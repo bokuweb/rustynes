@@ -1,0 +1,19 @@
+{
+  "name": "rustnes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run connect",
+    "connect": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rustc --target=wasm32-unknown-emscripten -o hello.html main.rs"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "connect": "^3.4.1",
+    "serve-static": "^1.10.2"
+  },
+  "dependencies": {}
+}
