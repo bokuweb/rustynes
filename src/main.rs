@@ -17,8 +17,9 @@ pub extern "C" fn update(len: usize, ptr: *mut bool, col: usize) -> u8 {
     // fetch();
     // externs::fetch("console.log('Hello, eval!')");
     // let a = externs::now();
-    let a = "aaaa";
-    println!("{:?}", externs::fetch(a));
+    let a = "roms/hello.nes";
+    let b = externs::fetch(a);
+    println!("{:?}", b);
     Nes::new()
     // buf.clone_from_slice(game.as_slice())
 }
