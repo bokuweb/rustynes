@@ -1,8 +1,5 @@
 
-pub struct Nes {}
-
-impl Nes {
-    pub fn new() -> u8 {
-        10
-    }
+pub fn parse(nes: &mut [u8]) -> u8 {
+    println!("{:?}", nes);
+    10
 }
