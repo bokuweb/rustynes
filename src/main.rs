@@ -1,3 +1,5 @@
+extern crate libc;
+
 mod nes;
 mod externs;
 
@@ -15,5 +17,6 @@ pub extern "C" fn run(len: usize, ptr: *mut u8) -> u8 {
     println!("{:?}", buf[0]);
     println!("{}", buf.len());
     externs::set_main_loop(test);
+    externs::eval("console.log('abbbaa')");
     Nes::new()
 }
