@@ -1,4 +1,4 @@
-const update = Module.cwrap('run', null, ['number', 'number', 'number']);
+const runNES = Module.cwrap('run', null, ['number', 'number']);
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext('2d');
 
@@ -16,12 +16,12 @@ fetch('./roms/hello.nes')
         const nes = new Uint8Array(arrBuf);
         const size = nes.byteLength;
         const ptr = Module._malloc(size);
-        console.log('nes', nes)
+        // console.log('nes', nes)
         const buf = new Uint8Array(Module.HEAPU8.buffer, ptr, size);
         for (let i = 0; i < nes.length - 1; i = i + 1) {
             buf[i] = nes[i];
         }
-        run(size, buf.byteOffset);
+        runNES(size, buf.byteOffset);
     });
 
 
