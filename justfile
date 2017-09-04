@@ -1,5 +1,5 @@
 name = "rustnes"
-exported_functions = "'_run'"
+exported_functions = "'_run','_init'"
 
 build:
 	mkdir -p wasm
