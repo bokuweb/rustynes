@@ -1,7 +1,6 @@
 extern crate libc;
 
 mod nes;
-// mod parser;
 mod externs;
 
 use nes::Nes;
@@ -14,6 +13,7 @@ pub extern "C" fn run(len: usize, ptr: *mut u8) -> u8 {
     let mut nes = Nes::new(buf);
     externs::set_main_loop_callback(|| {
         println!("{}", nes.run());
+        // externs::eval("render()");
     });
     10
 }
