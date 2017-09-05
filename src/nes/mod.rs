@@ -1,15 +1,16 @@
+mod parser;
 
 pub struct Nes {
-    pub a: usize,
+    pub cassette: parser::Cassette,
 }
 
 impl Nes {
-    pub fn new() -> Nes {
-        Nes { a: 10 }
+    pub fn new(buf: &mut [u8]) -> Nes {
+        let cassette = parser::parse(buf);
+        Nes { cassette: cassette }
     }
 
-    pub fn add(&mut self) -> usize {
-        self.a += 1;
-        self.a
+    pub fn run(&mut self) -> u8 {
+        self.cassette.program_rom[0]
     }
 }
