@@ -9,7 +9,7 @@ pub fn eval(x: &str) -> i32 {
 
 pub fn set_main_loop(func: extern "C" fn()) {
     unsafe {
-        ffi::emscripten_set_main_loop(func, 60, 0);
+        ffi::emscripten_set_main_loop(func, 0, 0);
     }
 }
 
