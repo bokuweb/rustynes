@@ -10,18 +10,32 @@ use nes::Nes;
 
 fn main() {}
 
+thread_local!(static NES: RefCell<*mut Nes> = RefCell::new(null_mut()));
+
 extern "C" fn main_loop() {
     NES.with(|n| {
         let nes = *n.borrow_mut() as *mut Nes;
+        let a = vec![10, 20, 40, 50];
+        externs::eval(&format!("console.log({:?});", a));
         unsafe {
             let a = (*nes).run();
-            let js = format!("console.log({value})", value = a);
+            let js = [
+                "const canvas = document.querySelector('canvas');",
+                "const ctx = canvas.getContext('2d');",
+                "const image = ctx.createImageData(256, 240);",
+                "for (let i = 0; i < 256 * 240; i += 1) {",
+                "const color = 0;",
+                "image.data[i * 4] = color;",
+                "image.data[i * 4 + 1] = color;",
+                "image.data[i * 4 + 2] = color;",
+                "image.data[i * 4 + 3] = 0xFF;",
+                "}",
+                "ctx.putImageData(image, 0, 0);",
+            ].join("");
             externs::eval(&js);
         }
     });
 }
-
-thread_local!(static NES: RefCell<*mut Nes> = RefCell::new(null_mut()));
 
 #[no_mangle]
 pub extern "C" fn run(len: usize, ptr: *mut u8) {
