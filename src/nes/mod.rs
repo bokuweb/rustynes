@@ -11,6 +11,6 @@ impl Nes {
     }
 
     pub fn run(&mut self) -> u8 {
-        self.cassette.program_rom[0]
+        self.cassette.character_memory[1]
     }
 }

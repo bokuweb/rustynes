@@ -30,7 +30,7 @@ pub fn parse(buf: &mut [u8]) -> Cassette {
     let character_rom_start = NES_HEADER_SIZE + program_rom_pages * PROGRAM_ROM_SIZE;
     let character_rom_end = character_rom_start + charcter_rom_pages * CHARACTER_ROM_SIZE;
     Cassette {
-        program_rom: buf[NES_HEADER_SIZE..character_rom_start - 1].to_vec(),
-        character_memory: buf[character_rom_start..character_rom_end - 1].to_vec(),
+        program_rom: buf[NES_HEADER_SIZE..character_rom_start].to_vec(),
+        character_memory: buf[character_rom_start..character_rom_end].to_vec(),
     }
 }
