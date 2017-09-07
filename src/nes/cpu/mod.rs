@@ -8,8 +8,9 @@ impl Cpu {
         Cpu
     }
 
-    pub fn run(&self, mut bus: CpuBus) {
+    pub fn run(&self, mut bus: CpuBus) -> usize {
         bus.write(0, 100);
         println!("{}", bus.read(0));
+        20
     }
 }

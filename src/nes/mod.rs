@@ -32,12 +32,19 @@ impl Nes {
     }
 
     pub fn run(&mut self) {
-        let cpu_bus = CpuBus::new(
-            &self.program_rom,
-            &self.character_memory,
-            &mut self.work_ram,
-            &self.ppu,
-        );
-        self.cpu.run(cpu_bus);
+        let mut cycle = 0;
+        loop {
+            let cpu_bus = CpuBus::new(
+                &self.program_rom,
+                &mut self.character_memory,
+                &mut self.work_ram,
+                &mut self.ppu,
+            );
+            cycle += self.cpu.run(cpu_bus);
+            if cycle > 300 {
+                println!("{}", cycle);
+                break;
+            }
+        }
     }
 }

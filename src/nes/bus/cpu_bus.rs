@@ -4,17 +4,17 @@ use nes::ppu::Ppu;
 
 pub struct CpuBus<'a> {
     program_rom: &'a Rom,
-    character_memory: &'a Ram,
+    character_memory: &'a mut Ram,
     work_ram: &'a mut Ram,
-    ppu: &'a Ppu,
+    ppu: &'a mut Ppu,
 }
 
 impl<'a> CpuBus<'a> {
     pub fn new(
         program_rom: &'a Rom,
-        character_memory: &'a Ram,
+        character_memory: &'a mut Ram,
         work_ram: &'a mut Ram,
-        ppu: &'a Ppu,
+        ppu: &'a mut Ppu,
     ) -> CpuBus<'a> {
         CpuBus {
             program_rom,
