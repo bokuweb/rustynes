@@ -40,33 +40,14 @@ impl<'a> CpuBus<'a> {
     }
 
     pub fn write(&mut self, addr: u16, data: u8) {
-        self.work_ram.write(addr, data);
+        match addr {
+            0x0000...0x07FF => self.work_ram.write(addr, data),
+            0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),
+            0x2000...0x2007 => {} // TODO: PPU
+            0x4014 => {} // TODO: keypad
+            0x4016 => {} // TODO: keypad
+            0x4000...0x401F => {} // TODO: APU
+            _ => panic!("There is an illegal address access."),
+        };
     }
 }
-
-
-/*
-  write(addr: Word, data: Byte) {
-    if (addr < 0x0800) {
-      // RAM
-      this.ram.write(addr, data);
-    } else if (addr < 0x2000) {
-      // mirror
-      this.ram.write(addr - 0x0800, data);
-    } else if (addr < 0x2008) {
-      // PPU
-      this.ppu.write(addr - 0x2000, data);
-    } else if (addr >= 0x4000 && addr < 0x4020) {
-      if (addr === 0x4014) {
-        this.dma.write(data);
-      } else if (addr === 0x4016) {
-        // TODO Add 2P
-        this.keypad.write(data);
-      } else {
-        // APU
-        this.apu.write(addr - 0x4000, data);
-      }
-    }
-  }
-}
-*/
