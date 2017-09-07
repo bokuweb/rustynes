@@ -1,15 +1,15 @@
 use nes::bus::cpu_bus::CpuBus;
 
-pub struct Cpu {
-    pub bus: CpuBus,
-}
+pub struct Cpu;
+
 
 impl Cpu {
-    pub fn new(bus: CpuBus) -> Cpu {
-        Cpu { bus }
+    pub fn new() -> Cpu {
+        Cpu
     }
 
-    pub fn run(&self) {
-        println!("{}", self.bus.read(0));
+    pub fn run(&self, mut bus: CpuBus) {
+        bus.write(0, 100);
+        println!("{}", bus.read(0));
     }
 }

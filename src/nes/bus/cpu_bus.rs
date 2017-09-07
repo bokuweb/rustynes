@@ -1,18 +1,26 @@
 use nes::rom::Rom;
 use nes::ram::Ram;
+use nes::ppu::Ppu;
 
-pub struct CpuBus {
-    program_rom: Rom,
-    character_memory: Ram,
-    work_ram: Ram,
+pub struct CpuBus<'a> {
+    program_rom: &'a Rom,
+    character_memory: &'a Ram,
+    work_ram: &'a mut Ram,
+    ppu: &'a Ppu,
 }
 
-impl CpuBus {
-    pub fn new(program_rom: Rom, character_memory: Ram, work_ram: Ram) -> CpuBus {
+impl<'a> CpuBus<'a> {
+    pub fn new(
+        program_rom: &'a Rom,
+        character_memory: &'a Ram,
+        work_ram: &'a mut Ram,
+        ppu: &'a Ppu,
+    ) -> CpuBus<'a> {
         CpuBus {
             program_rom,
             character_memory,
             work_ram,
+            ppu,
         }
     }
 
@@ -29,6 +37,10 @@ impl CpuBus {
             0xC000...0xFFFF => self.program_rom.read(addr - 0x8000),
             _ => panic!("There is an illegal address access."),
         }
+    }
+
+    pub fn write(&mut self, addr: u16, data: u8) {
+        self.work_ram.write(addr, data);
     }
 }
 
