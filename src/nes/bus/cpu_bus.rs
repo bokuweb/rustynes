@@ -1,79 +1,40 @@
 use nes::rom::Rom;
+use nes::ram::Ram;
 
 pub struct CpuBus {
-    pub program_rom: Rom,
+    program_rom: Rom,
+    character_memory: Ram,
+    work_ram: Ram,
 }
 
 impl CpuBus {
-    pub fn new(rom: Rom) -> CpuBus {
-        CpuBus { program_rom: rom }
+    pub fn new(program_rom: Rom, character_memory: Ram, work_ram: Ram) -> CpuBus {
+        CpuBus {
+            program_rom,
+            character_memory,
+            work_ram,
+        }
     }
 
     pub fn read(&self, addr: u16) -> u8 {
-        10
+        match addr {
+            0x0000...0x07FF => self.work_ram.read(addr),
+            0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
+            0x2000...0x3FFF => 0, // TODO: PPU
+            0x4016 => 0, // TODO: keypad
+            0x8000...0xBFFF => self.program_rom.read(addr - 0x8000),
+            0xC000...0xFFFF if self.program_rom.size() <= 0x4000 => {
+                self.program_rom.read(addr - 0xC000)
+            }
+            0xC000...0xFFFF => self.program_rom.read(addr - 0x8000),
+            _ => panic!("There is an illegal address access."),
+        }
     }
 }
 
 
 /*
-
-import Rom from '../rom';
-import Ram from '../ram';
-import Ppu from '../ppu';
-import Keypad from '../keypad';
-import Dma from '../dma';
-import Apu from '../apu';
-
-import type { Word, Byte } from '../types/common';
-
-export default class CpuBus {
-
-  ram: Ram;
-  ppu: Ppu;
-  apu: Apu;
-  programROM: Rom;
-  keypad: Keypad;
-  dma: Dma;
-
-  constructor(ram: Ram, programROM: Rom, ppu: Ppu, keypad: Keypad, dma: Dma, apu: Apu) {
-    this.ram = ram;
-    this.programROM = programROM;
-    this.ppu = ppu;
-    this.apu = apu;
-    this.keypad = keypad;
-    this.dma = dma;
-  }
-
-  readByCpu(addr: Word): Byte {
-    if (addr < 0x0800) {
-      return this.ram.read(addr);
-    } else if (addr < 0x2000) {
-      // mirror
-      return this.ram.read(addr - 0x0800);
-    } else if (addr < 0x4000) {
-      // mirror
-      const data = this.ppu.read((addr - 0x2000) % 8);
-      return data;
-    } else if (addr === 0x4016) {
-      // TODO Add 2P
-      return +this.keypad.read();
-    } else if (addr >= 0xC000) {
-      // Mirror, if prom block number equals 1
-      if (this.programROM.size <= 0x4000) {
-        return this.programROM.read(addr - 0xC000);
-      }
-      return this.programROM.read(addr - 0x8000);
-    } else if (addr >= 0x8000) {
-      // ROM
-      return this.programROM.read(addr - 0x8000);
-    } else {
-      // FIXME:
-      return 0;
-    }
-  }
-
-  writeByCpu(addr: Word, data: Byte) {
-    // log.debug(`cpu:write addr = ${addr}`, data);
+  write(addr: Word, data: Byte) {
     if (addr < 0x0800) {
       // RAM
       this.ram.write(addr, data);
@@ -96,5 +57,4 @@ export default class CpuBus {
     }
   }
 }
-
 */

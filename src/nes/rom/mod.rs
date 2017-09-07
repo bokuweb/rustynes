@@ -8,4 +8,8 @@ impl Rom {
     pub fn read(&self, addr: u16) -> u8 {
         self.0[addr as usize]
     }
+
+    pub fn size(&self) -> usize {
+        self.0.len()
+    }    
 }

@@ -1,16 +1,11 @@
-mod parser;
+use nes::bus::cpu_bus::CpuBus;
 
-pub struct Nes {
-    pub cassette: parser::Cassette,
+pub struct Cpu {
+    pub bus: CpuBus,
 }
 
-impl Nes {
-    pub fn new(buf: &mut [u8]) -> Nes {
-        let cassette = parser::parse(buf);
-        Nes { cassette: cassette }
-    }
-
-    pub fn run(&mut self) -> u8 {
-        self.cassette.character_memory[1]
+impl Cpu {
+    pub fn new(bus: CpuBus) -> Cpu {
+        Cpu { bus }
     }
 }
