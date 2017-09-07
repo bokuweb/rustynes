@@ -1,21 +1,28 @@
 mod parser;
 mod rom;
+mod ram;
+mod bus;
+
+use self::rom::Rom;
+use self::ram::Ram;
+use self::bus::cpu_bus::CpuBus;
 
 pub struct Nes {
-    // pub cassette: parser::Cassette,
-    program_rom: rom::Rom,
+    character_memory: Ram,
+    cpu_bus: CpuBus,
 }
 
 impl Nes {
     pub fn new(buf: &mut [u8]) -> Nes {
         let cassette = parser::parse(buf);
+        let program_rom = Rom::new(cassette.program_rom);
         Nes {
-            // cassette: cassette,
-            program_rom: rom::Rom::new(cassette.program_rom),
+            character_memory: Ram::new(cassette.character_memory),
+            cpu_bus: CpuBus::new(program_rom),
         }
     }
 
-    pub fn run(&mut self) -> u8 {
-        self.program_rom.read(0)
+    pub fn run(&self) -> u8 {
+        self.cpu_bus.read(0)
     }
 }
