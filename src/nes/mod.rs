@@ -10,8 +10,7 @@ use self::ram::Ram;
 use self::bus::cpu_bus::CpuBus;
 
 pub struct Nes {
-    cpu_bus: CpuBus,
-    // cpu: Cpu<'a>,
+    cpu: Cpu,
 }
 
 impl Nes {
@@ -22,14 +21,10 @@ impl Nes {
             Ram::new(cassette.character_memory),
             Ram::new(vec![0; 0x0800]),
         );
-        Nes {
-            // cpu: Cpu::new(),
-            cpu_bus,
-        } 
+        Nes { cpu: Cpu::new(cpu_bus) }
     }
 
-    pub fn run(&self) -> u8 {
-        // self.cpu_bus.read(0)
-        10
+    pub fn run(&self) {
+        self.cpu.run()
     }
 }
