@@ -13,10 +13,7 @@ pub struct Cassette {
 pub fn parse(buf: &mut [u8]) -> Cassette {
     // println!("{:?}", nes);
     let name = buf[0..3].to_vec();
-    let ines = match str::from_utf8(&name) {
-        Ok(v) => v,
-        Err(_) => panic!("Invalid *.nes file"),
-    };
+    let ines = str::from_utf8(&name).unwrap();
     if ines != "NES" {
         panic!("Invalid *.nes file.")
     };
