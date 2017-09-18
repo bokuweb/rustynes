@@ -1,47 +1,70 @@
-use std::collections::HashMap;
+// use std::collections::HashMap;
 
-#[derive(Debug)]
-pub struct Opecode {
-    pub name: Instraction,
-    pub mode: Addressing,
-    pub cycle: u8,
-}
+pub mod opecode {
 
-#[derive(Debug)]
-pub enum Instraction {
-    LDA,
-    LDX,
-}
+    use std::collections::HashMap;
 
-#[derive(Debug)]
-pub enum Addressing {
-    Immediate,
-    ZeroPage,
-}
+    #[derive(Debug)]
+    pub struct Opecode {
+        pub name: Instraction,
+        pub mode: Addressing,
+        pub cycle: u8,
+    }
 
-pub fn build_opecode_map() -> HashMap<String, u8> {
+    #[derive(Debug)]
+    pub enum Instraction {
+        LDA,
+        LDX,
+    }
+
+    #[derive(Debug)]
+    pub enum Addressing {
+        Immediate,
+        ZeroPage,
+    }
+
+    lazy_static! {
+        
+        pub static ref MAP: HashMap<u8, Opecode> = {
 
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    let cycles: Vec<u8> = vec![
-      7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7,
-      6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7,
-      6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7,
-      6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7,
-      2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-      2, 6, 2, 6, 4, 4, 4, 4, 2, 4, 2, 5, 5, 4, 5, 5,
-      2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
-      2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
-      2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-      2, 6, 3, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
-      2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
-    ];
+    let cycles: Vec<u8> =
+        vec![7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7,
+             4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6,
+             2, 4, 2, 7, 4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, 2, 5, 2, 8,
+             4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+             2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7, 2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2,
+             4, 4, 4, 4, 2, 6, 2, 6, 4, 4, 4, 4, 2, 4, 2, 5, 5, 4, 5, 5, 2, 6, 2, 6, 3, 3, 3, 3,
+             2, 2, 2, 2, 4, 4, 4, 4, 2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, 2, 6, 2, 8,
+             3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+             2, 6, 3, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7,
+             4, 4, 7, 7];            
+            let mut m = HashMap::new();
+            m.insert(0xA5, Opecode { name: Instraction::LDA, mode: Addressing::ZeroPage, cycle: cycles[0xA5] });
+            m
+        };
+    }
+
+}
+
+/*
+pub fn build_opecode_map() -> HashMap<u8, u8> {
+
+    #[cfg_attr(rustfmt, rustfmt_skip)]
+    let cycles: Vec<u8> =
+        vec![7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7,
+             4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6,
+             2, 4, 2, 7, 4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, 2, 5, 2, 8,
+             4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7, 6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+             2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 6, 7, 2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2,
+             4, 4, 4, 4, 2, 6, 2, 6, 4, 4, 4, 4, 2, 4, 2, 5, 5, 4, 5, 5, 2, 6, 2, 6, 3, 3, 3, 3,
+             2, 2, 2, 2, 4, 4, 4, 4, 2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, 2, 6, 2, 8,
+             3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+             2, 6, 3, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7,
+             4, 4, 7, 7];
     let mut map = HashMap::new();
-    map.insert(String::from("0xA9"), 10);
+    map.insert(1u8, 12);
+    ///map.insert(String::from("0xA9"), 10);
     //map.insert(0xA5, Opecode { name: "LDA", mode: "zeroPage", cycle: cycles[0xA5] });
     //map.insert(0xAD, Opecode { name: "LDA", mode: "absolute", cycle: cycles[0xAD] });
     //map.insert(0xB5, Opecode { name: "LDA", mode: "zeroPageX", cycle: cycles[0xB5] });
@@ -286,3 +309,4 @@ pub fn build_opecode_map() -> HashMap<String, u8> {
     //map.insert(0x73, Opecode { name: "RRA", mode: "postIndexedIndirect", cycle: cycles[0x73] });
     map
 }
+*/

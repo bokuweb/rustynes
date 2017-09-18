@@ -6,3 +6,4 @@ authors = ["bokuweb <bokuweb12@gmail.com>"]
 [dependencies]
 
 libc="*"
+lazy_static="0.2.8"
