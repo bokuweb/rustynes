@@ -21,18 +21,20 @@
       printErr: text => {
         console.error(text);
       },
+      onRuntimeInitialized() {
+        console.log('initialized');
+        const main = document.createElement('script');
+        main.src = 'main.js';
+        document.body.appendChild(main);
+      },
     };
     fetch(`${name}.wasm`)
       .then(resp => resp.arrayBuffer())
       .then(buffer => {
+        console.log('aa')
         Module.wasmBinary = buffer;
         const script = document.createElement("script");
         script.src = `${name}.js`;
-        script.addEventListener('load', (e) => {
-          const main = document.createElement('script');
-          main.src = 'main.js';
-          document.body.appendChild(main);
-        });
         document.body.appendChild(script);
       })
   </script>
