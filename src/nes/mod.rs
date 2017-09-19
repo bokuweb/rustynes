@@ -33,6 +33,17 @@ impl Nes {
         }
     }
 
+    pub fn reset(&mut self) {
+        // TODO: let mut cpu_bus = self.create_bus();
+        let mut cpu_bus = CpuBus::new(
+            &self.program_rom,
+            &mut self.character_memory,
+            &mut self.work_ram,
+            &mut self.ppu,
+        );
+        self.cpu.reset(&mut cpu_bus);
+    }
+
     pub fn run(&mut self) {
         let mut cycle = 0;
         let mut cpu_bus = CpuBus::new(
@@ -48,5 +59,14 @@ impl Nes {
                 break;
             }
         }
+    }
+
+    fn create_bus(&mut self) -> CpuBus {
+        CpuBus::new(
+            &self.program_rom,
+            &mut self.character_memory,
+            &mut self.work_ram,
+            &mut self.ppu,
+        )
     }
 }
