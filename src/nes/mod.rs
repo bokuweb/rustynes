@@ -1,3 +1,5 @@
+#![feature(box_syntax)]
+
 mod parser;
 mod rom;
 mod ram;

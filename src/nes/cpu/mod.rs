@@ -4,14 +4,42 @@ use std::collections::HashMap;
 use nes::bus::cpu_bus::CpuBus;
 // use self::opecode;
 
+struct Status {
+    negative: bool,
+    overflow: bool,
+    reserved: bool,
+    break_mode: bool,
+    decimal_mode: bool,
+    interrupt: bool,
+    zero: bool,
+    carry: bool,
+}
+
 pub struct Cpu {
-    // opecode: HashMap<u8, u8>,
+    A: u8,
+    X: u8,
+    Y: u8,
+    PC: u16,
+    P: Status,
 }
 
 impl Cpu {
     pub fn new() -> Cpu {
         Cpu {
-            //opecode: opecode::build_opecode_map().clone()
+            A: 0,
+            X: 0,
+            Y: 0,
+            PC: 0x8000,
+            P: Status {
+                negative: true,
+                overflow: true,
+                reserved: true,
+                break_mode: true,
+                decimal_mode: true,
+                interrupt: true,
+                zero: true,
+                carry: true,
+            },
         }
     }
 

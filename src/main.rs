@@ -17,8 +17,8 @@ thread_local!(static NES: RefCell<*mut Nes> = RefCell::new(null_mut()));
 extern "C" fn main_loop() {
     NES.with(|n| {
         let nes = *n.borrow_mut() as *mut Nes;
-        let a = vec![10, 20, 40, 50];
-        externs::eval(&format!("console.log({:?});", a));
+        // let a = vec![10, 20, 40, 50];
+        // externs::eval(&format!("console.log({:?});", a));
         unsafe {
             let a = (*nes).run();
             let js = [
