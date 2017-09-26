@@ -1,7 +1,7 @@
-pub struct Rom(Vec<u8>);
+pub struct Rom(Box<Vec<u8>>);
 
 impl Rom {
-    pub fn new(buf: Vec<u8>) -> Rom {
+    pub fn new(buf: Box<Vec<u8>>) -> Rom {
         Rom(buf)
     }
 
@@ -11,5 +11,5 @@ impl Rom {
 
     pub fn size(&self) -> usize {
         self.0.len()
-    }    
+    }
 }

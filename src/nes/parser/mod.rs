@@ -6,7 +6,7 @@ const CHARACTER_ROM_SIZE: usize = 0x2000;
 
 pub struct Cassette {
     // is_horizontal_mirror: bool,
-    pub character_memory: Vec<u8>,
+    pub character_ram: Vec<u8>,
     pub program_rom: Vec<u8>,
 }
 
@@ -28,6 +28,6 @@ pub fn parse(buf: &mut [u8]) -> Cassette {
     let character_rom_end = character_rom_start + charcter_rom_pages * CHARACTER_ROM_SIZE;
     Cassette {
         program_rom: buf[NES_HEADER_SIZE..character_rom_start].to_vec(),
-        character_memory: buf[character_rom_start..character_rom_end].to_vec(),
+        character_ram: buf[character_rom_start..character_rom_end].to_vec(),
     }
 }
