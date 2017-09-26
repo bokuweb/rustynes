@@ -43,7 +43,7 @@ impl Cpu {
         self.registers = Cpu::create_default_registers();
         let pc = self.read_word(bus, 0xFFFC);
         println!("Start from {:?}", pc);
-        self.registers.PC = self.read_word(bus, 0xFFFC);
+        self.registers.PC = pc
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> usize {
@@ -56,13 +56,14 @@ impl Cpu {
     }
 
     fn fetch(&mut self, bus: &CpuBus) -> u8 {
-        println!("{}", self.registers.PC);
+        println!("{:?}", self.registers.PC);
         let code = self.read_byte(bus, self.registers.PC);
         self.registers.PC += 1;
         code
     }
 
     fn read_byte(&self, bus: &CpuBus, addr: u16) -> u8 {
+        println!("addddd {}", addr);
         bus.read(addr)
     }
 

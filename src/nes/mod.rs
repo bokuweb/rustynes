@@ -23,38 +23,36 @@ pub struct Nes {
 
 impl Nes {
     pub fn new(buf: &mut [u8]) -> Nes {
-        let rom = Box::new(parser::parse(buf).program_rom);
-        let cram = Box::new(parser::parse(buf).character_ram);
+        let cassette = parser::parse(buf);
+        // let program_rom = Box::new(parser::parse(buf).program_rom);
+        let character_ram = Box::new(parser::parse(buf).character_ram);
         Nes {
             cpu: Cpu::new(),
             ppu: Ppu::new(),
-            program_rom: Rom::new(rom),
+            program_rom: Rom::new(Box::new(parser::parse(buf).program_rom)),
             work_ram: Ram::new(Box::new(vec![0; 0x0800])),
-            character_ram: Ram::new(cram),
+            character_ram: Ram::new(character_ram),
         }
     }
 
     pub fn reset(&mut self) {
         // TODO: let mut cpu_bus = self.create_bus();
-        let mut cpu_bus = CpuBus::new(
-            &self.program_rom,
-            &mut self.character_ram,
-            &mut self.work_ram,
-            &mut self.ppu,
-        );
+        let mut cpu_bus = CpuBus::new(&self.program_rom,
+                                      &mut self.character_ram,
+                                      &mut self.work_ram,
+                                      &mut self.ppu);
         self.cpu.reset(&mut cpu_bus);
     }
 
     pub fn run(&mut self) {
         let mut cycle = 0;
-        let mut cpu_bus = CpuBus::new(
-            &self.program_rom,
-            &mut self.character_ram,
-            &mut self.work_ram,
-            &mut self.ppu,
-        );
+        let mut cpu_bus = CpuBus::new(&self.program_rom,
+                                      &mut self.character_ram,
+                                      &mut self.work_ram,
+                                      &mut self.ppu);
         loop {
             println!("aa");
+            println!("a{}", cycle);
             cycle += self.cpu.run(&mut cpu_bus);
             println!("{}", cycle);
             if cycle > 300 {
@@ -65,11 +63,9 @@ impl Nes {
     }
 
     fn create_bus(&mut self) -> CpuBus {
-        CpuBus::new(
-            &self.program_rom,
-            &mut self.character_ram,
-            &mut self.work_ram,
-            &mut self.ppu,
-        )
+        CpuBus::new(&self.program_rom,
+                    &mut self.character_ram,
+                    &mut self.work_ram,
+                    &mut self.ppu)
     }
 }
