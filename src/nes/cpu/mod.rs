@@ -4,12 +4,12 @@ use std::collections::HashMap;
 use nes::bus::cpu_bus::CpuBus;
 // use self::opecode;
 
-
 // pub enum ReadMode {
 //     Byte,
 //     Word,
 // }
 
+#[derive(Debug)]
 struct Status {
     negative: bool,
     overflow: bool,
@@ -21,6 +21,7 @@ struct Status {
     carry: bool,
 }
 
+#[derive(Debug)]
 struct Registers {
     A: u8,
     X: u8,
@@ -31,6 +32,7 @@ struct Registers {
 }
 
 pub struct Cpu {
+    // registers: Box<Registers>,
     registers: Registers,
 }
 
@@ -43,7 +45,8 @@ impl Cpu {
         self.registers = Cpu::create_default_registers();
         let pc = self.read_word(bus, 0xFFFC);
         println!("Start from {:?}", pc);
-        self.registers.PC = pc
+        println!("registors {:?}", self.registers);
+        self.registers.PC = pc;
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> usize {

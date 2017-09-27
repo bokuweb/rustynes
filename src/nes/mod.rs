@@ -12,13 +12,15 @@ use self::ppu::Ppu;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus::CpuBus;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub struct Nes {
-    cpu: Cpu,
-    ppu: Ppu,
-    program_rom: Rom,
-    work_ram: Ram,
-    character_ram: Ram,
+    pub cpu: Rc<RefCell<Cpu>>,
+    pub ppu: Ppu,
+    pub program_rom: Rom,
+    pub work_ram: Ram,
+    pub character_ram: Ram,
 }
 
 impl Nes {
@@ -27,7 +29,7 @@ impl Nes {
         // let program_rom = Box::new(parser::parse(buf).program_rom);
         let character_ram = Box::new(parser::parse(buf).character_ram);
         Nes {
-            cpu: Cpu::new(),
+            cpu: Rc::new(RefCell::new(Cpu::new())),
             ppu: Ppu::new(),
             program_rom: Rom::new(Box::new(parser::parse(buf).program_rom)),
             work_ram: Ram::new(Box::new(vec![0; 0x0800])),
@@ -41,7 +43,7 @@ impl Nes {
                                       &mut self.character_ram,
                                       &mut self.work_ram,
                                       &mut self.ppu);
-        self.cpu.reset(&mut cpu_bus);
+        self.cpu.borrow_mut().reset(&mut cpu_bus);
     }
 
     pub fn run(&mut self) {
@@ -53,9 +55,9 @@ impl Nes {
         loop {
             println!("aa");
             println!("a{}", cycle);
-            cycle += self.cpu.run(&mut cpu_bus);
+            cycle += self.cpu.borrow_mut().run(&mut cpu_bus);
             println!("{}", cycle);
-            if cycle > 300 {
+            if cycle > 20 {
                 println!("{}", cycle);
                 break;
             }
