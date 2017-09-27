@@ -44,29 +44,24 @@ impl Cpu {
     pub fn reset(&mut self, bus: &CpuBus) {
         self.registers = Cpu::create_default_registers();
         let pc = self.read_word(bus, 0xFFFC);
-        println!("Start from {:?}", pc);
-        println!("registors {:?}", self.registers);
         self.registers.PC = pc;
     }
 
-    pub fn run(&mut self, mut bus: &CpuBus) -> usize {
+    pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
         let code = self.fetch(bus);
         let ref map = opecode::opecode::MAP;
-        println!("hoge");
-        println!("{:?}", code);
-        println!("{:?}", *map.get(&code).unwrap());
-        20
+        let code = &*map.get(&code).unwrap();
+        // println!("{:?}", code);
+        code.cycle
     }
 
     fn fetch(&mut self, bus: &CpuBus) -> u8 {
-        println!("{:?}", self.registers.PC);
         let code = self.read_byte(bus, self.registers.PC);
         self.registers.PC += 1;
         code
     }
 
     fn read_byte(&self, bus: &CpuBus, addr: u16) -> u8 {
-        println!("addddd {}", addr);
         bus.read(addr)
     }
 

@@ -53,21 +53,11 @@ impl Nes {
                                       &mut self.work_ram,
                                       &mut self.ppu);
         loop {
-            println!("aa");
-            println!("a{}", cycle);
             cycle += self.cpu.borrow_mut().run(&mut cpu_bus);
-            println!("{}", cycle);
             if cycle > 20 {
-                println!("{}", cycle);
                 break;
             }
         }
     }
 
-    fn create_bus(&mut self) -> CpuBus {
-        CpuBus::new(&self.program_rom,
-                    &mut self.character_ram,
-                    &mut self.work_ram,
-                    &mut self.ppu)
-    }
 }
