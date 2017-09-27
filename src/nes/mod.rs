@@ -1,4 +1,4 @@
-#![feature(box_syntax)]
+// #![feature(box_syntax)]
 
 mod parser;
 mod rom;
@@ -16,7 +16,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 pub struct Nes {
-    pub cpu: Rc<RefCell<Cpu>>,
+    pub cpu: Cpu,
     pub ppu: Ppu,
     pub program_rom: Rom,
     pub work_ram: Ram,
@@ -27,12 +27,12 @@ impl Nes {
     pub fn new(buf: &mut [u8]) -> Nes {
         let cassette = parser::parse(buf);
         // let program_rom = Box::new(parser::parse(buf).program_rom);
-        let character_ram = Box::new(parser::parse(buf).character_ram);
+        let character_ram = parser::parse(buf).character_ram;
         Nes {
-            cpu: Rc::new(RefCell::new(Cpu::new())),
+            cpu: Cpu::new(),
             ppu: Ppu::new(),
-            program_rom: Rom::new(Box::new(parser::parse(buf).program_rom)),
-            work_ram: Ram::new(Box::new(vec![0; 0x0800])),
+            program_rom: Rom::new(parser::parse(buf).program_rom),
+            work_ram: Ram::new(vec![0; 0x0800]),
             character_ram: Ram::new(character_ram),
         }
     }
@@ -43,7 +43,7 @@ impl Nes {
                                       &mut self.character_ram,
                                       &mut self.work_ram,
                                       &mut self.ppu);
-        self.cpu.borrow_mut().reset(&mut cpu_bus);
+        self.cpu.reset(&mut cpu_bus);
     }
 
     pub fn run(&mut self) {
@@ -53,7 +53,7 @@ impl Nes {
                                       &mut self.work_ram,
                                       &mut self.ppu);
         loop {
-            cycle += self.cpu.borrow_mut().run(&mut cpu_bus);
+            cycle += self.cpu.run(&mut cpu_bus);
             if cycle > 20 {
                 break;
             }

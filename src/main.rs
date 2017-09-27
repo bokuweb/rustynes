@@ -42,8 +42,8 @@ extern "C" fn main_loop() {
 #[no_mangle]
 pub extern "C" fn run(len: usize, ptr: *mut u8) {
     let buf: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-    let mut nes = Box::new(Nes::new(buf));
-    nes.reset();
+    let mut nes = Rc::new(RefCell::new(Nes::new(buf)));
+    nes.borrow_mut().reset();
     NES.with(|n| { *n.borrow_mut() = &nes as *const _ as *mut Nes; });
     externs::set_main_loop(main_loop);
 }

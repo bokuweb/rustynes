@@ -44,10 +44,12 @@ impl Cpu {
     pub fn reset(&mut self, bus: &CpuBus) {
         self.registers = Cpu::create_default_registers();
         let pc = self.read_word(bus, 0xFFFC);
+        println!("Initial PC {}", pc);
         self.registers.PC = pc;
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
+        println!("PC {}", self.registers.PC);
         let code = self.fetch(bus);
         let ref map = opecode::opecode::MAP;
         let code = &*map.get(&code).unwrap();
