@@ -5,7 +5,7 @@ pub struct Rom {
 
 impl Rom {
     pub fn new(buf: Vec<u8>) -> Rom {
-        Rom { vec: buf }
+        Rom { vec: buf.clone() }
     }
 
     pub fn read(&self, addr: u16) -> u8 {

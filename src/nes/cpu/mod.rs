@@ -39,18 +39,37 @@ pub struct Cpu {
 
 impl Cpu {
     pub fn new() -> Cpu {
-        Cpu { registers: Cpu::create_default_registers() }
+        Cpu {
+            registers: Registers {
+                A: 0,
+                X: 0,
+                Y: 0,
+                PC: 0x8000,
+                SP: 0x01FD,
+                P: Status {
+                    negative: false,
+                    overflow: false,
+                    reserved: true,
+                    break_mode: true,
+                    decimal_mode: false,
+                    interrupt: true,
+                    zero: false,
+                    carry: false,
+                },
+            },
+        }
     }
 
     pub fn reset(&mut self, bus: &CpuBus) {
         // self.reset_registers();
         let pc = self.read_word(bus, 0xFFFC);
         println!("Initial PC {}", pc);
+        println!("registers {:?}", self.registers);
         self.registers.PC = pc;
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
-        println!("PC {}", self.registers.PC);
+        println!("registers {:?}", self.registers);
         let code = self.fetch(bus);
         let ref map = opecode::opecode::MAP;
         let code = &*map.get(&code).unwrap();
