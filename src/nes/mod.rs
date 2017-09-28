@@ -15,10 +15,11 @@ use self::bus::cpu_bus::CpuBus;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Debug)]
 pub struct Nes {
     pub cpu: Cpu,
     pub ppu: Ppu,
-    pub program_rom: Rom,
+    pub program_rom: Box<Rom>,
     pub work_ram: Ram,
     pub character_ram: Ram,
 }
@@ -26,12 +27,13 @@ pub struct Nes {
 impl Nes {
     pub fn new(buf: &mut [u8]) -> Nes {
         let cassette = parser::parse(buf);
-        // let program_rom = Box::new(parser::parse(buf).program_rom);
+        let program_rom = Box::new(Rom::new(parser::parse(buf).program_rom));
         let character_ram = parser::parse(buf).character_ram;
+        println!("{:?}", program_rom);
         Nes {
             cpu: Cpu::new(),
             ppu: Ppu::new(),
-            program_rom: Rom::new(parser::parse(buf).program_rom),
+            program_rom, //: Rom::new(parser::parse(buf).program_rom),
             work_ram: Ram::new(vec![0; 0x0800]),
             character_ram: Ram::new(character_ram),
         }

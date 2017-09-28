@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Ram(Vec<u8>);
 
 impl Ram {

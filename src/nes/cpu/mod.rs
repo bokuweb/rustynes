@@ -31,6 +31,7 @@ struct Registers {
     P: Status,
 }
 
+#[derive(Debug)]
 pub struct Cpu {
     // registers: Box<Registers>,
     registers: Registers,
@@ -42,7 +43,7 @@ impl Cpu {
     }
 
     pub fn reset(&mut self, bus: &CpuBus) {
-        self.registers = Cpu::create_default_registers();
+        // self.reset_registers();
         let pc = self.read_word(bus, 0xFFFC);
         println!("Initial PC {}", pc);
         self.registers.PC = pc;
@@ -53,7 +54,7 @@ impl Cpu {
         let code = self.fetch(bus);
         let ref map = opecode::opecode::MAP;
         let code = &*map.get(&code).unwrap();
-        // println!("{:?}", code);
+        println!("{:?}", code);
         code.cycle
     }
 
@@ -71,6 +72,23 @@ impl Cpu {
         let low = bus.read(addr) as u16;
         let high = bus.read(addr + 1) as u16;
         (high << 8 | low) as u16
+    }
+
+
+    fn reset_registers(&mut self) {
+        self.registers.A = 0;
+        self.registers.X = 0;
+        self.registers.Y = 0;
+        self.registers.PC = 0x8000;
+        self.registers.SP = 0x01FD;
+        self.registers.P.negative = false;
+        self.registers.P.overflow = false;
+        self.registers.P.reserved = true;
+        self.registers.P.break_mode = true;
+        self.registers.P.decimal_mode = false;
+        self.registers.P.interrupt = true;
+        self.registers.P.zero = false;
+        self.registers.P.carry = false;
     }
 
     fn create_default_registers() -> Registers {

@@ -1,4 +1,4 @@
-// use std::collections::HashMap;
+
 
 pub mod opecode {
 
@@ -281,27 +281,27 @@ pub mod opecode {
             m.insert(0xB2, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xB2] });
             m.insert(0xD2, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xD2] });
             m.insert(0xF2, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xF2] });
-            m.insert(0x80, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x80] });
-            m.insert(0x82, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x82] });
-            m.insert(0x89, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x89] });
-            m.insert(0xC2, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xC2] });
-            m.insert(0xE2, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xE2] });
-            m.insert(0x04, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x04] });
-            m.insert(0x44, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x44] });
-            m.insert(0x64, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x64] });
-            m.insert(0x14, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x14] });
-            m.insert(0x34, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x34] });
-            m.insert(0x54, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x54] });
-            m.insert(0x74, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x74] });
-            m.insert(0xD4, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xD4] });
-            m.insert(0xF4, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xF4] });
-            m.insert(0x0C, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x0C] });
-            m.insert(0x1C, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x1C] });
-            m.insert(0x3C, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x3C] });
-            m.insert(0x5C, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x5C] });
-            m.insert(0x7C, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0x7C] });
-            m.insert(0xDC, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xDC] });
-            m.insert(0xFC, Opecode { name: Instruction::NOP, mode:Addressing::Implied, cycle: cycles[0xFC] });
+            m.insert(0x80, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x80] });
+            m.insert(0x82, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x82] });
+            m.insert(0x89, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x89] });
+            m.insert(0xC2, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xC2] });
+            m.insert(0xE2, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xE2] });
+            m.insert(0x04, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x04] });
+            m.insert(0x44, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x44] });
+            m.insert(0x64, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x64] });
+            m.insert(0x14, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x14] });
+            m.insert(0x34, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x34] });
+            m.insert(0x54, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x54] });
+            m.insert(0x74, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x74] });
+            m.insert(0xD4, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xD4] });
+            m.insert(0xF4, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xF4] });
+            m.insert(0x0C, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x0C] });
+            m.insert(0x1C, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x1C] });
+            m.insert(0x3C, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x3C] });
+            m.insert(0x5C, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x5C] });
+            m.insert(0x7C, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0x7C] });
+            m.insert(0xDC, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xDC] });
+            m.insert(0xFC, Opecode { name: Instruction::NOP, mode: Addressing::Implied, cycle: cycles[0xFC] });
             m.insert(0xA7, Opecode { name: Instruction::LAX, mode: Addressing::ZeroPage, cycle: cycles[0xA7] });
             m.insert(0xB7, Opecode { name: Instruction::LAX, mode: Addressing::ZeroPageY, cycle: cycles[0xB7] });
             m.insert(0xAF, Opecode { name: Instruction::LAX, mode: Addressing::Absolute, cycle: cycles[0xAF] });

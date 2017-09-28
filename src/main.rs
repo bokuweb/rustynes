@@ -13,14 +13,16 @@ use nes::Nes;
 
 fn main() {}
 
-thread_local!(static NES: RefCell<*mut Nes> = RefCell::new(null_mut()));
+thread_local!(static NES: RefCell<*mut libc::c_void> = RefCell::new(null_mut()));
 
 extern "C" fn main_loop() {
     NES.with(|n| {
-        let nes = *n.borrow_mut() as *mut Box<Nes>;
+        let mut nes = *n.borrow_mut() as *mut Nes;
         // let a = vec![10, 20, 40, 50];
+
         // externs::eval(&format!("console.log({:?});", a));
         unsafe {
+            println!("{:?}", (*nes).cpu);
             let a = (*nes).run();
             let js = ["const canvas = document.querySelector('canvas');",
                       "const ctx = canvas.getContext('2d');",
@@ -42,8 +44,9 @@ extern "C" fn main_loop() {
 #[no_mangle]
 pub extern "C" fn run(len: usize, ptr: *mut u8) {
     let buf: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-    let mut nes = Rc::new(RefCell::new(Nes::new(buf)));
-    nes.borrow_mut().reset();
-    NES.with(|n| { *n.borrow_mut() = &nes as *const _ as *mut Nes; });
+    // let mut nes = Box::new(Nes::new(buf));
+    // nes.reset();
+    // println!("{:?}", nes.program_rom);
+    NES.with(|n| { *n.borrow_mut() = &Nes::new(buf) as *const _ as *mut libc::c_void; });
     externs::set_main_loop(main_loop);
 }
