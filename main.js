@@ -1,5 +1,6 @@
 (async () => {
-  const run = Module.cwrap('run', null, ['number', 'number']);
+  const main = Module.cwrap('main', null, []);
+  // const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
 
@@ -15,7 +16,8 @@
   for (let i = 0; i < nes.length - 1; i = i + 1) {
     buf[i] = nes[i];
   }
-  run(size, buf.byteOffset);
+  // run(size, buf.byteOffset);
+  main();
 })();
 
 

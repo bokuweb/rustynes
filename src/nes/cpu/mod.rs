@@ -65,7 +65,7 @@ impl Cpu {
         let pc = self.read_word(bus, 0xFFFC);
         println!("Initial PC {}", pc);
         println!("registers {:?}", self.registers);
-        self.registers.PC = pc;
+        self.registers.PC = 0x8000; //pc;
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
