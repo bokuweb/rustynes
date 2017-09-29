@@ -69,11 +69,11 @@ impl Cpu {
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
-        println!("registers {:?}", self.registers);
+        // println!("registers {:?}", self.registers);
         let code = self.fetch(bus);
         let ref map = opecode::opecode::MAP;
         let code = &*map.get(&code).unwrap();
-        println!("{:?}", code);
+        // println!("{:?}", code);
         code.cycle
     }
 

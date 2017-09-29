@@ -11,10 +11,14 @@ use std::rc::Rc;
 
 use nes::Nes;
 
+extern "C" fn onload() {
+    println!("{}", 1000000000000000000000);
+}
+
 fn main() {
     // let buf: &mut [u8] = vec![120, 120, 120, 120, 120];
     // let mut nes = Box::new(Nes::new(buf));
-
+    // externs::wget(&"/roms/hello.nes", &"b", onload);
     // println!("{:?}", nes.program_rom);
     // NES.with(|n| { *n.borrow_mut() = &Nes::new(buf) as *const _ as *mut libc::c_void; });
     // let mut nes = Rc::new(RefCell::new(Nes::new(buf)));
@@ -47,6 +51,32 @@ fn main() {
     externs::set_main_loop_callback(main_loop);
 }
 
+
+/*
+void onLoadCallback(const char *filename) {
+    FILE *fp;
+    char s[256];
+
+    if((fp = fopen(filename, "r")) == NULL) {
+        printf("file open error!!\n");
+        exit(1);
+    }
+
+    while (fgets(s, 256, fp) != NULL) {
+        printf("%s", s);
+    }
+    fclose(fp);
+}
+
+void onErrorCallback(const char *err) {
+    printf("%s", err);
+}
+
+int main() {
+    emscripten_async_wget("http://www.google.com", "file.txt", onLoadCallback, onErrorCallback);
+    return 0;
+}
+*/
 // thread_local!(static NES: RefCell<*mut libc::c_void> = RefCell::new(null_mut()));
 
 // extern "C" fn main_loop() {
