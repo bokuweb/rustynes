@@ -1,6 +1,6 @@
 (async () => {
-  const main = Module.cwrap('main', null, []);
-  // const run = Module.cwrap('run', null, ['number', 'number']);
+  // const main = Module.cwrap('run');
+  const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
 
@@ -14,11 +14,11 @@
   const ptr = Module._malloc(size);
   const buf = new Uint8Array(Module.HEAPU8.buffer, ptr, size);
   for (let i = 0; i < nes.length - 1; i = i + 1) {
-    buf[i] = nes[i];
+   buf[i] = nes[i];
   }
-  // run(size, buf.byteOffset);
-  main();
-})();
+  run(size, buf.byteOffset);
+  // main();
+})().catch(e => console.log(e));
 
 
 

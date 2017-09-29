@@ -16,11 +16,11 @@ pub fn eval(x: &str) -> i32 {
     unsafe { emscripten_run_script_int(ptr) }
 }
 
-pub fn wget(url: &str, file: &str, onload: em_callback_func) -> i32 {
+pub fn wget(url: &str, file: &str) {
     let url = CString::new(url).unwrap();
     let file = CString::new(file).unwrap();
-    unsafe { emscripten_async_wget(url.as_ptr(), file.as_ptr(), onload, onload) };
-    10
+    unsafe { emscripten_wget(url.as_ptr(), file.as_ptr());
+    println!("{:?}", *file.as_ptr()); }
 }
 
 
@@ -30,10 +30,9 @@ extern "C" {
     pub fn emscripten_set_main_loop(func: em_callback_func,
                                     fps: c_int,
                                     simulate_infinite_loop: c_int);
-    pub fn emscripten_async_wget(url: *const c_uchar,
+    pub fn emscripten_wget(url: *const c_uchar,
                                  file: *const c_uchar,
-                                 onload: em_callback_func,
-                                 onerror: em_callback_func);
+                                 );
 }
 
 
@@ -45,13 +44,13 @@ pub fn set_main_loop_callback<F>(callback: F)
     unsafe {
         emscripten_set_main_loop(wrapper::<F>, 0, 1);
     }
+}
 
-    unsafe extern "C" fn wrapper<F>()
-        where F: FnMut()
-    {
-        MAIN_LOOP_CALLBACK.with(|z| {
-                                    let closure = *z.borrow_mut() as *mut F;
-                                    (*closure)();
-                                });
-    }
+unsafe extern "C" fn wrapper<F>()
+    where F: FnMut()
+{
+    MAIN_LOOP_CALLBACK.with(|z| {
+                                let closure = *z.borrow_mut() as *mut F;
+                                (*closure)();
+                            });
 }

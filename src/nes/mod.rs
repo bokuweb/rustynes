@@ -25,13 +25,13 @@ pub struct Nes {
 }
 
 impl Nes {
-    pub fn new(/*buf: &mut [u8]*/) -> Nes {
-        // let cassette = parser::parse(buf);
+    pub fn new(buf: &mut [u8]) -> Nes {
+        let cassette = parser::parse(buf);
         // let character_ram = parser::parse(buf).character_ram;
         Nes {
             cpu: Cpu::new(),
             ppu: Ppu::new(),
-            program_rom: Rom::new(vec![120; 0x8000]),
+            program_rom: Rom::new(cassette.program_rom),
             work_ram: Ram::new(vec![0; 0x0800]),
             character_ram: Ram::new(vec![0; 0x0800]),
         }

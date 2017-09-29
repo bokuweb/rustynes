@@ -2,7 +2,7 @@ mod opecode;
 
 use std::collections::HashMap;
 use nes::bus::cpu_bus::CpuBus;
-// use self::opecode;
+use self::opecode::*;
 
 // pub enum ReadMode {
 //     Byte,
@@ -65,15 +65,19 @@ impl Cpu {
         let pc = self.read_word(bus, 0xFFFC);
         println!("Initial PC {}", pc);
         println!("registers {:?}", self.registers);
-        self.registers.PC = 0x8000; //pc;
+        self.registers.PC = pc;
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
         // println!("registers {:?}", self.registers);
         let code = self.fetch(bus);
-        let ref map = opecode::opecode::MAP;
+        let ref map = opecode::MAP;
         let code = &*map.get(&code).unwrap();
-        // println!("{:?}", code);
+        println!("{:?}", code);
+        match code.name {
+            Instruction::SEI => println!("{}", "hoge2"),
+            _ => println!("{}", "hoge"),
+        }
         code.cycle
     }
 
