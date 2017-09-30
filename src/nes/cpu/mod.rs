@@ -4,11 +4,6 @@ use std::collections::HashMap;
 use nes::bus::cpu_bus::CpuBus;
 use self::opecode::*;
 
-// pub enum ReadMode {
-//     Byte,
-//     Word,
-// }
-
 #[derive(Debug)]
 struct Status {
     negative: bool,
@@ -33,7 +28,6 @@ struct Registers {
 
 #[derive(Debug)]
 pub struct Cpu {
-    // registers: Box<Registers>,
     registers: Registers,
 }
 
@@ -61,7 +55,7 @@ impl Cpu {
     }
 
     pub fn reset(&mut self, bus: &CpuBus) {
-        // self.reset_registers();
+        self.reset_registers();
         let pc = self.read_word(bus, 0xFFFC);
         println!("Initial PC {}", pc);
         println!("registers {:?}", self.registers);
@@ -69,13 +63,14 @@ impl Cpu {
     }
 
     pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
-        // println!("registers {:?}", self.registers);
+        println!("registers {:?}", self.registers);
         let code = self.fetch(bus);
         let ref map = opecode::MAP;
         let code = &*map.get(&code).unwrap();
         println!("{:?}", code);
+        let opeland = self.fetchOpeland(&code, bus);
         match code.name {
-            Instruction::LDA => self.lda(&code, bus),
+            Instruction::LDA => self.lda(&code, opeland, bus),
             Instruction::LDX => println!("{}", "TODO:"),
             Instruction::LDY => println!("{}", "TODO:"),
             Instruction::STA => println!("{}", "TODO:"),
@@ -198,14 +193,13 @@ impl Cpu {
 
     fn fetchOpeland(&mut self, code: &Opecode, bus: &CpuBus) -> u16 {
         println!("{:?}", code.mode);
-
         match code.mode {
             Addressing::Accumulator => 0x0000,
             Addressing::Implied => 0x0000,
             Addressing::Immediate => self.fetch(bus) as u16,
             _ => 10u16,
         }
-      /*
+        /*
       case 'relative': {
         const baseAddr = this.fetch(this.registers.PC);
         const addr = baseAddr < 0x80 ? baseAddr + this.registers.PC : baseAddr + this.registers.PC - 256;
@@ -290,25 +284,15 @@ impl Cpu {
         // this.registers.P.zero = !this.registers.A;
     }
 
-    fn lda(&mut self, code: &Opecode, bus: &CpuBus) {
-        // println!("{:?}", code.mode);
-        let opeland = self.fetchOpeland(code, bus);
-        println!("{}", opeland);
-        // this.registers.A = if code.mode === Addressing::Immediate {
-        //     addrOrData
-        // } else {
-        //     this.read(addrOrData)
-        // }
-        // this.registers.P.negative = !!(this.registers.A & 0x80);
-        // this.registers.P.zero = !this.registers.A;
+    fn lda(&mut self, code: &Opecode, opeland: u16, bus: &CpuBus) {
+        self.registers.A = match code.mode {
+            Addressing::Immediate => opeland as u8,
+            _ => bus.read(opeland),
+        };
+        self.registers.P.negative = (self.registers.A & 0x80) == 0x80;
+        self.registers.P.zero = self.registers.A == 0;
     }
     /*
-      case 'LDA': {
-        this.registers.A = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
       case 'LDX': {
         this.registers.X = mode === 'immediate' ? addrOrData : this.read(addrOrData);
         this.registers.P.negative = !!(this.registers.X & 0x80);
@@ -751,4 +735,17 @@ impl Cpu {
         break;
       }
       */
+}
+
+
+#[test]
+fn lda_immidiate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.PC = 0x000;
+    // let mut cpu_bus = CpuBus::new(&self.program_rom,
+    //                               &mut self.character_ram,
+    //                               &mut self.work_ram,
+    //                               &mut self.ppu);
+    // cpu.lda();
+    assert!(1 == 1);
 }
