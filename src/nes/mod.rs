@@ -17,49 +17,53 @@ use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Nes {
-    pub cpu: Cpu,
-    pub ppu: Ppu,
-    pub program_rom: Box<Rom>,
-    pub work_ram: Ram,
-    pub character_ram: Ram,
+    cpu: RefCell<Cpu>,
+    ppu: RefCell<Ppu>,
+    work_ram: RefCell<Ram>,
+    character_ram: RefCell<Ram>,
+    program_rom: Rom,
 }
 
 impl Nes {
     pub fn new(buf: &mut [u8]) -> Nes {
         let cassette = parser::parse(buf);
-        let program_rom = Box::new(Rom::new(parser::parse(buf).program_rom));
-        let character_ram = parser::parse(buf).character_ram;
-        println!("{:?}", program_rom);
+        // let character_ram = parser::parse(buf).character_ram;
         Nes {
-            cpu: Cpu::new(),
-            ppu: Ppu::new(),
-            program_rom, //: Rom::new(parser::parse(buf).program_rom),
-            work_ram: Ram::new(vec![0; 0x0800]),
-            character_ram: Ram::new(character_ram),
+            cpu: RefCell::new(Cpu::new()),
+            ppu: RefCell::new(Ppu::new()),
+            program_rom: Rom::new(cassette.program_rom),
+            work_ram: RefCell::new(Ram::new(vec![0; 0x0800])),
+            character_ram: RefCell::new(Ram::new(vec![0; 0x0800])),
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&self) {
         // TODO: let mut cpu_bus = self.create_bus();
-        let mut cpu_bus = CpuBus::new(&self.program_rom,
-                                      &mut self.character_ram,
-                                      &mut self.work_ram,
-                                      &mut self.ppu);
-        self.cpu.reset(&mut cpu_bus);
+        // let cpu_bus = CpuBus::new(&self.program_rom,
+        //                           &self.character_ram,
+        //                           &self.work_ram,
+        //                           &self.ppu);
+        self.cpu.borrow_mut().reset(|addr: u16| self.read(addr));
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&self) {
         let mut cycle = 0;
-        let mut cpu_bus = CpuBus::new(&self.program_rom,
-                                      &mut self.character_ram,
-                                      &mut self.work_ram,
-                                      &mut self.ppu);
+        // let cpu_bus = CpuBus::new(&self.program_rom,
+        //                           &self.character_ram,
+        //                           &self.work_ram,
+        //                           &self.ppu);
         loop {
-            cycle += self.cpu.run(&mut cpu_bus);
+            cycle += self.cpu.borrow_mut().run(|addr: u16| self.read(addr));
             if cycle > 20 {
                 break;
             }
         }
     }
-
+    fn read(&self, addr: u16) -> u8 {
+        let cpu_bus = CpuBus::new(&self.program_rom,
+                                  &self.character_ram,
+                                  &self.work_ram,
+                                  &self.ppu);
+        cpu_bus.read(addr)
+    }
 }
