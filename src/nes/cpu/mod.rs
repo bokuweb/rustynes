@@ -54,23 +54,27 @@ impl Cpu {
         }
     }
 
-    pub fn reset(&mut self, bus: &CpuBus) {
+    pub fn reset<F>(&mut self, read: F)
+        where F: Fn(u16) -> u8
+    {
         self.reset_registers();
-        let pc = self.read_word(bus, 0xFFFC);
+        let pc = self.read_word(&read, 0xFFFC);
         println!("Initial PC {}", pc);
         println!("registers {:?}", self.registers);
         self.registers.PC = pc;
     }
 
-    pub fn run(&mut self, mut bus: &CpuBus) -> u8 {
+    pub fn run<F>(&mut self, read: F) -> u8
+        where F: Fn(u16) -> u8
+    {
         println!("registers {:?}", self.registers);
-        let code = self.fetch(bus);
+        let code = self.fetch(&read);
         let ref map = opecode::MAP;
         let code = &*map.get(&code).unwrap();
         println!("{:?}", code);
-        let opeland = self.fetchOpeland(&code, bus);
+        let opeland = self.fetchOpeland(&code, &read);
         match code.name {
-            Instruction::LDA => self.lda(&code, opeland, bus),
+            Instruction::LDA => self.lda(&code, opeland, &read),
             Instruction::LDX => println!("{}", "TODO:"),
             Instruction::LDY => println!("{}", "TODO:"),
             Instruction::STA => println!("{}", "TODO:"),
@@ -139,19 +143,19 @@ impl Cpu {
         code.cycle
     }
 
-    fn fetch(&mut self, bus: &CpuBus) -> u8 {
-        let code = self.read_byte(bus, self.registers.PC);
+    fn fetch<F>(&mut self, read: F) -> u8
+        where F: Fn(u16) -> u8
+    {
+        let code = read(self.registers.PC);
         self.registers.PC += 1;
         code
     }
 
-    fn read_byte(&self, bus: &CpuBus, addr: u16) -> u8 {
-        bus.read(addr)
-    }
-
-    fn read_word(&self, bus: &CpuBus, addr: u16) -> u16 {
-        let low = bus.read(addr) as u16;
-        let high = bus.read(addr + 1) as u16;
+    fn read_word<F>(&self, read: F, addr: u16) -> u16
+        where F: Fn(u16) -> u8
+    {
+        let low = read(addr) as u16;
+        let high = read(addr + 1) as u16;
         (high << 8 | low) as u16
     }
 
@@ -191,12 +195,14 @@ impl Cpu {
         }
     }
 
-    fn fetchOpeland(&mut self, code: &Opecode, bus: &CpuBus) -> u16 {
+    fn fetchOpeland<F>(&mut self, code: &Opecode, read: F) -> u16
+        where F: Fn(u16) -> u8
+    {
         println!("{:?}", code.mode);
         match code.mode {
             Addressing::Accumulator => 0x0000,
             Addressing::Implied => 0x0000,
-            Addressing::Immediate => self.fetch(bus) as u16,
+            Addressing::Immediate => self.fetch(read) as u16,
             _ => 10u16,
         }
         /*
@@ -284,10 +290,12 @@ impl Cpu {
         // this.registers.P.zero = !this.registers.A;
     }
 
-    fn lda(&mut self, code: &Opecode, opeland: u16, bus: &CpuBus) {
+    fn lda<F>(&mut self, code: &Opecode, opeland: u16, read: F)
+        where F: Fn(u16) -> u8
+    {
         self.registers.A = match code.mode {
             Addressing::Immediate => opeland as u8,
-            _ => bus.read(opeland),
+            _ => read(opeland),
         };
         self.registers.P.negative = (self.registers.A & 0x80) == 0x80;
         self.registers.P.zero = self.registers.A == 0;
@@ -741,11 +749,9 @@ impl Cpu {
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.PC = 0x000;
-    // let mut cpu_bus = CpuBus::new(&self.program_rom,
-    //                               &mut self.character_ram,
-    //                               &mut self.work_ram,
-    //                               &mut self.ppu);
+    cpu.registers.PC = 0x0000;
+    let rom = vec![0x00, 0x00, 0x00];
+     // fn lda<F>(&mut self, code: &Opecode, opeland: u16, read: F)
     // cpu.lda();
     assert!(1 == 1);
 }

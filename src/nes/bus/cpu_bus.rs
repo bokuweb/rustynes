@@ -1,21 +1,22 @@
+use std::cell::RefCell;
+
 use nes::rom::Rom;
 use nes::ram::Ram;
 use nes::ppu::Ppu;
 
 pub struct CpuBus<'a> {
     program_rom: &'a Rom,
-    character_memory: &'a mut Ram,
-    work_ram: &'a mut Ram,
-    ppu: &'a mut Ppu,
+    character_memory: &'a RefCell<Ram>,
+    work_ram: &'a RefCell<Ram>,
+    ppu: &'a RefCell<Ppu>,
 }
 
 impl<'a> CpuBus<'a> {
-    pub fn new(
-        program_rom: &'a Rom,
-        character_memory: &'a mut Ram,
-        work_ram: &'a mut Ram,
-        ppu: &'a mut Ppu,
-    ) -> CpuBus<'a> {
+    pub fn new(program_rom: &'a Rom,
+               character_memory: &'a RefCell<Ram>,
+               work_ram: &'a RefCell<Ram>,
+               ppu: &'a RefCell<Ppu>)
+               -> CpuBus<'a> {
         CpuBus {
             program_rom,
             character_memory,
@@ -26,8 +27,8 @@ impl<'a> CpuBus<'a> {
 
     pub fn read(&self, addr: u16) -> u8 {
         match addr {
-            0x0000...0x07FF => self.work_ram.read(addr),
-            0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
+            0x0000...0x07FF => self.work_ram.borrow().read(addr),
+            0x0800...0x1FFF => self.work_ram.borrow().read(addr - 0x0800),
             0x2000...0x3FFF => 0, // TODO: PPU
             0x4016 => 0, // TODO: keypad
             0x8000...0xBFFF => self.program_rom.read(addr - 0x8000),
@@ -41,8 +42,8 @@ impl<'a> CpuBus<'a> {
 
     pub fn write(&mut self, addr: u16, data: u8) {
         match addr {
-            0x0000...0x07FF => self.work_ram.write(addr, data),
-            0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),
+            0x0000...0x07FF => self.work_ram.borrow_mut().write(addr, data),
+            0x0800...0x1FFF => self.work_ram.borrow_mut().write(addr - 0x0800, data),
             0x2000...0x2007 => {} // TODO: PPU
             0x4014 => {} // TODO: keypad
             0x4016 => {} // TODO: keypad
