@@ -6,6 +6,7 @@ mod ram;
 mod bus;
 mod cpu;
 mod ppu;
+mod types;
 
 use self::cpu::Cpu;
 use self::ppu::Ppu;

@@ -4,6 +4,7 @@ mod registers;
 use std::collections::HashMap;
 use self::opecode::*;
 use self::registers::*;
+use nes::types::{Data, Addr, Word};
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -16,17 +17,15 @@ impl Cpu {
     }
 
     pub fn reset<R>(&mut self, read: R)
-        where R: Fn(u16) -> u8
+        where R: Fn(Addr) -> Data
     {
         self.registers.reset();
         let pc = self.read_word(&read, 0xFFFC);
-        println!("Initial PC {}", pc);
-        println!("registers {:?}", self.registers);
         self.registers.PC = pc;
     }
 
-    pub fn run<R>(&mut self, read: R) -> u8
-        where R: Fn(u16) -> u8
+    pub fn run<R>(&mut self, read: R) -> Data
+        where R: Fn(Addr) -> Data
     {
         println!("registers {:?}", self.registers);
         let code = self.fetch(&read);
@@ -104,31 +103,31 @@ impl Cpu {
         code.cycle
     }
 
-    fn fetch<R>(&mut self, read: R) -> u8
-        where R: Fn(u16) -> u8
+    fn fetch<R>(&mut self, read: R) -> Data
+        where R: Fn(Addr) -> Data
     {
         let code = read(self.registers.get_pc());
         self.registers.update_pc();
         code
     }
 
-    fn read_word<R>(&self, read: R, addr: u16) -> u16
-        where R: Fn(u16) -> u8
+    fn read_word<R>(&self, read: R, addr: Addr) -> Word
+        where R: Fn(Addr) -> Data
     {
-        let low = read(addr) as u16;
-        let high = read(addr + 1) as u16;
-        (high << 8 | low) as u16
+        let low = read(addr) as Word;
+        let high = read(addr + 1) as Word;
+        (high << 8 | low) as Word
     }
 
-    fn fetchOpeland<F>(&mut self, code: &Opecode, read: F) -> u16
-        where F: Fn(u16) -> u8
+    fn fetchOpeland<F>(&mut self, code: &Opecode, read: F) -> Word
+        where F: Fn(Addr) -> Data
     {
         match code.mode {
             Addressing::Accumulator => 0x0000,
             Addressing::Implied => 0x0000,
-            Addressing::Immediate => self.fetch(read) as u16,
+            Addressing::Immediate => self.fetch(read) as Word,
             Addressing::Relative => {
-                let base = self.fetch(read) as u16;
+                let base = self.fetch(read) as Word;
                 if base < 0x80 {
                     base + self.registers.get_pc()
                 } else {
@@ -138,14 +137,7 @@ impl Cpu {
             _ => 10u16,
         }
         /*
-      case 'relative': {
-        const baseAddr = this.fetch(this.registers.PC);
-        const addr = baseAddr < 0x80 ? baseAddr + this.registers.PC : baseAddr + this.registers.PC - 256;
-        return {
-          addrOrData: addr,
-          additionalCycle: (addr & 0xFF00) !== (this.registers.PC & 0xFF00) ? 1 : 0,
-        }
-      }
+
       case 'zeroPage': {
         return {
           addrOrData: this.fetch(this.registers.PC),
@@ -222,11 +214,11 @@ impl Cpu {
         // this.registers.P.zero = !this.registers.A;
     }
 
-    fn lda<R>(&mut self, code: &Opecode, opeland: u16, read: R)
-        where R: Fn(u16) -> u8
+    fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
-            Addressing::Immediate => opeland as u8,
+            Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
         self.registers
@@ -235,11 +227,11 @@ impl Cpu {
             .update_zero(computed);
     }
 
-    fn ldx<R>(&mut self, code: &Opecode, opeland: u16, read: R)
-        where R: Fn(u16) -> u8
+    fn ldx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
-            Addressing::Immediate => opeland as u8,
+            Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
         self.registers
@@ -248,11 +240,11 @@ impl Cpu {
             .update_zero(computed);
     }
 
-    fn ldy<R>(&mut self, code: &Opecode, opeland: u16, read: R)
-        where R: Fn(u16) -> u8
+    fn ldy<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
-            Addressing::Immediate => opeland as u8,
+            Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
         self.registers
@@ -705,7 +697,7 @@ fn lda_immidiate() {
         mode: Addressing::Immediate,
         cycle: 1,
     };
-    cpu.lda(&code, 255, |addr: u16| rom[addr as usize]);
+    cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.A == 255);
 }
 
@@ -719,6 +711,6 @@ fn ldx_immidiate() {
         mode: Addressing::Immediate,
         cycle: 1,
     };
-    cpu.ldx(&code, 255, |addr: u16| rom[addr as usize]);
+    cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.X == 255);
 }
