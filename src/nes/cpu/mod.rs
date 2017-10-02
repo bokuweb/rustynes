@@ -751,7 +751,7 @@ fn lda_immidiate() {
     let mut cpu = Cpu::new();
     cpu.registers.PC = 0x0000;
     let rom = vec![0x00, 0x00, 0x00];
-     // fn lda<F>(&mut self, code: &Opecode, opeland: u16, read: F)
-    // cpu.lda();
-    assert!(1 == 1);
+    let code = Opecode { name: Instruction::LDA, mode: Addressing::Immediate, cycle: 1 };
+    cpu.lda(&code, 255, |addr: u16| rom[addr as usize]);
+    assert!(cpu.registers.A == 255);
 }
