@@ -16,8 +16,8 @@ pub struct Registers {
     A: u8,
     X: u8,
     Y: u8,
+    Sp: u8,
     Pc: u16,
-    Sp: u16,
     P: Status,
 }
 
@@ -26,6 +26,8 @@ pub enum ByteRegister {
     A,
     X,
     Y,
+    SP,
+    P,
 }
 
 impl Registers {
@@ -35,7 +37,7 @@ impl Registers {
             X: 0,
             Y: 0,
             Pc: 0x8000,
-            Sp: 0x01FD,
+            Sp: 0xFD,
             P: Status {
                 negative: false,
                 overflow: false,
@@ -54,7 +56,7 @@ impl Registers {
         self.X = 0;
         self.Y = 0;
         self.Pc = 0x8000;
-        self.Sp = 0x01FD;
+        self.Sp = 0xFD;
         self.P.negative = false;
         self.P.overflow = false;
         self.P.reserved = true;
@@ -66,10 +68,20 @@ impl Registers {
     }
 
     pub fn get(&self, name: ByteRegister) -> u8 {
+        let bool_to_u8 = |v: bool| if v { 1 } else { 0 };
         match name {
             ByteRegister::A => self.A,
             ByteRegister::X => self.X,
             ByteRegister::Y => self.Y,
+            ByteRegister::SP => self.Sp,
+            ByteRegister::P => {
+                bool_to_u8(self.P.negative) << 7 | bool_to_u8(self.P.overflow) << 6 |
+                bool_to_u8(self.P.reserved) << 5 |
+                bool_to_u8(self.P.break_mode) << 4 |
+                bool_to_u8(self.P.decimal_mode) << 3 |
+                bool_to_u8(self.P.interrupt) << 2 | bool_to_u8(self.P.zero) << 1 |
+                bool_to_u8(self.P.carry) as u8
+            }
         }
     }
 
@@ -77,9 +89,6 @@ impl Registers {
         self.Pc
     }
 
-    pub fn get_sp(&self) -> u16 {
-        self.Sp
-    }
 
     pub fn set_acc(&mut self, v: u8) -> &mut Self {
         self.A = v;
@@ -101,13 +110,38 @@ impl Registers {
         self
     }
 
-    pub fn set_sp(&mut self, v: u16) -> &mut Self {
+    pub fn set_sp(&mut self, v: u8) -> &mut Self {
         self.Sp = v;
+        self
+    }
+
+    pub fn set_negative(&mut self) -> &mut Self {
+        self.P.negative = true;
+        self
+    }
+
+    pub fn set_overflow(&mut self) -> &mut Self {
+        self.P.overflow = true;
         self
     }
 
     pub fn set_break(&mut self) -> &mut Self {
         self.P.break_mode = true;
+        self
+    }
+
+    pub fn set_interrupt(&mut self) -> &mut Self {
+        self.P.interrupt = true;
+        self
+    }
+
+    pub fn set_zero(&mut self) -> &mut Self {
+        self.P.zero = true;
+        self
+    }
+
+    pub fn set_carry(&mut self) -> &mut Self {
+        self.P.carry = true;
         self
     }
 
@@ -125,4 +159,27 @@ impl Registers {
         self.Pc += 1;
         self
     }
+}
+
+#[test]
+fn get_p() {
+    let mut reg = Registers::new();
+    let p = reg.get(ByteRegister::P);
+    assert_eq!(p, 0x34);
+}
+
+#[test]
+fn update_zero() {
+    let mut reg = Registers::new();
+    reg.update_zero(0);
+    let p = reg.get(ByteRegister::P);
+    assert_eq!(p, 0x36);
+}
+
+#[test]
+fn update_negative() {
+    let mut reg = Registers::new();
+    reg.update_negative(0x80);
+    let p = reg.get(ByteRegister::P);
+    assert_eq!(p, 0xB4);
 }

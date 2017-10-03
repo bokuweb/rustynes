@@ -211,6 +211,44 @@ impl Cpu {
         }
     }
 
+
+    /*
+  push(data: Byte) {
+    this.write(0x100 | (this.registers.SP & 0xFF), data);
+    this.registers.SP--;
+  }
+
+  pop(): Byte {
+    this.registers.SP++;
+    return this.read(0x100 | (this.registers.SP & 0xFF));
+  }
+
+  branch(addr: Word) {
+    this.registers.PC = addr;
+    this.hasBranched = true;
+  }
+
+  pushStatus() {
+    const status: Byte = (+this.registers.P.negative) << 7 |
+      (+this.registers.P.overflow) << 6 |
+      (+this.registers.P.reserved) << 5 |
+      (+this.registers.P.break) << 4 |
+      (+this.registers.P.decimal) << 3 |
+      (+this.registers.P.interrupt) << 2 |
+      (+this.registers.P.zero) << 1 |
+      (+this.registers.P.carry);
+    this.push(status);
+  }
+  */
+    fn push_status<W>(&mut self, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let status = self.registers.get(ByteRegister::P);
+        let addr = self.registers.get(ByteRegister::SP) as Addr;
+        write((addr | 0x0100), status);
+    }
+
+
     fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
@@ -285,8 +323,8 @@ impl Cpu {
     }
 
     fn txs(&mut self) {
-        let x = self.registers.get(ByteRegister::X) as u16;
-        self.registers.set_sp(x + 0x0100);
+        let x = self.registers.get(ByteRegister::X);
+        self.registers.set_sp(x);
     }
 
     fn tay(&mut self) {
@@ -306,16 +344,18 @@ impl Cpu {
     }
 
     fn tsx(&mut self) {
-        let sp = (self.registers.get_sp() & 0xFF) as u8;
+        let sp = self.registers.get(ByteRegister::SP);
         self.registers
             .set_x(sp)
             .update_negative(sp)
             .update_zero(sp);
     }
 
-    fn php(&mut self) {
-        self.registers.set_break()
-        this.pushStatus();
+    fn php<W>(&mut self, write: W)
+        where W: Fn(Addr, Data)
+    {
+        self.registers.set_break();
+        self.push_status(&write);
     }
 
     /*
@@ -777,7 +817,6 @@ fn sty() {
 #[test]
 fn tax() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
     cpu.registers.set_acc(0xA5);
     cpu.tax();
     assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
@@ -786,8 +825,39 @@ fn tax() {
 #[test]
 fn tay() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
     cpu.registers.set_acc(0xA5);
     cpu.tay();
     assert!(cpu.registers.get(ByteRegister::Y) == 0xA5);
+}
+
+#[test]
+fn txa() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_x(0xA5);
+    cpu.txa();
+    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+}
+
+#[test]
+fn tya() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_y(0xA5);
+    cpu.tya();
+    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+}
+
+#[test]
+fn txs() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_x(0xA5);
+    cpu.txs();
+    assert!(cpu.registers.get(ByteRegister::SP) == 0xA5);
+}
+
+#[test]
+fn tsx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    cpu.tsx();
+    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
 }
