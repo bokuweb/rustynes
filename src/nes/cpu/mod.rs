@@ -1,7 +1,6 @@
 mod opecode;
 mod registers;
 
-use std::collections::HashMap;
 use self::opecode::*;
 use self::registers::*;
 use nes::types::{Data, Addr, Word};
@@ -21,7 +20,7 @@ impl Cpu {
     {
         self.registers.reset();
         let pc = self.read_word(&read, 0xFFFC);
-        self.registers.PC = pc;
+        self.registers.set_pc(pc);
     }
 
     pub fn run<R>(&mut self, read: R) -> Data
@@ -31,8 +30,7 @@ impl Cpu {
         let code = self.fetch(&read);
         let ref map = opecode::MAP;
         let code = &*map.get(&code).unwrap();
-        println!("{:?}", code);
-        let opeland = self.fetchOpeland(&code, &read);
+        let opeland = self.fetch_opeland(&code, &read);
         match code.name {
             Instruction::LDA => self.lda(&code, opeland, &read),
             Instruction::LDX => self.ldx(&code, opeland, &read),
@@ -98,7 +96,6 @@ impl Cpu {
             Instruction::RLA => println!("{}", "TODO:"),
             Instruction::SRE => println!("{}", "TODO:"),
             Instruction::RRA => println!("{}", "TODO:"),
-            _ => panic!("Unknown opecode detected."),
         }
         code.cycle
     }
@@ -119,7 +116,7 @@ impl Cpu {
         (high << 8 | low) as Word
     }
 
-    fn fetchOpeland<F>(&mut self, code: &Opecode, read: F) -> Word
+    fn fetch_opeland<F>(&mut self, code: &Opecode, read: F) -> Word
         where F: Fn(Addr) -> Data
     {
         match code.mode {

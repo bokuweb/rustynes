@@ -1,33 +1,31 @@
 #[derive(Debug)]
 pub struct Status {
-    pub negative: bool,
-    pub overflow: bool,
-    pub reserved: bool,
-    pub break_mode: bool,
-    pub decimal_mode: bool,
-    pub interrupt: bool,
-    pub zero: bool,
-    pub carry: bool,
+    negative: bool,
+    overflow: bool,
+    reserved: bool,
+    break_mode: bool,
+    decimal_mode: bool,
+    interrupt: bool,
+    zero: bool,
+    carry: bool,
 }
 
 #[derive(Debug)]
+#[allow(non_snake_case)]
 pub struct Registers {
-    pub A: u8,
-    pub X: u8,
-    pub Y: u8,
-    pub PC: u16,
-    pub SP: u16,
-    pub P: Status,
+    A: u8,
+    X: u8,
+    Y: u8,
+    Pc: u16,
+    Sp: u16,
+    P: Status,
 }
 
 #[derive(Debug)]
-pub enum RegisterName {
+pub enum ByteRegister {
     A,
     X,
     Y,
-    PC,
-    SP,
-    P,
 }
 
 impl Registers {
@@ -36,8 +34,8 @@ impl Registers {
             A: 0,
             X: 0,
             Y: 0,
-            PC: 0x8000,
-            SP: 0x01FD,
+            Pc: 0x8000,
+            Sp: 0x01FD,
             P: Status {
                 negative: false,
                 overflow: false,
@@ -55,8 +53,8 @@ impl Registers {
         self.A = 0;
         self.X = 0;
         self.Y = 0;
-        self.PC = 0x8000;
-        self.SP = 0x01FD;
+        self.Pc = 0x8000;
+        self.Sp = 0x01FD;
         self.P.negative = false;
         self.P.overflow = false;
         self.P.reserved = true;
@@ -67,17 +65,16 @@ impl Registers {
         self.P.carry = false;
     }
 
-    pub fn get(&self, name: RegisterName) -> u8 {
+    pub fn get(&self, name: ByteRegister) -> u8 {
         match name {
-            RegisterName::A => self.A,
-            RegisterName::X => self.X,
-            RegisterName::Y => self.Y,
-            _ => 0,
+            ByteRegister::A => self.A,
+            ByteRegister::X => self.X,
+            ByteRegister::Y => self.Y,
         }
     }
 
     pub fn get_pc(&self) -> u16 {
-        self.PC
+        self.Pc
     }
 
     pub fn set_acc(&mut self, v: u8) -> &mut Self {
@@ -96,7 +93,7 @@ impl Registers {
     }
 
     pub fn set_pc(&mut self, v: u16) -> &mut Self {
-        self.PC = v;
+        self.Pc = v;
         self
     }
 
@@ -111,7 +108,7 @@ impl Registers {
     }
 
     pub fn update_pc(&mut self) -> &mut Self {
-        self.PC += 1;
+        self.Pc += 1;
         self
     }    
 }
