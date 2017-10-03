@@ -656,7 +656,7 @@ impl Cpu {
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.PC = 0x0000;
+    cpu.registers.set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDA,
@@ -664,13 +664,13 @@ fn lda_immidiate() {
         cycle: 1,
     };
     cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.A == 255);
+    assert!(cpu.registers.get(ByteRegister::A) == 255);
 }
 
 #[test]
 fn ldx_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.PC = 0x0000;
+    cpu.registers.set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDX,
@@ -678,5 +678,5 @@ fn ldx_immidiate() {
         cycle: 1,
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.X == 255);
+    assert!(cpu.registers.get(ByteRegister::X) == 255);
 }
