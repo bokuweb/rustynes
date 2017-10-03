@@ -108,16 +108,26 @@ impl Cpu {
         code
     }
 
+    fn fetch_word<R>(&mut self, read: R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let lower = read(self.registers.get_pc()) as Word;
+        self.registers.update_pc();
+        let upper = read(self.registers.get_pc()) as Word;
+        self.registers.update_pc();
+        (upper << 8 | lower) as Word
+    }
+
     fn read_word<R>(&self, read: R, addr: Addr) -> Word
         where R: Fn(Addr) -> Data
     {
-        let low = read(addr) as Word;
-        let high = read(addr + 1) as Word;
-        (high << 8 | low) as Word
+        let lower = read(addr) as Word;
+        let upper = read(addr + 1) as Word;
+        (upper << 8 | lower) as Word
     }
 
-    fn fetch_opeland<F>(&mut self, code: &Opecode, read: F) -> Word
-        where F: Fn(Addr) -> Data
+    fn fetch_opeland<R>(&mut self, code: &Opecode, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
     {
         match code.mode {
             Addressing::Accumulator => 0x0000,
@@ -136,78 +146,38 @@ impl Cpu {
                 let addr = self.fetch(read) as Word;
                 (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
             }
-            _ => 10u16,
+            Addressing::ZeroPageY => {
+                let addr = self.fetch(read) as Word;
+                (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
+            }
+            Addressing::Absolute => self.fetch_word(read),     
+            Addressing::AbsoluteX => {
+                let addr = self.fetch_word(read);
+                (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
+            }
+            Addressing::AbsoluteY => {
+                let addr = self.fetch_word(read);
+                (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
+            }         
+            Addressing::PreIndexedIndirect => {
+                let baseAddr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) &
+                                0xFF) as u16;
+                let addr = (read(baseAddr) as u16) +
+                           ((read((baseAddr + 1) as u16 & 0xFF) as u16) << 8);
+                addr & 0xFFFF
+            }  
+            Addressing::PostIndexedIndirect => {
+                let addr = self.fetch(read) as u16;
+                let baseAddr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
+                baseAddr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
+            }                
+            Addressing::IndirectAbsolute => {
+                let addr = self.fetch_word(read);
+                let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as u16) as u16;
+                let addr = (read(addr) as u16) + (upper << 8) as u16;
+                addr & 0xFFFF
+            } 
         }
-        /*
-
-      case 'zeroPageX': {
-        const addr = this.fetch(this.registers.PC);
-        return {
-          addrOrData: (addr + this.registers.X) & 0xFF,
-          additionalCycle: 0,
-        }
-      }
-      case 'zeroPageY': {
-        const addr = this.fetch(this.registers.PC);
-        return {
-          addrOrData: (addr + this.registers.Y & 0xFF),
-          additionalCycle: 0,
-        }
-      }
-      case 'absolute': {
-        return {
-          addrOrData: (this.fetch(this.registers.PC, "Word")),
-          additionalCycle: 0,
-        }
-      }
-      case 'absoluteX': {
-        const addr = (this.fetch(this.registers.PC, "Word"));
-        const additionalCycle = (addr & 0xFF00) !== ((addr + this.registers.X) & 0xFF00) ? 1 : 0;
-        return {
-          addrOrData: (addr + this.registers.X) & 0xFFFF,
-          additionalCycle,
-        }
-      }
-      case 'absoluteY': {
-        const addr = (this.fetch(this.registers.PC, "Word"));
-        const additionalCycle = (addr & 0xFF00) !== ((addr + this.registers.Y) & 0xFF00) ? 1 : 0;
-        return {
-          addrOrData: (addr + this.registers.Y) & 0xFFFF,
-          additionalCycle,
-        }
-      }
-      case 'preIndexedIndirect': {
-        const baseAddr = (this.fetch(this.registers.PC) + this.registers.X) & 0xFF;
-        const addr = this.read(baseAddr) + (this.read((baseAddr + 1) & 0xFF) << 8);
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: (addr & 0xFF00) !== (baseAddr & 0xFF00) ? 1 : 0,
-        }
-      }
-      case 'postIndexedIndirect': {
-        const addrOrData = this.fetch(this.registers.PC);
-        const baseAddr = this.read(addrOrData) + (this.read((addrOrData + 1) & 0xFF) << 8);
-        const addr = baseAddr + this.registers.Y;
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: (addr & 0xFF00) !== (baseAddr & 0xFF00) ? 1 : 0,
-        }
-      }
-      case 'indirectAbsolute': {
-        const addrOrData = this.fetch(this.registers.PC, "Word");
-        const addr = this.read(addrOrData) + (this.read((addrOrData & 0xFF00) | (((addrOrData & 0xFF) + 1) & 0xFF)) << 8);
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: 0,
-        }
-      }*/
-        // this.registers.A = if code.mode === Addressing::Immediate {
-        //     addrOrData
-        // } else {
-        //     this.read(addrOrData)
-        // }
-        // this.registers.P.negative = !!(this.registers.A & 0x80);
-        // this.registers.P.zero = !this.registers.A;
     }
 
     fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
