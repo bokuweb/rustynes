@@ -46,7 +46,7 @@ impl Cpu {
             Instruction::TAX => self.tax(),
             Instruction::TSX => self.tsx(),
             Instruction::PHP => self.php(&write),
-            Instruction::PLP => println!("{}", "TODO:"),
+            Instruction::PLP => self.plp(&read),
             Instruction::PHA => println!("{}", "TODO:"),
             Instruction::PLA => println!("{}", "TODO:"),
             Instruction::ADC => println!("{}", "TODO:"),
@@ -228,7 +228,8 @@ impl Cpu {
         where R: Fn(Addr) -> Data
     {
         self.registers.inc_sp();
-        read((0x0100 | self.registers.get(ByteRegister::SP)) as Addr)
+        let addr = (0x0100 | self.registers.get(ByteRegister::SP) as Addr);
+        read(addr)
     }
 
     fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
@@ -338,6 +339,14 @@ impl Cpu {
     {
         self.registers.set_break();
         self.push_status(&write);
+    }
+
+    fn plp<R>(&mut self, ref read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.registers.set_reserved();
+        let status = self.pop(&read);
+        self.registers.set_p(status);
     }
 
     /*
@@ -527,22 +536,14 @@ impl Cpu {
         this.push(this.registers.A);
         break;
       }
-      case 'PHP': {
-        this.registers.P.break = true;
-        this.pushStatus();
-        break;
-      }
+
       case 'PLA': {
         this.registers.A = this.pop();
         this.registers.P.negative = !!(this.registers.A & 0x80);
         this.registers.P.zero = !this.registers.A;
         break;
       }
-      case 'PLP': {
-        this.popStatus();
-        this.registers.P.reserved = true;
-        break;
-      }
+
       case 'JMP': {
         this.registers.PC = addrOrData;
         break;
@@ -847,7 +848,6 @@ fn tsx() {
 #[test]
 fn php() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
     cpu.registers.set_sp(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
@@ -855,4 +855,16 @@ fn php() {
         assert!(addr == 0x01A5);
     };
     cpu.php(&write);
+}
+
+#[test]
+fn plp() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    let read = |addr: Addr| {
+        assert_eq!(addr, 0x01A6);
+        0xA5 as u8
+    };
+    cpu.plp(&read);
+    assert_eq!(cpu.registers.get(ByteRegister::P), 0xA5);
 }

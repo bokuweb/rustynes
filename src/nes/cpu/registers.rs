@@ -89,7 +89,6 @@ impl Registers {
         self.Pc
     }
 
-
     pub fn set_acc(&mut self, v: u8) -> &mut Self {
         self.A = v;
         self
@@ -110,6 +109,18 @@ impl Registers {
         self
     }
 
+    pub fn set_p(&mut self, v: u8) -> &mut Self {
+        self.P.negative = v & 0x80 == 0x80;
+        self.P.overflow = v & 0x40 == 0x40;
+        self.P.reserved = v & 0x20 == 0x20;
+        self.P.break_mode = v & 0x10 == 0x10;
+        self.P.decimal_mode = v & 0x08 == 0x08;
+        self.P.interrupt = v & 0x04 == 0x04;
+        self.P.zero = v & 0x02 == 0x02;
+        self.P.carry = v & 0x01 == 0x01;
+        self
+    }
+
     pub fn set_sp(&mut self, v: u8) -> &mut Self {
         self.Sp = v;
         self
@@ -122,6 +133,11 @@ impl Registers {
 
     pub fn set_overflow(&mut self) -> &mut Self {
         self.P.overflow = true;
+        self
+    }
+
+    pub fn set_reserved(&mut self) -> &mut Self {
+        self.P.reserved = true;
         self
     }
 
