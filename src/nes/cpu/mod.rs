@@ -126,6 +126,70 @@ impl Cpu {
         (upper << 8 | lower) as Word
     }
 
+    fn fetch_relative<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let base = self.fetch(read) as Word;
+        if base < 0x80 {
+            base + self.registers.get_pc()
+        } else {
+            base + self.registers.get_pc() - 256
+        }
+    }
+
+    fn fetch_zeropage_x<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch(read) as Word;
+        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
+    }
+
+    fn fetch_zeropage_y<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch(read) as Word;
+        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
+    }
+
+    fn fetch_absolute_x<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
+    }
+
+    fn fetch_absolute_y<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
+    }
+
+    fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let baseAddr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as u16;
+        let addr = (read(baseAddr) as u16) + ((read((baseAddr + 1) as u16 & 0xFF) as u16) << 8);
+        addr & 0xFFFF
+    }
+
+    fn fetch_post_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch(read) as u16;
+        let baseAddr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
+        baseAddr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
+    }
+
+    fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as u16) as u16;
+        let addr = (read(addr) as u16) + (upper << 8) as u16;
+        addr & 0xFFFF
+    }
+
     fn fetch_opeland<R>(&mut self, code: &Opecode, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
@@ -133,50 +197,16 @@ impl Cpu {
             Addressing::Accumulator => 0x0000,
             Addressing::Implied => 0x0000,
             Addressing::Immediate => self.fetch(read) as Word,
-            Addressing::Relative => {
-                let base = self.fetch(read) as Word;
-                if base < 0x80 {
-                    base + self.registers.get_pc()
-                } else {
-                    base + self.registers.get_pc() - 256
-                }
-            }
+            Addressing::Relative => self.fetch_relative(read),
             Addressing::ZeroPage => self.fetch(read) as Word,
-            Addressing::ZeroPageX => {
-                let addr = self.fetch(read) as Word;
-                (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
-            }
-            Addressing::ZeroPageY => {
-                let addr = self.fetch(read) as Word;
-                (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
-            }
+            Addressing::ZeroPageX => self.fetch_zeropage_x(read),
+            Addressing::ZeroPageY => self.fetch_zeropage_y(read),
             Addressing::Absolute => self.fetch_word(read),     
-            Addressing::AbsoluteX => {
-                let addr = self.fetch_word(read);
-                (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
-            }
-            Addressing::AbsoluteY => {
-                let addr = self.fetch_word(read);
-                (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
-            }         
-            Addressing::PreIndexedIndirect => {
-                let baseAddr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) &
-                                0xFF) as u16;
-                let addr = (read(baseAddr) as u16) +
-                           ((read((baseAddr + 1) as u16 & 0xFF) as u16) << 8);
-                addr & 0xFFFF
-            }  
-            Addressing::PostIndexedIndirect => {
-                let addr = self.fetch(read) as u16;
-                let baseAddr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
-                baseAddr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
-            }                
-            Addressing::IndirectAbsolute => {
-                let addr = self.fetch_word(read);
-                let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as u16) as u16;
-                let addr = (read(addr) as u16) + (upper << 8) as u16;
-                addr & 0xFFFF
-            } 
+            Addressing::AbsoluteX => self.fetch_absolute_x(read),
+            Addressing::AbsoluteY => self.fetch_absolute_y(read),
+            Addressing::PreIndexedIndirect => self.fetch_pre_indexed_indirect(read),
+            Addressing::PostIndexedIndirect => self.fetch_post_indexed_indirect(read),
+            Addressing::IndirectAbsolute => self.fetch_indirect_absolute(read),
         }
     }
 
@@ -661,7 +691,7 @@ fn lda_immidiate() {
     let code = Opecode {
         name: Instruction::LDA,
         mode: Addressing::Immediate,
-        cycle: 1,
+        cycle: 1, // dummy
     };
     cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.get(ByteRegister::A) == 255);
@@ -675,7 +705,7 @@ fn ldx_immidiate() {
     let code = Opecode {
         name: Instruction::LDX,
         mode: Addressing::Immediate,
-        cycle: 1,
+        cycle: 1, // dummy
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.get(ByteRegister::X) == 255);
