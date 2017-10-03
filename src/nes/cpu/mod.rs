@@ -3,7 +3,7 @@ mod registers;
 
 use self::opecode::*;
 use self::registers::*;
-use nes::types::{Data, Addr, Word};
+use super::types::{Data, Addr, Word};
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -23,8 +23,9 @@ impl Cpu {
         self.registers.set_pc(pc);
     }
 
-    pub fn run<R>(&mut self, read: R) -> Data
-        where R: Fn(Addr) -> Data
+    pub fn run<R, W>(&mut self, read: R, write: W) -> Data
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
     {
         println!("registers {:?}", self.registers);
         let code = self.fetch(&read);
@@ -35,9 +36,9 @@ impl Cpu {
             Instruction::LDA => self.lda(&code, opeland, &read),
             Instruction::LDX => self.ldx(&code, opeland, &read),
             Instruction::LDY => self.ldy(&code, opeland, &read),
-            Instruction::STA => println!("{}", "TODO:"),
-            Instruction::STX => println!("{}", "TODO:"),
-            Instruction::STY => println!("{}", "TODO:"),
+            Instruction::STA => self.sta(opeland, &write),
+            Instruction::STX => self.stx(opeland, &write),
+            Instruction::STY => self.sty(opeland, &write),
             Instruction::TXA => println!("{}", "TODO:"),
             Instruction::TYA => println!("{}", "TODO:"),
             Instruction::TXS => println!("{}", "TODO:"),
@@ -168,8 +169,8 @@ impl Cpu {
     fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let baseAddr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as u16;
-        let addr = (read(baseAddr) as u16) + ((read((baseAddr + 1) as u16 & 0xFF) as u16) << 8);
+        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as u16;
+        let addr = (read(addr) as u16) + ((read((addr + 1) as u16 & 0xFF) as u16) << 8);
         addr & 0xFFFF
     }
 
@@ -177,8 +178,8 @@ impl Cpu {
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as u16;
-        let baseAddr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
-        baseAddr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
+        let addr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
+        addr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
     }
 
     fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
@@ -248,12 +249,27 @@ impl Cpu {
             .update_negative(computed)
             .update_zero(computed);
     }
+
+    fn sta<W>(&mut self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::A));
+    }
+
+    fn stx<W>(&mut self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::X));
+    }
+
+    fn sty<W>(&mut self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::Y));
+    }
     /*
 
-      case 'STA': {
-        this.write(addrOrData, this.registers.A);
-        break;
-      }
+
       case 'STX': {
         this.write(addrOrData, this.registers.X);
         break;
@@ -709,4 +725,43 @@ fn ldx_immidiate() {
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.get(ByteRegister::X) == 255);
+}
+
+#[test]
+fn sta() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.sta(0xFF, &write);
+}
+
+#[test]
+fn stx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_x(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.stx(0xFF, &write);
+}
+
+#[test]
+fn sty() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_y(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.sty(0xFF, &write);
 }
