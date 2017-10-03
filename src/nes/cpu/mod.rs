@@ -45,7 +45,7 @@ impl Cpu {
             Instruction::TAY => self.tay(),
             Instruction::TAX => self.tax(),
             Instruction::TSX => self.tsx(),
-            Instruction::PHP => println!("{}", "TODO:"),
+            Instruction::PHP => self.php(&write),
             Instruction::PLP => println!("{}", "TODO:"),
             Instruction::PHA => println!("{}", "TODO:"),
             Instruction::PLA => println!("{}", "TODO:"),
@@ -333,7 +333,7 @@ impl Cpu {
             .update_zero(sp);
     }
 
-    fn php<W>(&mut self, write: W)
+    fn php<W>(&mut self, ref write: W)
         where W: Fn(Addr, Data)
     {
         self.registers.set_break();
@@ -842,4 +842,17 @@ fn tsx() {
     cpu.registers.set_sp(0xA5);
     cpu.tsx();
     assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+}
+
+#[test]
+fn php() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_sp(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0x34);
+        assert!(addr == 0x01A5);
+    };
+    cpu.php(&write);
 }
