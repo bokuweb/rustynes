@@ -159,6 +159,16 @@ impl Registers {
         self.Pc += 1;
         self
     }
+
+    pub fn inc_sp(&mut self) -> &mut Self {
+        self.Sp += 1;
+        self
+    }
+
+    pub fn dec_sp(&mut self) -> &mut Self {
+        self.Sp -= 1;
+        self
+    }
 }
 
 #[test]

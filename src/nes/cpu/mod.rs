@@ -211,43 +211,25 @@ impl Cpu {
         }
     }
 
+    fn branch(&mut self, addr: Addr) {
+        self.registers.set_pc(addr);
+    }
 
-    /*
-  push(data: Byte) {
-    this.write(0x100 | (this.registers.SP & 0xFF), data);
-    this.registers.SP--;
-  }
-
-  pop(): Byte {
-    this.registers.SP++;
-    return this.read(0x100 | (this.registers.SP & 0xFF));
-  }
-
-  branch(addr: Word) {
-    this.registers.PC = addr;
-    this.hasBranched = true;
-  }
-
-  pushStatus() {
-    const status: Byte = (+this.registers.P.negative) << 7 |
-      (+this.registers.P.overflow) << 6 |
-      (+this.registers.P.reserved) << 5 |
-      (+this.registers.P.break) << 4 |
-      (+this.registers.P.decimal) << 3 |
-      (+this.registers.P.interrupt) << 2 |
-      (+this.registers.P.zero) << 1 |
-      (+this.registers.P.carry);
-    this.push(status);
-  }
-  */
     fn push_status<W>(&mut self, write: W)
         where W: Fn(Addr, Data)
     {
         let status = self.registers.get(ByteRegister::P);
         let addr = self.registers.get(ByteRegister::SP) as Addr;
         write((addr | 0x0100), status);
+        self.registers.dec_sp();
     }
 
+    fn pop<R>(&mut self, read: R) -> Data
+        where R: Fn(Addr) -> Data
+    {
+        self.registers.inc_sp();
+        read((0x0100 | self.registers.get(ByteRegister::SP)) as Addr)
+    }
 
     fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
