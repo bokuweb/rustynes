@@ -77,6 +77,10 @@ impl Registers {
         self.Pc
     }
 
+    pub fn get_sp(&self) -> u16 {
+        self.Sp
+    }
+
     pub fn set_acc(&mut self, v: u8) -> &mut Self {
         self.A = v;
         self
@@ -97,6 +101,16 @@ impl Registers {
         self
     }
 
+    pub fn set_sp(&mut self, v: u16) -> &mut Self {
+        self.Sp = v;
+        self
+    }
+
+    pub fn set_break(&mut self) -> &mut Self {
+        self.P.break_mode = true;
+        self
+    }
+
     pub fn update_negative(&mut self, v: u8) -> &mut Self {
         self.P.negative = v & 0x80 == 0x80;
         self
@@ -110,5 +124,5 @@ impl Registers {
     pub fn update_pc(&mut self) -> &mut Self {
         self.Pc += 1;
         self
-    }    
+    }
 }

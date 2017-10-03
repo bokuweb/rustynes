@@ -39,12 +39,12 @@ impl Cpu {
             Instruction::STA => self.sta(opeland, &write),
             Instruction::STX => self.stx(opeland, &write),
             Instruction::STY => self.sty(opeland, &write),
-            Instruction::TXA => println!("{}", "TODO:"),
-            Instruction::TYA => println!("{}", "TODO:"),
-            Instruction::TXS => println!("{}", "TODO:"),
-            Instruction::TAY => println!("{}", "TODO:"),
-            Instruction::TAX => println!("{}", "TODO:"),
-            Instruction::TSX => println!("{}", "TODO:"),
+            Instruction::TXA => self.txa(),
+            Instruction::TYA => self.tya(),
+            Instruction::TXS => self.txs(),
+            Instruction::TAY => self.tay(),
+            Instruction::TAX => self.tax(),
+            Instruction::TSX => self.tsx(),
             Instruction::PHP => println!("{}", "TODO:"),
             Instruction::PLP => println!("{}", "TODO:"),
             Instruction::PHA => println!("{}", "TODO:"),
@@ -169,25 +169,25 @@ impl Cpu {
     fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as u16;
-        let addr = (read(addr) as u16) + ((read((addr + 1) as u16 & 0xFF) as u16) << 8);
+        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as Addr;
+        let addr = (read(addr) as Addr) + ((read((addr + 1) as Addr & 0xFF) as Addr) << 8);
         addr & 0xFFFF
     }
 
     fn fetch_post_indexed_indirect<R>(&mut self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let addr = self.fetch(read) as u16;
-        let addr = (read(addr) as u16) + ((read((addr + 1) & 0xFF) as u16) << 8);
-        addr + (self.registers.get(ByteRegister::Y) as u16) & 0xFFFF
+        let addr = self.fetch(read) as Addr;
+        let addr = (read(addr) as Addr) + ((read((addr + 1) & 0xFF) as Addr) << 8);
+        addr + (self.registers.get(ByteRegister::Y) as Addr) & 0xFFFF
     }
 
     fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
-        let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as u16) as u16;
-        let addr = (read(addr) as u16) + (upper << 8) as u16;
+        let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as Addr) as Addr;
+        let addr = (read(addr) as Addr) + (upper << 8) as Addr;
         addr & 0xFFFF
     }
 
@@ -250,68 +250,76 @@ impl Cpu {
             .update_zero(computed);
     }
 
-    fn sta<W>(&mut self, opeland: Word, write: W)
+    fn sta<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
         write(opeland, self.registers.get(ByteRegister::A));
     }
 
-    fn stx<W>(&mut self, opeland: Word, write: W)
+    fn stx<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
         write(opeland, self.registers.get(ByteRegister::X));
     }
 
-    fn sty<W>(&mut self, opeland: Word, write: W)
+    fn sty<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
         write(opeland, self.registers.get(ByteRegister::Y));
     }
+
+    fn txa(&mut self) {
+        let x = self.registers.get(ByteRegister::X);
+        self.registers
+            .set_acc(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn tya(&mut self) {
+        let y = self.registers.get(ByteRegister::Y);
+        self.registers
+            .set_acc(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn txs(&mut self) {
+        let x = self.registers.get(ByteRegister::X) as u16;
+        self.registers.set_sp(x + 0x0100);
+    }
+
+    fn tay(&mut self) {
+        let acc = self.registers.get(ByteRegister::A);
+        self.registers
+            .set_y(acc)
+            .update_negative(acc)
+            .update_zero(acc);
+    }
+
+    fn tax(&mut self) {
+        let acc = self.registers.get(ByteRegister::A);
+        self.registers
+            .set_x(acc)
+            .update_negative(acc)
+            .update_zero(acc);
+    }
+
+    fn tsx(&mut self) {
+        let sp = (self.registers.get_sp() & 0xFF) as u8;
+        self.registers
+            .set_x(sp)
+            .update_negative(sp)
+            .update_zero(sp);
+    }
+
+    fn php(&mut self) {
+        self.registers.set_break()
+        this.pushStatus();
+    }
+
     /*
 
-
-      case 'STX': {
-        this.write(addrOrData, this.registers.X);
-        break;
-      }
-      case 'STY': {
-        this.write(addrOrData, this.registers.Y);
-        break;
-      }
-      case 'TAX': {
-        this.registers.X = this.registers.A;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'TAY': {
-        this.registers.Y = this.registers.A;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-      case 'TSX': {
-        this.registers.X = this.registers.SP & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'TXA': {
-        this.registers.A = this.registers.X;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'TXS': {
-        this.registers.SP = this.registers.X + 0x0100;
-        break;
-      }
-      case 'TYA': {
-        this.registers.A = this.registers.Y;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
       case 'ADC': {
         const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
         const operated = data + this.registers.A + this.registers.P.carry;
@@ -764,4 +772,22 @@ fn sty() {
         assert!(addr == 0xFF);
     };
     cpu.sty(0xFF, &write);
+}
+
+#[test]
+fn tax() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0xA5);
+    cpu.tax();
+    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+}
+
+#[test]
+fn tay() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0xA5);
+    cpu.tay();
+    assert!(cpu.registers.get(ByteRegister::Y) == 0xA5);
 }
