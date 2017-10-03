@@ -48,7 +48,7 @@ impl Cpu {
             Instruction::PHP => self.php(&write),
             Instruction::PLP => self.plp(&read),
             Instruction::PHA => self.pha(&write),
-            Instruction::PLA => println!("{}", "TODO:"),
+            Instruction::PLA => self.pla(&read),
             Instruction::ADC => println!("{}", "TODO:"),
             Instruction::SBC => println!("{}", "TODO:"),
             Instruction::CPX => println!("{}", "TODO:"),
@@ -361,6 +361,17 @@ impl Cpu {
         let acc = self.registers.get(ByteRegister::A);
         self.push(acc, &write);
     }
+
+    fn pla<R>(&mut self, ref read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let v = self.pop(&read);
+        self.registers
+            .set_acc(v)
+            .update_negative(v)
+            .update_zero(v);
+    }
+
     /*
 
       case 'ADC': {
@@ -549,12 +560,7 @@ impl Cpu {
         break;
       }
 
-      case 'PLA': {
-        this.registers.A = this.pop();
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
+
 
       case 'JMP': {
         this.registers.PC = addrOrData;
