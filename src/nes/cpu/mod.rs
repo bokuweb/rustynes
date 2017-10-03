@@ -131,16 +131,15 @@ impl Cpu {
                     base + self.registers.get_pc() - 256
                 }
             }
+            Addressing::ZeroPage => self.fetch(read) as Word,
+            Addressing::ZeroPageX => {
+                let addr = self.fetch(read) as Word;
+                (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
+            }
             _ => 10u16,
         }
         /*
 
-      case 'zeroPage': {
-        return {
-          addrOrData: this.fetch(this.registers.PC),
-          additionalCycle: 0,
-        }
-      }
       case 'zeroPageX': {
         const addr = this.fetch(this.registers.PC);
         return {
