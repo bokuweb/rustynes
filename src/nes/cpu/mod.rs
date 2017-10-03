@@ -47,7 +47,7 @@ impl Cpu {
             Instruction::TSX => self.tsx(),
             Instruction::PHP => self.php(&write),
             Instruction::PLP => self.plp(&read),
-            Instruction::PHA => println!("{}", "TODO:"),
+            Instruction::PHA => self.pha(&write),
             Instruction::PLA => println!("{}", "TODO:"),
             Instruction::ADC => println!("{}", "TODO:"),
             Instruction::SBC => println!("{}", "TODO:"),
@@ -219,8 +219,14 @@ impl Cpu {
         where W: Fn(Addr, Data)
     {
         let status = self.registers.get(ByteRegister::P);
+        self.push(status, &write);
+    }
+
+    fn push<W>(&mut self, data: Data, write: W)
+        where W: Fn(Addr, Data)
+    {
         let addr = self.registers.get(ByteRegister::SP) as Addr;
-        write((addr | 0x0100), status);
+        write((addr | 0x0100), data);
         self.registers.dec_sp();
     }
 
@@ -349,6 +355,12 @@ impl Cpu {
         self.registers.set_p(status);
     }
 
+    fn pha<W>(&mut self, ref write: W)
+        where W: Fn(Addr, Data)
+    {
+        let acc = self.registers.get(ByteRegister::A);
+        self.push(acc, &write);
+    }
     /*
 
       case 'ADC': {
@@ -867,4 +879,17 @@ fn plp() {
     };
     cpu.plp(&read);
     assert_eq!(cpu.registers.get(ByteRegister::P), 0xA5);
+}
+
+#[test]
+fn pha() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    cpu.registers.set_acc(0x5A);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0x5A);
+        assert!(addr == 0x01A5);
+    };
+    cpu.pha(&write);
 }
