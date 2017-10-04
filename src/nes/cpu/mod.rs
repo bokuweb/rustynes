@@ -4,6 +4,7 @@ mod registers;
 use self::opecode::*;
 use self::registers::*;
 use super::types::{Data, Addr, Word};
+use super::helper::*;
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -49,7 +50,7 @@ impl Cpu {
             Instruction::PLP => self.plp(&read),
             Instruction::PHA => self.pha(&write),
             Instruction::PLA => self.pla(&read),
-            Instruction::ADC => println!("{}", "TODO:"),
+            Instruction::ADC => self.adc(&code, opeland, &read),
             Instruction::SBC => println!("{}", "TODO:"),
             Instruction::CPX => println!("{}", "TODO:"),
             Instruction::CPY => println!("{}", "TODO:"),
@@ -372,6 +373,22 @@ impl Cpu {
             .update_zero(v);
     }
 
+    fn adc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = fetched + self.registers.get(ByteRegister::A) +
+                       bool_to_u8(self.registers.get_status(StatusName::carry));
+        self.registers
+            .update_overflow(fetched, computed)
+            .update_carry(computed)
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
     /*
 
       case 'ADC': {
@@ -898,4 +915,18 @@ fn pha() {
         assert!(addr == 0x01A5);
     };
     cpu.pha(&write);
+}
+
+#[test]
+fn adc_immidiate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0x05);
+    let code = Opecode {
+        name: Instruction::LDA,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get(ByteRegister::A) == 0xAA);
 }

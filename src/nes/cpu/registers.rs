@@ -1,3 +1,6 @@
+use super::super::types::{Data, Addr, Word};
+use super::super::helper::*;
+
 #[derive(Debug)]
 pub struct Status {
     negative: bool,
@@ -28,6 +31,18 @@ pub enum ByteRegister {
     Y,
     SP,
     P,
+}
+
+#[derive(Debug)]
+pub enum StatusName {
+    negative,
+    overflow,
+    reserved,
+    break_mode,
+    decimal_mode,
+    interrupt,
+    zero,
+    carry,
 }
 
 impl Registers {
@@ -68,7 +83,6 @@ impl Registers {
     }
 
     pub fn get(&self, name: ByteRegister) -> u8 {
-        let bool_to_u8 = |v: bool| if v { 1 } else { 0 };
         match name {
             ByteRegister::A => self.A,
             ByteRegister::X => self.X,
@@ -82,6 +96,19 @@ impl Registers {
                 bool_to_u8(self.P.interrupt) << 2 | bool_to_u8(self.P.zero) << 1 |
                 bool_to_u8(self.P.carry) as u8
             }
+        }
+    }
+
+    pub fn get_status(&self, name: StatusName) -> bool {
+        match name {
+            StatusName::negative => self.P.negative,
+            StatusName::overflow => self.P.overflow,
+            StatusName::reserved => self.P.reserved,
+            StatusName::break_mode => self.P.break_mode,
+            StatusName::decimal_mode => self.P.decimal_mode,
+            StatusName::interrupt => self.P.interrupt,
+            StatusName::zero => self.P.zero,
+            StatusName::carry => self.P.carry,
         }
     }
 
@@ -163,6 +190,17 @@ impl Registers {
 
     pub fn update_negative(&mut self, v: u8) -> &mut Self {
         self.P.negative = v & 0x80 == 0x80;
+        self
+    }
+
+    pub fn update_overflow(&mut self, fetched: u8, computed: u8) -> &mut Self {
+        self.P.overflow = !(((self.A ^ fetched) & 0x80) != 0) &&
+                          (((self.A ^ computed) & 0x80)) != 0;
+        self
+    }
+
+    pub fn update_carry(&mut self, v: u8) -> &mut Self {
+        self.P.carry = v > 0xFF;
         self
     }
 
