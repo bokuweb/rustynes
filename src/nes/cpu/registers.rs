@@ -153,38 +153,38 @@ impl Registers {
         self
     }
 
-    pub fn set_negative(&mut self) -> &mut Self {
-        self.P.negative = true;
+    pub fn set_negative(&mut self, v: bool) -> &mut Self {
+        self.P.negative = v;
         self
     }
 
-    pub fn set_overflow(&mut self) -> &mut Self {
-        self.P.overflow = true;
+    pub fn set_overflow(&mut self, v: bool) -> &mut Self {
+        self.P.overflow = v;
         self
     }
 
-    pub fn set_reserved(&mut self) -> &mut Self {
-        self.P.reserved = true;
+    pub fn set_reserved(&mut self, v: bool) -> &mut Self {
+        self.P.reserved = v;
         self
     }
 
-    pub fn set_break(&mut self) -> &mut Self {
-        self.P.break_mode = true;
+    pub fn set_break(&mut self, v: bool) -> &mut Self {
+        self.P.break_mode = v;
         self
     }
 
-    pub fn set_interrupt(&mut self) -> &mut Self {
-        self.P.interrupt = true;
+    pub fn set_interrupt(&mut self, v: bool) -> &mut Self {
+        self.P.interrupt = v;
         self
     }
 
-    pub fn set_zero(&mut self) -> &mut Self {
-        self.P.zero = true;
+    pub fn set_zero(&mut self, v: bool) -> &mut Self {
+        self.P.zero = v;
         self
     }
 
-    pub fn set_carry(&mut self) -> &mut Self {
-        self.P.carry = true;
+    pub fn set_carry(&mut self, v: bool) -> &mut Self {
+        self.P.carry = v;
         self
     }
 
@@ -196,11 +196,6 @@ impl Registers {
     pub fn update_overflow(&mut self, fetched: u8, computed: u8) -> &mut Self {
         self.P.overflow = !(((self.A ^ fetched) & 0x80) != 0) &&
                           (((self.A ^ computed) & 0x80)) != 0;
-        self
-    }
-
-    pub fn update_carry(&mut self, v: u8) -> &mut Self {
-        self.P.carry = v > 0xFF;
         self
     }
 

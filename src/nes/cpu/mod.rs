@@ -51,7 +51,7 @@ impl Cpu {
             Instruction::PHA => self.pha(&write),
             Instruction::PLA => self.pla(&read),
             Instruction::ADC => self.adc(&code, opeland, &read),
-            Instruction::SBC => println!("{}", "TODO:"),
+            Instruction::SBC => self.sbc(&code, opeland, &read),
             Instruction::CPX => println!("{}", "TODO:"),
             Instruction::CPY => println!("{}", "TODO:"),
             Instruction::CMP => println!("{}", "TODO:"),
@@ -344,14 +344,14 @@ impl Cpu {
     fn php<W>(&mut self, ref write: W)
         where W: Fn(Addr, Data)
     {
-        self.registers.set_break();
+        self.registers.set_break(true);
         self.push_status(&write);
     }
 
     fn plp<R>(&mut self, ref read: R)
         where R: Fn(Addr) -> Data
     {
-        self.registers.set_reserved();
+        self.registers.set_reserved(true);
         let status = self.pop(&read);
         self.registers.set_p(status);
     }
@@ -384,24 +384,32 @@ impl Cpu {
                        bool_to_u8(self.registers.get_status(StatusName::carry));
         self.registers
             .update_overflow(fetched, computed)
-            .update_carry(computed)
             .update_negative(computed)
             .update_zero(computed)
+            .set_carry(computed > 0xFF)
             .set_acc(computed);
     }
+
+    fn sbc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.get(ByteRegister::A) - fetched - 
+                       bool_to_u8(!self.registers.get_status(StatusName::carry));
+        self.registers
+            .update_overflow(computed, fetched)
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >=0)
+            .set_acc(computed);
+    }  
+  
     /*
 
-      case 'ADC': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data + this.registers.A + this.registers.P.carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated > 0xFF;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
       case 'AND': {
         const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
         const operated = data & this.registers.A;
@@ -561,17 +569,7 @@ impl Cpu {
         }
         break;
       }
-      case 'SBC': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = this.registers.A - data - (this.registers.P.carry ? 0 : 1);
-        const overflow = (((this.registers.A ^ operated) & 0x80) != 0 && ((this.registers.A ^ data) & 0x80) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated >= 0;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
       case 'PHA': {
         this.push(this.registers.A);
         break;
