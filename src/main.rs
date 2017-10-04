@@ -20,7 +20,6 @@ pub fn run(len: usize, ptr: *mut u8) {
     nes.reset();
     let mut main_loop = || {
         // externs::eval(&format!("console.log({:?});", a));
-        // println!("{:?}", nes.cpu);
         nes.run();
         let js = ["const canvas = document.querySelector('canvas');",
                   "const ctx = canvas.getContext('2d');",

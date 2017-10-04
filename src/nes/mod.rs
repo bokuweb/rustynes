@@ -42,20 +42,11 @@ impl Nes {
     }
 
     pub fn reset(&self) {
-        // TODO: let mut cpu_bus = self.create_bus();
-        // let cpu_bus = CpuBus::new(&self.program_rom,
-        //                           &self.character_ram,
-        //                           &self.work_ram,
-        //                           &self.ppu);
         self.cpu.borrow_mut().reset(|addr: Addr| self.read(addr));
     }
 
     pub fn run(&self) {
         let mut cycle = 0;
-        // let cpu_bus = CpuBus::new(&self.program_rom,
-        //                           &self.character_ram,
-        //                           &self.work_ram,
-        //                           &self.ppu);
         loop {
             cycle += self.cpu
                 .borrow_mut()
