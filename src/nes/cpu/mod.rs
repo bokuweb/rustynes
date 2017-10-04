@@ -52,7 +52,7 @@ impl Cpu {
             Instruction::PLA => self.pla(&read),
             Instruction::ADC => self.adc(&code, opeland, &read),
             Instruction::SBC => self.sbc(&code, opeland, &read),
-            Instruction::CPX => println!("{}", "TODO:"),
+            Instruction::CPX => self.cpx(&code, opeland, &read),
             Instruction::CPY => println!("{}", "TODO:"),
             Instruction::CMP => println!("{}", "TODO:"),
             Instruction::AND => println!("{}", "TODO:"),
@@ -397,16 +397,32 @@ impl Cpu {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = self.registers.get(ByteRegister::A) - fetched - 
+        let computed = self.registers.get(ByteRegister::A) - fetched -
                        bool_to_u8(!self.registers.get_status(StatusName::carry));
         self.registers
             .update_overflow(computed, fetched)
             .update_negative(computed)
             .update_zero(computed)
-            .set_carry(computed >=0)
+            .set_carry(computed >= 0)
             .set_acc(computed);
-    }  
-  
+    }
+
+
+    fn cpx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.get(ByteRegister::X) - fetched;
+        self.registers
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0);
+    }
+
+
     /*
 
 
@@ -916,15 +932,43 @@ fn pha() {
 }
 
 #[test]
-fn adc_immidiate() {
+fn adc_immediate() {
     let mut cpu = Cpu::new();
     cpu.registers.set_pc(0x0000);
     cpu.registers.set_acc(0x05);
     let code = Opecode {
-        name: Instruction::LDA,
+        name: Instruction::ADC,
         mode: Addressing::Immediate,
         cycle: 1, // dummy
     };
     cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
     assert!(cpu.registers.get(ByteRegister::A) == 0xAA);
+}
+
+#[test]
+fn sbc_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0x10);
+    let code = Opecode {
+        name: Instruction::SBC,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get(ByteRegister::A) == 0x09);
+}
+
+#[test]
+fn cpx_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_x(0x05);
+    let code = Opecode {
+        name: Instruction::CPX,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get_status(StatusName::carry));
 }
