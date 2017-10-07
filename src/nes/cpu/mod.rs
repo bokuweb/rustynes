@@ -235,7 +235,7 @@ impl Cpu {
         where R: Fn(Addr) -> Data
     {
         self.registers.inc_sp();
-        let addr = (0x0100 | self.registers.get(ByteRegister::SP) as Addr);
+        let addr = 0x0100 | self.registers.get(ByteRegister::SP) as Addr;
         read(addr)
     }
 
@@ -386,7 +386,7 @@ impl Cpu {
             .update_overflow(fetched, computed)
             .update_negative(computed)
             .update_zero(computed)
-            .set_carry(computed > 0xFF)
+            .set_carry(computed > 0xFF as u8)
             .set_acc(computed);
     }
 
@@ -403,7 +403,7 @@ impl Cpu {
             .update_overflow(computed, fetched)
             .update_negative(computed)
             .update_zero(computed)
-            .set_carry(computed >= 0)
+            .set_carry(computed >= 0 as u8)
             .set_acc(computed);
     }
 
@@ -419,7 +419,7 @@ impl Cpu {
         self.registers
             .update_negative(computed)
             .update_zero(computed)
-            .set_carry(computed >= 0);
+            .set_carry(computed >= 0 as u8);
     }
 
 
