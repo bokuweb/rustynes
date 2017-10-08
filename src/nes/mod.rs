@@ -14,10 +14,10 @@ use self::ppu::Ppu;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus::CpuBus;
-use std::rc::Rc;
+// use std::rc::Rc;
 use std::cell::RefCell;
 use nes::types::{Data, Addr, Word};
-use nes::helper::*;
+// use nes::helper::*;
 
 #[derive(Debug)]
 pub struct Nes {
