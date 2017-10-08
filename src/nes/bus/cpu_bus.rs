@@ -40,7 +40,7 @@ impl<'a> CpuBus<'a> {
         }
     }
 
-    pub fn write(&mut self, addr: u16, data: u8) {
+    pub fn write(&self, addr: u16, data: u8) {
         match addr {
             0x0000...0x07FF => self.work_ram.borrow_mut().write(addr, data),
             0x0800...0x1FFF => self.work_ram.borrow_mut().write(addr - 0x0800, data),

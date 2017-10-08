@@ -5,9 +5,6 @@ extern crate libc;
 mod nes;
 mod externs;
 
-use std::cell::RefCell;
-use std::ptr::null_mut;
-use std::rc::Rc;
 use nes::Nes;
 
 fn main() {
@@ -16,11 +13,10 @@ fn main() {
 #[no_mangle]
 pub fn run(len: usize, ptr: *mut u8) {
     let buf: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-    let mut nes = Nes::new(buf);
+    let nes = Nes::new(buf);
     nes.reset();
-    let mut main_loop = || {
+    let main_loop = || {
         // externs::eval(&format!("console.log({:?});", a));
-        // println!("{:?}", nes.cpu);
         nes.run();
         let js = ["const canvas = document.querySelector('canvas');",
                   "const ctx = canvas.getContext('2d');",

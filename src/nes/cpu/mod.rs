@@ -1,30 +1,10 @@
 mod opecode;
+mod registers;
 
-use std::collections::HashMap;
-use nes::bus::cpu_bus::CpuBus;
 use self::opecode::*;
-
-#[derive(Debug)]
-struct Status {
-    negative: bool,
-    overflow: bool,
-    reserved: bool,
-    break_mode: bool,
-    decimal_mode: bool,
-    interrupt: bool,
-    zero: bool,
-    carry: bool,
-}
-
-#[derive(Debug)]
-struct Registers {
-    A: u8,
-    X: u8,
-    Y: u8,
-    PC: u16,
-    SP: u16,
-    P: Status,
-}
+use self::registers::*;
+use super::types::{Data, Addr, Word};
+use super::helper::*;
 
 #[derive(Debug)]
 pub struct Cpu {
@@ -33,66 +13,46 @@ pub struct Cpu {
 
 impl Cpu {
     pub fn new() -> Cpu {
-        Cpu {
-            registers: Registers {
-                A: 0,
-                X: 0,
-                Y: 0,
-                PC: 0x8000,
-                SP: 0x01FD,
-                P: Status {
-                    negative: false,
-                    overflow: false,
-                    reserved: true,
-                    break_mode: true,
-                    decimal_mode: false,
-                    interrupt: true,
-                    zero: false,
-                    carry: false,
-                },
-            },
-        }
+        Cpu { registers: Registers::new() }
     }
 
-    pub fn reset<F>(&mut self, read: F)
-        where F: Fn(u16) -> u8
+    pub fn reset<R>(&mut self, read: R)
+        where R: Fn(Addr) -> Data
     {
-        self.reset_registers();
+        self.registers.reset();
         let pc = self.read_word(&read, 0xFFFC);
-        println!("Initial PC {}", pc);
-        println!("registers {:?}", self.registers);
-        self.registers.PC = pc;
+        self.registers.set_pc(pc);
     }
 
-    pub fn run<F>(&mut self, read: F) -> u8
-        where F: Fn(u16) -> u8
+    pub fn run<R, W>(&mut self, read: R, write: W) -> Data
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
     {
         println!("registers {:?}", self.registers);
         let code = self.fetch(&read);
         let ref map = opecode::MAP;
         let code = &*map.get(&code).unwrap();
-        println!("{:?}", code);
-        let opeland = self.fetchOpeland(&code, &read);
+        let opeland = self.fetch_opeland(&code, &read);
         match code.name {
             Instruction::LDA => self.lda(&code, opeland, &read),
-            Instruction::LDX => println!("{}", "TODO:"),
-            Instruction::LDY => println!("{}", "TODO:"),
-            Instruction::STA => println!("{}", "TODO:"),
-            Instruction::STX => println!("{}", "TODO:"),
-            Instruction::STY => println!("{}", "TODO:"),
-            Instruction::TXA => println!("{}", "TODO:"),
-            Instruction::TYA => println!("{}", "TODO:"),
-            Instruction::TXS => println!("{}", "TODO:"),
-            Instruction::TAY => println!("{}", "TODO:"),
-            Instruction::TAX => println!("{}", "TODO:"),
-            Instruction::TSX => println!("{}", "TODO:"),
-            Instruction::PHP => println!("{}", "TODO:"),
-            Instruction::PLP => println!("{}", "TODO:"),
-            Instruction::PHA => println!("{}", "TODO:"),
-            Instruction::PLA => println!("{}", "TODO:"),
-            Instruction::ADC => println!("{}", "TODO:"),
-            Instruction::SBC => println!("{}", "TODO:"),
-            Instruction::CPX => println!("{}", "TODO:"),
+            Instruction::LDX => self.ldx(&code, opeland, &read),
+            Instruction::LDY => self.ldy(&code, opeland, &read),
+            Instruction::STA => self.sta(opeland, &write),
+            Instruction::STX => self.stx(opeland, &write),
+            Instruction::STY => self.sty(opeland, &write),
+            Instruction::TXA => self.txa(),
+            Instruction::TYA => self.tya(),
+            Instruction::TXS => self.txs(),
+            Instruction::TAY => self.tay(),
+            Instruction::TAX => self.tax(),
+            Instruction::TSX => self.tsx(),
+            Instruction::PHP => self.php(&write),
+            Instruction::PLP => self.plp(&read),
+            Instruction::PHA => self.pha(&write),
+            Instruction::PLA => self.pla(&read),
+            Instruction::ADC => self.adc(&code, opeland, &read),
+            Instruction::SBC => self.sbc(&code, opeland, &read),
+            Instruction::CPX => self.cpx(&code, opeland, &read),
             Instruction::CPY => println!("{}", "TODO:"),
             Instruction::CMP => println!("{}", "TODO:"),
             Instruction::AND => println!("{}", "TODO:"),
@@ -138,238 +98,334 @@ impl Cpu {
             Instruction::RLA => println!("{}", "TODO:"),
             Instruction::SRE => println!("{}", "TODO:"),
             Instruction::RRA => println!("{}", "TODO:"),
-            _ => panic!("Unknown opecode detected."),
         }
         code.cycle
     }
 
-    fn fetch<F>(&mut self, read: F) -> u8
-        where F: Fn(u16) -> u8
+    fn fetch<R>(&mut self, read: R) -> Data
+        where R: Fn(Addr) -> Data
     {
-        let code = read(self.registers.PC);
-        self.registers.PC += 1;
+        let code = read(self.registers.get_pc());
+        self.registers.update_pc();
         code
     }
 
-    fn read_word<F>(&self, read: F, addr: u16) -> u16
-        where F: Fn(u16) -> u8
+    fn fetch_word<R>(&mut self, read: R) -> Word
+        where R: Fn(Addr) -> Data
     {
-        let low = read(addr) as u16;
-        let high = read(addr + 1) as u16;
-        (high << 8 | low) as u16
+        let lower = read(self.registers.get_pc()) as Word;
+        self.registers.update_pc();
+        let upper = read(self.registers.get_pc()) as Word;
+        self.registers.update_pc();
+        (upper << 8 | lower) as Word
     }
 
-    fn reset_registers(&mut self) {
-        self.registers.A = 0;
-        self.registers.X = 0;
-        self.registers.Y = 0;
-        self.registers.PC = 0x8000;
-        self.registers.SP = 0x01FD;
-        self.registers.P.negative = false;
-        self.registers.P.overflow = false;
-        self.registers.P.reserved = true;
-        self.registers.P.break_mode = true;
-        self.registers.P.decimal_mode = false;
-        self.registers.P.interrupt = true;
-        self.registers.P.zero = false;
-        self.registers.P.carry = false;
+    fn read_word<R>(&self, read: R, addr: Addr) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let lower = read(addr) as Word;
+        let upper = read(addr + 1) as Word;
+        (upper << 8 | lower) as Word
     }
 
-    fn create_default_registers() -> Registers {
-        Registers {
-            A: 0,
-            X: 0,
-            Y: 0,
-            PC: 0x8000,
-            SP: 0x01FD,
-            P: Status {
-                negative: false,
-                overflow: false,
-                reserved: true,
-                break_mode: true,
-                decimal_mode: false,
-                interrupt: true,
-                zero: false,
-                carry: false,
-            },
+    fn fetch_relative<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let base = self.fetch(read) as Word;
+        if base < 0x80 {
+            base + self.registers.get_pc()
+        } else {
+            base + self.registers.get_pc() - 256
         }
     }
 
-    fn fetchOpeland<F>(&mut self, code: &Opecode, read: F) -> u16
-        where F: Fn(u16) -> u8
+    fn fetch_zeropage_x<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
     {
-        println!("{:?}", code.mode);
+        let addr = self.fetch(read) as Word;
+        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
+    }
+
+    fn fetch_zeropage_y<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch(read) as Word;
+        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
+    }
+
+    fn fetch_absolute_x<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
+    }
+
+    fn fetch_absolute_y<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
+    }
+
+    fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as Addr;
+        let addr = (read(addr) as Addr) + ((read((addr + 1) as Addr & 0xFF) as Addr) << 8);
+        addr & 0xFFFF
+    }
+
+    fn fetch_post_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch(read) as Addr;
+        let addr = (read(addr) as Addr) + ((read((addr + 1) & 0xFF) as Addr) << 8);
+        addr + (self.registers.get(ByteRegister::Y) as Addr) & 0xFFFF
+    }
+
+    fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
+        let addr = self.fetch_word(read);
+        let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as Addr) as Addr;
+        let addr = (read(addr) as Addr) + (upper << 8) as Addr;
+        addr & 0xFFFF
+    }
+
+    fn fetch_opeland<R>(&mut self, code: &Opecode, ref read: &R) -> Word
+        where R: Fn(Addr) -> Data
+    {
         match code.mode {
             Addressing::Accumulator => 0x0000,
             Addressing::Implied => 0x0000,
-            Addressing::Immediate => self.fetch(read) as u16,
-            _ => 10u16,
+            Addressing::Immediate => self.fetch(read) as Word,
+            Addressing::Relative => self.fetch_relative(read),
+            Addressing::ZeroPage => self.fetch(read) as Word,
+            Addressing::ZeroPageX => self.fetch_zeropage_x(read),
+            Addressing::ZeroPageY => self.fetch_zeropage_y(read),
+            Addressing::Absolute => self.fetch_word(read),     
+            Addressing::AbsoluteX => self.fetch_absolute_x(read),
+            Addressing::AbsoluteY => self.fetch_absolute_y(read),
+            Addressing::PreIndexedIndirect => self.fetch_pre_indexed_indirect(read),
+            Addressing::PostIndexedIndirect => self.fetch_post_indexed_indirect(read),
+            Addressing::IndirectAbsolute => self.fetch_indirect_absolute(read),
         }
-        /*
-      case 'relative': {
-        const baseAddr = this.fetch(this.registers.PC);
-        const addr = baseAddr < 0x80 ? baseAddr + this.registers.PC : baseAddr + this.registers.PC - 256;
-        return {
-          addrOrData: addr,
-          additionalCycle: (addr & 0xFF00) !== (this.registers.PC & 0xFF00) ? 1 : 0,
-        }
-      }
-      case 'zeroPage': {
-        return {
-          addrOrData: this.fetch(this.registers.PC),
-          additionalCycle: 0,
-        }
-      }
-      case 'zeroPageX': {
-        const addr = this.fetch(this.registers.PC);
-        return {
-          addrOrData: (addr + this.registers.X) & 0xFF,
-          additionalCycle: 0,
-        }
-      }
-      case 'zeroPageY': {
-        const addr = this.fetch(this.registers.PC);
-        return {
-          addrOrData: (addr + this.registers.Y & 0xFF),
-          additionalCycle: 0,
-        }
-      }
-      case 'absolute': {
-        return {
-          addrOrData: (this.fetch(this.registers.PC, "Word")),
-          additionalCycle: 0,
-        }
-      }
-      case 'absoluteX': {
-        const addr = (this.fetch(this.registers.PC, "Word"));
-        const additionalCycle = (addr & 0xFF00) !== ((addr + this.registers.X) & 0xFF00) ? 1 : 0;
-        return {
-          addrOrData: (addr + this.registers.X) & 0xFFFF,
-          additionalCycle,
-        }
-      }
-      case 'absoluteY': {
-        const addr = (this.fetch(this.registers.PC, "Word"));
-        const additionalCycle = (addr & 0xFF00) !== ((addr + this.registers.Y) & 0xFF00) ? 1 : 0;
-        return {
-          addrOrData: (addr + this.registers.Y) & 0xFFFF,
-          additionalCycle,
-        }
-      }
-      case 'preIndexedIndirect': {
-        const baseAddr = (this.fetch(this.registers.PC) + this.registers.X) & 0xFF;
-        const addr = this.read(baseAddr) + (this.read((baseAddr + 1) & 0xFF) << 8);
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: (addr & 0xFF00) !== (baseAddr & 0xFF00) ? 1 : 0,
-        }
-      }
-      case 'postIndexedIndirect': {
-        const addrOrData = this.fetch(this.registers.PC);
-        const baseAddr = this.read(addrOrData) + (this.read((addrOrData + 1) & 0xFF) << 8);
-        const addr = baseAddr + this.registers.Y;
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: (addr & 0xFF00) !== (baseAddr & 0xFF00) ? 1 : 0,
-        }
-      }
-      case 'indirectAbsolute': {
-        const addrOrData = this.fetch(this.registers.PC, "Word");
-        const addr = this.read(addrOrData) + (this.read((addrOrData & 0xFF00) | (((addrOrData & 0xFF) + 1) & 0xFF)) << 8);
-        return {
-          addrOrData: addr & 0xFFFF,
-          additionalCycle: 0,
-        }
-      }*/
-        // this.registers.A = if code.mode === Addressing::Immediate {
-        //     addrOrData
-        // } else {
-        //     this.read(addrOrData)
-        // }
-        // this.registers.P.negative = !!(this.registers.A & 0x80);
-        // this.registers.P.zero = !this.registers.A;
     }
 
-    fn lda<F>(&mut self, code: &Opecode, opeland: u16, read: F)
-        where F: Fn(u16) -> u8
+    fn branch(&mut self, addr: Addr) {
+        self.registers.set_pc(addr);
+    }
+
+    fn push_status<W>(&mut self, write: W)
+        where W: Fn(Addr, Data)
     {
-        self.registers.A = match code.mode {
-            Addressing::Immediate => opeland as u8,
+        let status = self.registers.get(ByteRegister::P);
+        self.push(status, &write);
+    }
+
+    fn push<W>(&mut self, data: Data, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let addr = self.registers.get(ByteRegister::SP) as Addr;
+        write((addr | 0x0100), data);
+        self.registers.dec_sp();
+    }
+
+    fn pop<R>(&mut self, read: R) -> Data
+        where R: Fn(Addr) -> Data
+    {
+        self.registers.inc_sp();
+        let addr = 0x0100 | self.registers.get(ByteRegister::SP) as Addr;
+        read(addr)
+    }
+
+    fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let computed = match code.mode {
+            Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        self.registers.P.negative = (self.registers.A & 0x80) == 0x80;
-        self.registers.P.zero = self.registers.A == 0;
+        self.registers
+            .set_acc(computed)
+            .update_negative(computed)
+            .update_zero(computed);
     }
+
+    fn ldx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let computed = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        self.registers
+            .set_x(computed)
+            .update_negative(computed)
+            .update_zero(computed);
+    }
+
+    fn ldy<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let computed = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        self.registers
+            .set_y(computed)
+            .update_negative(computed)
+            .update_zero(computed);
+    }
+
+    fn sta<W>(&self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::A));
+    }
+
+    fn stx<W>(&self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::X));
+    }
+
+    fn sty<W>(&self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        write(opeland, self.registers.get(ByteRegister::Y));
+    }
+
+    fn txa(&mut self) {
+        let x = self.registers.get(ByteRegister::X);
+        self.registers
+            .set_acc(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn tya(&mut self) {
+        let y = self.registers.get(ByteRegister::Y);
+        self.registers
+            .set_acc(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn txs(&mut self) {
+        let x = self.registers.get(ByteRegister::X);
+        self.registers.set_sp(x);
+    }
+
+    fn tay(&mut self) {
+        let acc = self.registers.get(ByteRegister::A);
+        self.registers
+            .set_y(acc)
+            .update_negative(acc)
+            .update_zero(acc);
+    }
+
+    fn tax(&mut self) {
+        let acc = self.registers.get(ByteRegister::A);
+        self.registers
+            .set_x(acc)
+            .update_negative(acc)
+            .update_zero(acc);
+    }
+
+    fn tsx(&mut self) {
+        let sp = self.registers.get(ByteRegister::SP);
+        self.registers
+            .set_x(sp)
+            .update_negative(sp)
+            .update_zero(sp);
+    }
+
+    fn php<W>(&mut self, ref write: W)
+        where W: Fn(Addr, Data)
+    {
+        self.registers.set_break(true);
+        self.push_status(&write);
+    }
+
+    fn plp<R>(&mut self, ref read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.registers.set_reserved(true);
+        let status = self.pop(&read);
+        self.registers.set_p(status);
+    }
+
+    fn pha<W>(&mut self, ref write: W)
+        where W: Fn(Addr, Data)
+    {
+        let acc = self.registers.get(ByteRegister::A);
+        self.push(acc, &write);
+    }
+
+    fn pla<R>(&mut self, ref read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let v = self.pop(&read);
+        self.registers
+            .set_acc(v)
+            .update_negative(v)
+            .update_zero(v);
+    }
+
+    fn adc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = fetched + self.registers.get(ByteRegister::A) +
+                       bool_to_u8(self.registers.get_status(StatusName::carry));
+        self.registers
+            .update_overflow(fetched, computed)
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed > 0xFF as u8)
+            .set_acc(computed);
+    }
+
+    fn sbc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.get(ByteRegister::A) - fetched -
+                       bool_to_u8(!self.registers.get_status(StatusName::carry));
+        self.registers
+            .update_overflow(computed, fetched)
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8)
+            .set_acc(computed);
+    }
+
+
+    fn cpx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.get(ByteRegister::X) - fetched;
+        self.registers
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8);
+    }
+
+
     /*
-      case 'LDX': {
-        this.registers.X = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'LDY': {
-        this.registers.Y = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-      case 'STA': {
-        this.write(addrOrData, this.registers.A);
-        break;
-      }
-      case 'STX': {
-        this.write(addrOrData, this.registers.X);
-        break;
-      }
-      case 'STY': {
-        this.write(addrOrData, this.registers.Y);
-        break;
-      }
-      case 'TAX': {
-        this.registers.X = this.registers.A;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'TAY': {
-        this.registers.Y = this.registers.A;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-      case 'TSX': {
-        this.registers.X = this.registers.SP & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'TXA': {
-        this.registers.A = this.registers.X;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'TXS': {
-        this.registers.SP = this.registers.X + 0x0100;
-        break;
-      }
-      case 'TYA': {
-        this.registers.A = this.registers.Y;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'ADC': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data + this.registers.A + this.registers.P.carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated > 0xFF;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
+
       case 'AND': {
         const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
         const operated = data & this.registers.A;
@@ -529,37 +585,14 @@ impl Cpu {
         }
         break;
       }
-      case 'SBC': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = this.registers.A - data - (this.registers.P.carry ? 0 : 1);
-        const overflow = (((this.registers.A ^ operated) & 0x80) != 0 && ((this.registers.A ^ data) & 0x80) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated >= 0;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
       case 'PHA': {
         this.push(this.registers.A);
         break;
       }
-      case 'PHP': {
-        this.registers.P.break = true;
-        this.pushStatus();
-        break;
-      }
-      case 'PLA': {
-        this.registers.A = this.pop();
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'PLP': {
-        this.popStatus();
-        this.registers.P.reserved = true;
-        break;
-      }
+
+
+
       case 'JMP': {
         this.registers.PC = addrOrData;
         break;
@@ -749,9 +782,193 @@ impl Cpu {
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.PC = 0x0000;
-    let rom = vec![0x00, 0x00, 0x00];
-    let code = Opecode { name: Instruction::LDA, mode: Addressing::Immediate, cycle: 1 };
-    cpu.lda(&code, 255, |addr: u16| rom[addr as usize]);
-    assert!(cpu.registers.A == 255);
+    cpu.registers.set_pc(0x0000);
+    let rom = vec![0x00];
+    let code = Opecode {
+        name: Instruction::LDA,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
+    assert!(cpu.registers.get(ByteRegister::A) == 255);
+}
+
+#[test]
+fn ldx_immidiate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    let rom = vec![0x00];
+    let code = Opecode {
+        name: Instruction::LDX,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
+    assert!(cpu.registers.get(ByteRegister::X) == 255);
+}
+
+#[test]
+fn sta() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.sta(0xFF, &write);
+}
+
+#[test]
+fn stx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_x(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.stx(0xFF, &write);
+}
+
+#[test]
+fn sty() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_y(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0xA5);
+        assert!(addr == 0xFF);
+    };
+    cpu.sty(0xFF, &write);
+}
+
+#[test]
+fn tax() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_acc(0xA5);
+    cpu.tax();
+    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+}
+
+#[test]
+fn tay() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_acc(0xA5);
+    cpu.tay();
+    assert!(cpu.registers.get(ByteRegister::Y) == 0xA5);
+}
+
+#[test]
+fn txa() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_x(0xA5);
+    cpu.txa();
+    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+}
+
+#[test]
+fn tya() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_y(0xA5);
+    cpu.tya();
+    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+}
+
+#[test]
+fn txs() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_x(0xA5);
+    cpu.txs();
+    assert!(cpu.registers.get(ByteRegister::SP) == 0xA5);
+}
+
+#[test]
+fn tsx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    cpu.tsx();
+    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+}
+
+#[test]
+fn php() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0x34);
+        assert!(addr == 0x01A5);
+    };
+    cpu.php(&write);
+}
+
+#[test]
+fn plp() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    let read = |addr: Addr| {
+        assert_eq!(addr, 0x01A6);
+        0xA5 as u8
+    };
+    cpu.plp(&read);
+    assert_eq!(cpu.registers.get(ByteRegister::P), 0xA5);
+}
+
+#[test]
+fn pha() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_sp(0xA5);
+    cpu.registers.set_acc(0x5A);
+    let mut mem = 0;
+    let write = |addr: Addr, data: Data| {
+        assert!(data == 0x5A);
+        assert!(addr == 0x01A5);
+    };
+    cpu.pha(&write);
+}
+
+#[test]
+fn adc_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0x05);
+    let code = Opecode {
+        name: Instruction::ADC,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get(ByteRegister::A) == 0xAA);
+}
+
+#[test]
+fn sbc_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_acc(0x10);
+    let code = Opecode {
+        name: Instruction::SBC,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get(ByteRegister::A) == 0x09);
+}
+
+#[test]
+fn cpx_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.set_pc(0x0000);
+    cpu.registers.set_x(0x05);
+    let code = Opecode {
+        name: Instruction::CPX,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.get_status(StatusName::carry));
 }
