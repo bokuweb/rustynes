@@ -66,7 +66,7 @@ impl Registers {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> &mut Self {
         self.A = 0;
         self.X = 0;
         self.Y = 0;
@@ -80,6 +80,7 @@ impl Registers {
         self.P.interrupt = true;
         self.P.zero = false;
         self.P.carry = false;
+        self
     }
 
     pub fn get(&self, name: ByteRegister) -> u8 {

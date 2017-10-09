@@ -5,26 +5,26 @@ use self::opecode::*;
 use self::registers::*;
 use super::types::{Data, Addr, Word};
 use super::helper::*;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Cpu {
-    registers: Registers,
+    registers: RefCell<Registers>,
 }
 
 impl Cpu {
     pub fn new() -> Cpu {
-        Cpu { registers: Registers::new() }
+        Cpu { registers: RefCell::new(Registers::new()) }
     }
 
-    pub fn reset<R>(&mut self, read: R)
+    pub fn reset<R>(&self, read: R)
         where R: Fn(Addr) -> Data
     {
-        self.registers.reset();
         let pc = self.read_word(&read, 0xFFFC);
-        self.registers.set_pc(pc);
+        self.registers.borrow_mut().reset().set_pc(pc);
     }
 
-    pub fn run<R, W>(&mut self, read: R, write: W) -> Data
+    pub fn run<R, W>(&self, read: R, write: W) -> Data
         where R: Fn(Addr) -> Data,
               W: Fn(Addr, Data)
     {
@@ -102,21 +102,21 @@ impl Cpu {
         code.cycle
     }
 
-    fn fetch<R>(&mut self, read: R) -> Data
+    fn fetch<R>(&self, read: R) -> Data
         where R: Fn(Addr) -> Data
     {
-        let code = read(self.registers.get_pc());
-        self.registers.update_pc();
+        let code = read(self.registers.borrow().get_pc());
+        self.registers.borrow_mut().update_pc();
         code
     }
 
-    fn fetch_word<R>(&mut self, read: R) -> Word
+    fn fetch_word<R>(&self, read: R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let lower = read(self.registers.get_pc()) as Word;
-        self.registers.update_pc();
-        let upper = read(self.registers.get_pc()) as Word;
-        self.registers.update_pc();
+        let lower = read(self.registers.borrow().get_pc()) as Word;
+        self.registers.borrow_mut().update_pc();
+        let upper = read(self.registers.borrow().get_pc()) as Word;
+        self.registers.borrow_mut().update_pc();
         (upper << 8 | lower) as Word
     }
 
@@ -128,62 +128,63 @@ impl Cpu {
         (upper << 8 | lower) as Word
     }
 
-    fn fetch_relative<R>(&mut self, ref read: &R) -> Word
+    fn fetch_relative<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let base = self.fetch(read) as Word;
         if base < 0x80 {
-            base + self.registers.get_pc()
+            base + self.registers.borrow().get_pc()
         } else {
-            base + self.registers.get_pc() - 256
+            base + self.registers.borrow().get_pc() - 256
         }
     }
 
-    fn fetch_zeropage_x<R>(&mut self, ref read: &R) -> Word
+    fn fetch_zeropage_x<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Word;
-        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
+        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFF as Word
     }
 
-    fn fetch_zeropage_y<R>(&mut self, ref read: &R) -> Word
+    fn fetch_zeropage_y<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Word;
-        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
+        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFF as Word
     }
 
-    fn fetch_absolute_x<R>(&mut self, ref read: &R) -> Word
+    fn fetch_absolute_x<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
-        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
+        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFFFF
     }
 
-    fn fetch_absolute_y<R>(&mut self, ref read: &R) -> Word
+    fn fetch_absolute_y<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
-        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
+        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFFFF
     }
 
-    fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+    fn fetch_pre_indexed_indirect<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as Addr;
+        let addr = ((self.fetch(read) + self.registers.borrow().get(ByteRegister::X)) & 0xFF) as
+                   Addr;
         let addr = (read(addr) as Addr) + ((read((addr + 1) as Addr & 0xFF) as Addr) << 8);
         addr & 0xFFFF
     }
 
-    fn fetch_post_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+    fn fetch_post_indexed_indirect<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Addr;
         let addr = (read(addr) as Addr) + ((read((addr + 1) & 0xFF) as Addr) << 8);
-        addr + (self.registers.get(ByteRegister::Y) as Addr) & 0xFFFF
+        addr + (self.registers.borrow().get(ByteRegister::Y) as Addr) & 0xFFFF
     }
 
-    fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
+    fn fetch_indirect_absolute<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
@@ -192,7 +193,7 @@ impl Cpu {
         addr & 0xFFFF
     }
 
-    fn fetch_opeland<R>(&mut self, code: &Opecode, ref read: &R) -> Word
+    fn fetch_opeland<R>(&self, code: &Opecode, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         match code.mode {
@@ -212,34 +213,34 @@ impl Cpu {
         }
     }
 
-    fn branch(&mut self, addr: Addr) {
-        self.registers.set_pc(addr);
+    fn branch(&self, addr: Addr) {
+        self.registers.borrow_mut().set_pc(addr);
     }
 
-    fn push_status<W>(&mut self, write: W)
+    fn push_status<W>(&self, write: W)
         where W: Fn(Addr, Data)
     {
-        let status = self.registers.get(ByteRegister::P);
+        let status = self.registers.borrow().get(ByteRegister::P);
         self.push(status, &write);
     }
 
-    fn push<W>(&mut self, data: Data, write: W)
+    fn push<W>(&self, data: Data, write: W)
         where W: Fn(Addr, Data)
     {
-        let addr = self.registers.get(ByteRegister::SP) as Addr;
+        let addr = self.registers.borrow().get(ByteRegister::SP) as Addr;
         write((addr | 0x0100), data);
-        self.registers.dec_sp();
+        self.registers.borrow_mut().dec_sp();
     }
 
-    fn pop<R>(&mut self, read: R) -> Data
+    fn pop<R>(&self, read: R) -> Data
         where R: Fn(Addr) -> Data
     {
-        self.registers.inc_sp();
-        let addr = 0x0100 | self.registers.get(ByteRegister::SP) as Addr;
+        self.registers.borrow_mut().inc_sp();
+        let addr = 0x0100 | self.registers.borrow().get(ByteRegister::SP) as Addr;
         read(addr)
     }
 
-    fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn lda<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -247,12 +248,13 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_acc(computed)
             .update_negative(computed)
             .update_zero(computed);
     }
 
-    fn ldx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn ldx<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -260,12 +262,13 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_x(computed)
             .update_negative(computed)
             .update_zero(computed);
     }
 
-    fn ldy<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn ldy<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -273,6 +276,7 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_y(computed)
             .update_negative(computed)
             .update_zero(computed);
@@ -281,108 +285,115 @@ impl Cpu {
     fn sta<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::A));
+        write(opeland, self.registers.borrow().get(ByteRegister::A));
     }
 
     fn stx<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::X));
+        write(opeland, self.registers.borrow().get(ByteRegister::X));
     }
 
     fn sty<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::Y));
+        write(opeland, self.registers.borrow().get(ByteRegister::Y));
     }
 
-    fn txa(&mut self) {
-        let x = self.registers.get(ByteRegister::X);
+    fn txa(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X);
         self.registers
+            .borrow_mut()
             .set_acc(x)
             .update_negative(x)
             .update_zero(x);
     }
 
-    fn tya(&mut self) {
-        let y = self.registers.get(ByteRegister::Y);
+    fn tya(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y);
         self.registers
+            .borrow_mut()
             .set_acc(y)
             .update_negative(y)
             .update_zero(y);
     }
 
-    fn txs(&mut self) {
-        let x = self.registers.get(ByteRegister::X);
-        self.registers.set_sp(x);
+    fn txs(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X);
+        self.registers.borrow_mut().set_sp(x);
     }
 
-    fn tay(&mut self) {
-        let acc = self.registers.get(ByteRegister::A);
+    fn tay(&self) {
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.registers
+            .borrow_mut()
             .set_y(acc)
             .update_negative(acc)
             .update_zero(acc);
     }
 
-    fn tax(&mut self) {
-        let acc = self.registers.get(ByteRegister::A);
+    fn tax(&self) {
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.registers
+            .borrow_mut()
             .set_x(acc)
             .update_negative(acc)
             .update_zero(acc);
     }
 
-    fn tsx(&mut self) {
-        let sp = self.registers.get(ByteRegister::SP);
+    fn tsx(&self) {
+        let sp = self.registers.borrow().get(ByteRegister::SP);
         self.registers
+            .borrow_mut()
             .set_x(sp)
             .update_negative(sp)
             .update_zero(sp);
     }
 
-    fn php<W>(&mut self, ref write: W)
+    fn php<W>(&self, ref write: W)
         where W: Fn(Addr, Data)
     {
-        self.registers.set_break(true);
+        self.registers.borrow_mut().set_break(true);
         self.push_status(&write);
     }
 
-    fn plp<R>(&mut self, ref read: R)
+    fn plp<R>(&self, ref read: R)
         where R: Fn(Addr) -> Data
     {
-        self.registers.set_reserved(true);
+        self.registers.borrow_mut().set_reserved(true);
         let status = self.pop(&read);
-        self.registers.set_p(status);
+        self.registers.borrow_mut().set_p(status);
     }
 
-    fn pha<W>(&mut self, ref write: W)
+    fn pha<W>(&self, ref write: W)
         where W: Fn(Addr, Data)
     {
-        let acc = self.registers.get(ByteRegister::A);
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.push(acc, &write);
     }
 
-    fn pla<R>(&mut self, ref read: R)
+    fn pla<R>(&self, ref read: R)
         where R: Fn(Addr) -> Data
     {
         let v = self.pop(&read);
         self.registers
+            .borrow_mut()
             .set_acc(v)
             .update_negative(v)
             .update_zero(v);
     }
 
-    fn adc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn adc<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = fetched + self.registers.get(ByteRegister::A) +
-                       bool_to_u8(self.registers.get_status(StatusName::carry));
+        let computed = fetched + self.registers.borrow().get(ByteRegister::A) +
+                       bool_to_u8(self.registers.borrow().get_status(StatusName::carry));
         self.registers
+            .borrow_mut()
             .update_overflow(fetched, computed)
             .update_negative(computed)
             .update_zero(computed)
@@ -390,16 +401,17 @@ impl Cpu {
             .set_acc(computed);
     }
 
-    fn sbc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn sbc<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = self.registers.get(ByteRegister::A) - fetched -
-                       bool_to_u8(!self.registers.get_status(StatusName::carry));
+        let computed = self.registers.borrow().get(ByteRegister::A) - fetched -
+                       bool_to_u8(!self.registers.borrow().get_status(StatusName::carry));
         self.registers
+            .borrow_mut()
             .update_overflow(computed, fetched)
             .update_negative(computed)
             .update_zero(computed)
@@ -408,15 +420,16 @@ impl Cpu {
     }
 
 
-    fn cpx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn cpx<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = self.registers.get(ByteRegister::X) - fetched;
+        let computed = self.registers.borrow().get(ByteRegister::X) - fetched;
         self.registers
+            .borrow_mut()
             .update_negative(computed)
             .update_zero(computed)
             .set_carry(computed >= 0 as u8);
@@ -790,7 +803,7 @@ fn lda_immidiate() {
         cycle: 1, // dummy
     };
     cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.get(ByteRegister::A) == 255);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 255);
 }
 
 #[test]
@@ -804,7 +817,7 @@ fn ldx_immidiate() {
         cycle: 1, // dummy
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.get(ByteRegister::X) == 255);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 255);
 }
 
 #[test]
@@ -851,7 +864,7 @@ fn tax() {
     let mut cpu = Cpu::new();
     cpu.registers.set_acc(0xA5);
     cpu.tax();
-    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
 
 #[test]
@@ -859,7 +872,7 @@ fn tay() {
     let mut cpu = Cpu::new();
     cpu.registers.set_acc(0xA5);
     cpu.tay();
-    assert!(cpu.registers.get(ByteRegister::Y) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::Y) == 0xA5);
 }
 
 #[test]
@@ -867,7 +880,7 @@ fn txa() {
     let mut cpu = Cpu::new();
     cpu.registers.set_x(0xA5);
     cpu.txa();
-    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
 
 #[test]
@@ -875,7 +888,7 @@ fn tya() {
     let mut cpu = Cpu::new();
     cpu.registers.set_y(0xA5);
     cpu.tya();
-    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
 
 #[test]
@@ -883,7 +896,7 @@ fn txs() {
     let mut cpu = Cpu::new();
     cpu.registers.set_x(0xA5);
     cpu.txs();
-    assert!(cpu.registers.get(ByteRegister::SP) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::SP) == 0xA5);
 }
 
 #[test]
@@ -891,7 +904,7 @@ fn tsx() {
     let mut cpu = Cpu::new();
     cpu.registers.set_sp(0xA5);
     cpu.tsx();
-    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
 
 #[test]
@@ -915,7 +928,7 @@ fn plp() {
         0xA5 as u8
     };
     cpu.plp(&read);
-    assert_eq!(cpu.registers.get(ByteRegister::P), 0xA5);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::P), 0xA5);
 }
 
 #[test]
@@ -942,7 +955,7 @@ fn adc_immediate() {
         cycle: 1, // dummy
     };
     cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get(ByteRegister::A) == 0xAA);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xAA);
 }
 
 #[test]
@@ -956,7 +969,7 @@ fn sbc_immediate() {
         cycle: 1, // dummy
     };
     cpu.sbc(&code, 0x06, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get(ByteRegister::A) == 0x09);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0x09);
 }
 
 #[test]
@@ -970,5 +983,5 @@ fn cpx_immediate() {
         cycle: 1, // dummy
     };
     cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get_status(StatusName::carry));
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
 }
