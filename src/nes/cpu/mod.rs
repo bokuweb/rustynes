@@ -57,9 +57,9 @@ impl Cpu {
             Instruction::CMP => self.cmp(&code, opeland, &read),
             Instruction::AND => self.and(&code, opeland, &read),
             Instruction::EOR => self.eor(&code, opeland, &read),
-            Instruction::ORA => println!("{}", "TODO:"),
-            Instruction::BIT => println!("{}", "TODO:"),
-            Instruction::ASL => println!("{}", "TODO:"),
+            Instruction::ORA => self.ora(&code, opeland, &read),
+            Instruction::BIT => self.bit(opeland, &read),
+            Instruction::ASL => self.asl(&code, opeland, &read, &write),
             Instruction::LSR => println!("{}", "TODO:"),
             Instruction::ROL => println!("{}", "TODO:"),
             Instruction::ROR => println!("{}", "TODO:"),
@@ -494,33 +494,60 @@ impl Cpu {
             .set_acc(computed);
     }
 
+    fn ora<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) | fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
+
+    fn bit<R>(&self, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = read(opeland);
+        self.registers
+            .borrow_mut()
+            .update_negative(fetched)
+            .update_zero(fetched & self.registers.borrow().get(ByteRegister::A))
+            .set_overflow(fetched & 0x40 == 0x40);
+    }
+
+    fn asl<R, W>(&self, code: &Opecode, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        match code.mode {
+            Addressing::Accumulator => {
+                let acc = self.registers.borrow().get(ByteRegister::A);
+                let shifted = (acc << 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(acc & 0x80 == 0x80)
+                    .update_negative(shifted)
+                    .update_zero(shifted)
+                    .set_acc(shifted);
+            }
+            _ => {
+                let fetched = read(opeland);
+                let shifted = (fetched << 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(fetched & 0x80 == 0x80)
+                    .update_negative(shifted)
+                    .update_zero(shifted);
+                write(opeland, shifted);
+            }
+        };
+    }
     /*
-
-      case 'ASL': {
-        if (mode === 'accumulator') {
-          const acc = this.registers.A;
-          this.registers.P.carry = !!(acc & 0x80);
-          this.registers.A = (acc << 1) & 0xFF;
-          this.registers.P.zero = !this.registers.A;
-          this.registers.P.negative = !!(this.registers.A & 0x80);
-        } else {
-          const data = this.read(addrOrData);
-          this.registers.P.carry = !!(data & 0x80);
-          const shifted = (data << 1) & 0xFF;
-          this.write(addrOrData, shifted);
-          this.registers.P.zero = !shifted;
-          this.registers.P.negative = !!(shifted & 0x80);
-        }
-        break;
-      }
-      case 'BIT': {
-        const data = this.read(addrOrData);
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.overflow = !!(data & 0x40);
-        this.registers.P.zero = !(this.registers.A & data);
-        break;
-      }
-
       case 'DEC': {
         const data = (this.read(addrOrData) - 1) & 0xFF;
         this.registers.P.negative = !!(data & 0x80);
@@ -575,14 +602,7 @@ impl Cpu {
         this.registers.P.negative = false;
         break;
       }
-      case 'ORA': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data | this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
       case 'ROL': {
         if (mode === 'accumulator') {
           const acc = this.registers.A;
@@ -819,7 +839,7 @@ fn lda_immidiate() {
     let code = Opecode {
         name: Instruction::LDA,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
     cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.borrow().get(ByteRegister::A) == 255);
@@ -833,7 +853,7 @@ fn ldx_immidiate() {
     let code = Opecode {
         name: Instruction::LDX,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.borrow().get(ByteRegister::X) == 255);
@@ -971,9 +991,9 @@ fn adc_immediate() {
     let code = Opecode {
         name: Instruction::ADC,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
+    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* mock */);
     assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xAA);
 }
 
@@ -985,9 +1005,9 @@ fn sbc_immediate() {
     let code = Opecode {
         name: Instruction::SBC,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* dummy */);
+    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* mock */);
     assert!(cpu.registers.borrow().get(ByteRegister::A) == 0x09);
 }
 
@@ -999,9 +1019,9 @@ fn cpx_immediate() {
     let code = Opecode {
         name: Instruction::CPX,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* mock */);
     assert!(cpu.registers.borrow().get_status(StatusName::carry));
 }
 
@@ -1013,9 +1033,9 @@ fn cpy_immediate() {
     let code = Opecode {
         name: Instruction::CPY,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.cpy(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    cpu.cpy(&code, 0x04, |addr: Addr| 0 /* mock */);
     assert!(cpu.registers.borrow().get_status(StatusName::carry));
 }
 
@@ -1027,9 +1047,9 @@ fn cmp_immediate() {
     let code = Opecode {
         name: Instruction::CMP,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.cmp(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    cpu.cmp(&code, 0x04, |addr: Addr| 0 /* mock */);
     assert!(cpu.registers.borrow().get_status(StatusName::carry));
 }
 
@@ -1041,9 +1061,9 @@ fn and_immediate() {
     let code = Opecode {
         name: Instruction::AND,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.and(&code, 0x05, |addr: Addr| 0 /* dummy */);
+    cpu.and(&code, 0x05, |addr: Addr| 0 /* mock */);
     assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0x05);
 }
 
@@ -1055,8 +1075,36 @@ fn eor_immediate() {
     let code = Opecode {
         name: Instruction::EOR,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.eor(&code, 0x05, |addr: Addr| 0 /* dummy */);
+    cpu.eor(&code, 0x05, |addr: Addr| 0 /* mock */);
     assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xA0);
+}
+
+#[test]
+fn ora_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA0);
+    let code = Opecode {
+        name: Instruction::ORA,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.ora(&code, 0x05, |addr: Addr| 0 /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xA5);
+}
+
+#[test]
+fn asl_accumlator() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x55);
+    let code = Opecode {
+        name: Instruction::ASL,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.asl(&code, 0x00, |addr: Addr| 0, |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xAA);
 }
