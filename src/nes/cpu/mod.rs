@@ -795,7 +795,7 @@ impl Cpu {
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
+    cpu.registers.borrow_mut().set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDA,
@@ -809,7 +809,7 @@ fn lda_immidiate() {
 #[test]
 fn ldx_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
+    cpu.registers.borrow_mut().set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDX,
@@ -823,8 +823,8 @@ fn ldx_immidiate() {
 #[test]
 fn sta() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -836,8 +836,8 @@ fn sta() {
 #[test]
 fn stx() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_x(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -849,8 +849,8 @@ fn stx() {
 #[test]
 fn sty() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_y(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_y(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -862,7 +862,7 @@ fn sty() {
 #[test]
 fn tax() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     cpu.tax();
     assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
@@ -870,7 +870,7 @@ fn tax() {
 #[test]
 fn tay() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     cpu.tay();
     assert!(cpu.registers.borrow().get(ByteRegister::Y) == 0xA5);
 }
@@ -878,7 +878,7 @@ fn tay() {
 #[test]
 fn txa() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_x(0xA5);
     cpu.txa();
     assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
@@ -886,7 +886,7 @@ fn txa() {
 #[test]
 fn tya() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_y(0xA5);
+    cpu.registers.borrow_mut().set_y(0xA5);
     cpu.tya();
     assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
@@ -894,7 +894,7 @@ fn tya() {
 #[test]
 fn txs() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_x(0xA5);
     cpu.txs();
     assert!(cpu.registers.borrow().get(ByteRegister::SP) == 0xA5);
 }
@@ -902,7 +902,7 @@ fn txs() {
 #[test]
 fn tsx() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     cpu.tsx();
     assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
@@ -910,7 +910,7 @@ fn tsx() {
 #[test]
 fn php() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0x34);
@@ -922,7 +922,7 @@ fn php() {
 #[test]
 fn plp() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     let read = |addr: Addr| {
         assert_eq!(addr, 0x01A6);
         0xA5 as u8
@@ -934,8 +934,8 @@ fn plp() {
 #[test]
 fn pha() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
-    cpu.registers.set_acc(0x5A);
+    cpu.registers.borrow_mut().set_sp(0xA5);
+    cpu.registers.borrow_mut().set_acc(0x5A);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0x5A);
@@ -947,8 +947,8 @@ fn pha() {
 #[test]
 fn adc_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0x05);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x05);
     let code = Opecode {
         name: Instruction::ADC,
         mode: Addressing::Immediate,
@@ -961,8 +961,8 @@ fn adc_immediate() {
 #[test]
 fn sbc_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0x10);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x10);
     let code = Opecode {
         name: Instruction::SBC,
         mode: Addressing::Immediate,
@@ -975,8 +975,8 @@ fn sbc_immediate() {
 #[test]
 fn cpx_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_x(0x05);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_x(0x05);
     let code = Opecode {
         name: Instruction::CPX,
         mode: Addressing::Immediate,

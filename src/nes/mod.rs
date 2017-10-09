@@ -15,8 +15,8 @@ use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus::CpuBus;
 // use std::rc::Rc;
-use std::cell::RefCell;
-use nes::types::{Data, Addr, Word};
+// use std::cell::RefCell;
+use nes::types::{Data, Addr};
 // use nes::helper::*;
 
 #[derive(Debug)]
