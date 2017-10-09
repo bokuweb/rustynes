@@ -53,10 +53,10 @@ impl Cpu {
             Instruction::ADC => self.adc(&code, opeland, &read),
             Instruction::SBC => self.sbc(&code, opeland, &read),
             Instruction::CPX => self.cpx(&code, opeland, &read),
-            Instruction::CPY => println!("{}", "TODO:"),
-            Instruction::CMP => println!("{}", "TODO:"),
-            Instruction::AND => println!("{}", "TODO:"),
-            Instruction::EOR => println!("{}", "TODO:"),
+            Instruction::CPY => self.cpy(&code, opeland, &read),
+            Instruction::CMP => self.cmp(&code, opeland, &read),
+            Instruction::AND => self.and(&code, opeland, &read),
+            Instruction::EOR => self.eor(&code, opeland, &read),
             Instruction::ORA => println!("{}", "TODO:"),
             Instruction::BIT => println!("{}", "TODO:"),
             Instruction::ASL => println!("{}", "TODO:"),
@@ -419,7 +419,6 @@ impl Cpu {
             .set_acc(computed);
     }
 
-
     fn cpx<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
@@ -435,18 +434,68 @@ impl Cpu {
             .set_carry(computed >= 0 as u8);
     }
 
+    fn cpy<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::Y) - fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8);
+    }
+
+    fn cmp<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) - fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8);
+    }
+
+    fn and<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) & fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
+
+    fn eor<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) ^ fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
 
     /*
 
-
-      case 'AND': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data & this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
       case 'ASL': {
         if (mode === 'accumulator') {
           const acc = this.registers.A;
@@ -471,30 +520,7 @@ impl Cpu {
         this.registers.P.zero = !(this.registers.A & data);
         break;
       }
-      case 'CMP': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.A - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
-      case 'CPX': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.X - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
-      case 'CPY': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.Y - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
+
       case 'DEC': {
         const data = (this.read(addrOrData) - 1) & 0xFF;
         this.registers.P.negative = !!(data & 0x80);
@@ -514,14 +540,7 @@ impl Cpu {
         this.registers.P.zero = !this.registers.Y;
         break;
       }
-      case 'EOR': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data ^ this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
+
       case 'INC': {
         const data = (this.read(addrOrData) + 1) & 0xFF;
         this.registers.P.negative = !!(data & 0x80);
@@ -984,4 +1003,60 @@ fn cpx_immediate() {
     };
     cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
     assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn cpy_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_y(0x05);
+    let code = Opecode {
+        name: Instruction::CPY,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.cpy(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn cmp_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x05);
+    let code = Opecode {
+        name: Instruction::CMP,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.cmp(&code, 0x04, |addr: Addr| 0 /* dummy */);
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn and_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
+    let code = Opecode {
+        name: Instruction::AND,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.and(&code, 0x05, |addr: Addr| 0 /* dummy */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0x05);
+}
+
+#[test]
+fn eor_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
+    let code = Opecode {
+        name: Instruction::EOR,
+        mode: Addressing::Immediate,
+        cycle: 1, // dummy
+    };
+    cpu.eor(&code, 0x05, |addr: Addr| 0 /* dummy */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xA0);
 }
