@@ -63,12 +63,12 @@ impl Cpu {
             Instruction::LSR => self.lsr(&code, opeland, &read, &write),
             Instruction::ROL => self.rol(&code, opeland, &read, &write),
             Instruction::ROR => self.ror(&code, opeland, &read, &write),
-            Instruction::INX => println!("{}", "TODO:"),
-            Instruction::INY => println!("{}", "TODO:"),
-            Instruction::INC => println!("{}", "TODO:"),
-            Instruction::DEX => println!("{}", "TODO:"),
-            Instruction::DEY => println!("{}", "TODO:"),
-            Instruction::DEC => println!("{}", "TODO:"),
+            Instruction::INX => self.inx(),
+            Instruction::INY => self.iny(),
+            Instruction::INC => self.inc(opeland, &read, &write),
+            Instruction::DEX => self.dex(),
+            Instruction::DEY => self.dey(),
+            Instruction::DEC => self.dec(opeland, &read, &write),
             Instruction::CLC => println!("{}", "TODO:"),
             Instruction::CLI => println!("{}", "TODO:"),
             Instruction::CLV => println!("{}", "TODO:"),
@@ -647,48 +647,69 @@ impl Cpu {
             }
         };
     }
+
+    fn inx(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X) + 1;
+        self.registers
+            .borrow_mut()
+            .set_x(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn iny(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y) + 1;
+        self.registers
+            .borrow_mut()
+            .set_y(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn inc<R, W>(&self, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let data = read(opeland) + 1 as u8;
+        self.registers
+            .borrow_mut()
+            .update_negative(data)
+            .update_zero(data);
+        write(opeland, data);
+    }
+
+    fn dex(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X) - 1;
+        self.registers
+            .borrow_mut()
+            .set_x(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn dey(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y) - 1;
+        self.registers
+            .borrow_mut()
+            .set_y(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn dec<R, W>(&self, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let data = read(opeland) - 1 as u8;
+        self.registers
+            .borrow_mut()
+            .update_negative(data)
+            .update_zero(data);
+        write(opeland, data);
+    }
+
     /*          
-      case 'DEC': {
-        const data = (this.read(addrOrData) - 1) & 0xFF;
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.zero = !data;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'DEX': {
-        this.registers.X = (this.registers.X - 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'DEY': {
-        this.registers.Y = (this.registers.Y - 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-
-      case 'INC': {
-        const data = (this.read(addrOrData) + 1) & 0xFF;
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.zero = !data;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'INX': {
-        this.registers.X = (this.registers.X + 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'INY': {
-        this.registers.Y = (this.registers.Y + 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-
-      case 'PHA': {
+       case 'PHA': {
         this.push(this.registers.A);
         break;
       }
@@ -1230,4 +1251,86 @@ fn rol_accumlator_with_carry() {
             |addr: Addr| 0,
             |addr: Addr, data: Data| () /* mock */);
     assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xAB);
+}
+
+#[test]
+fn inx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_x(0xA5);
+    let code = Opecode {
+        name: Instruction::INX,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.inx();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::X), 0xA6);
+}
+
+#[test]
+fn iny() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_y(0xA5);
+    let code = Opecode {
+        name: Instruction::INY,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.iny();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::Y), 0xA6);
+}
+
+#[test]
+fn inc() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    let code = Opecode {
+        name: Instruction::INC,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.inc(0x55, |addr: Addr| 0xA5, |addr: Addr, data: Data| {
+        assert_eq!(addr, 0x55);
+        assert_eq!(data, 0xA6);
+    });
+}
+
+#[test]
+fn dex() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_x(0xA5);
+    let code = Opecode {
+        name: Instruction::DEX,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dex();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::X), 0xA4);
+}
+
+#[test]
+fn dey() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_y(0xA5);
+    let code = Opecode {
+        name: Instruction::DEY,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dey();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::Y), 0xA4);
+}
+
+#[test]
+fn dec() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    let code = Opecode {
+        name: Instruction::DEC,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dec(0x55, |addr: Addr| 0xA5, |addr: Addr, data: Data| {
+        assert_eq!(addr, 0x55);
+        assert_eq!(data, 0xA4);
+    });
 }
