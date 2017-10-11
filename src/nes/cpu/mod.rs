@@ -69,35 +69,35 @@ impl Cpu {
             Instruction::DEX => self.dex(),
             Instruction::DEY => self.dey(),
             Instruction::DEC => self.dec(opeland, &read, &write),
-            Instruction::CLC => println!("{}", "TODO:"),
-            Instruction::CLI => println!("{}", "TODO:"),
-            Instruction::CLV => println!("{}", "TODO:"),
-            Instruction::SEC => println!("{}", "TODO:"),
-            Instruction::SEI => println!("{}", "TODO:"),
-            Instruction::NOP => println!("{}", "TODO:"),
-            Instruction::BRK => println!("{}", "TODO:"),
-            Instruction::JSR => println!("{}", "TODO:"),
-            Instruction::JMP => println!("{}", "TODO:"),
-            Instruction::RTI => println!("{}", "TODO:"),
-            Instruction::RTS => println!("{}", "TODO:"),
-            Instruction::BPL => println!("{}", "TODO:"),
-            Instruction::BMI => println!("{}", "TODO:"),
-            Instruction::BVC => println!("{}", "TODO:"),
-            Instruction::BVS => println!("{}", "TODO:"),
-            Instruction::BCC => println!("{}", "TODO:"),
-            Instruction::BCS => println!("{}", "TODO:"),
-            Instruction::BNE => println!("{}", "TODO:"),
-            Instruction::BEQ => println!("{}", "TODO:"),
-            Instruction::SED => println!("{}", "TODO:"),
-            Instruction::CLD => println!("{}", "TODO:"),
-            Instruction::LAX => println!("{}", "TODO:"),
-            Instruction::SAX => println!("{}", "TODO:"),
-            Instruction::DCP => println!("{}", "TODO:"),
-            Instruction::ISB => println!("{}", "TODO:"),
-            Instruction::SLO => println!("{}", "TODO:"),
-            Instruction::RLA => println!("{}", "TODO:"),
-            Instruction::SRE => println!("{}", "TODO:"),
-            Instruction::RRA => println!("{}", "TODO:"),
+            Instruction::CLC => self.clc(),
+            Instruction::CLI => self.cli(),
+            Instruction::CLV => self.clv(),
+            Instruction::SEC => self.sec(),
+            Instruction::SEI => self.sei(),
+            Instruction::NOP => (),
+            Instruction::BRK => self.brk(&read, &write),
+            Instruction::JSR => self.jsr(opeland, &write),
+            Instruction::JMP => self.jmp(opeland),
+            Instruction::RTI => self.rti(&read),
+            Instruction::RTS => self.rts(&read),
+            Instruction::BPL => self.bpl(opeland),
+            Instruction::BMI => self.bmi(opeland),
+            Instruction::BVC => self.bvc(opeland),
+            Instruction::BVS => self.bvs(opeland),
+            Instruction::BCC => self.bcc(opeland),
+            Instruction::BCS => self.bcs(opeland),
+            Instruction::BNE => self.bne(opeland),
+            Instruction::BEQ => self.beq(opeland),
+            Instruction::SED => self.sed(),
+            Instruction::CLD => self.cld(),
+            Instruction::LAX => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SAX => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::DCP => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::ISB => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SLO => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::RLA => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SRE => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::RRA => println!("{}", "TODO:Undocumented instruction"),
         }
         code.cycle
     }
@@ -224,6 +224,14 @@ impl Cpu {
         self.push(status, &write);
     }
 
+    fn push_pc<W>(&self, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let pc = self.registers.borrow().get_pc();
+        self.push((pc >> 8) as u8, &write);
+        self.push(pc as u8, &write);
+    }
+
     fn push<W>(&self, data: Data, write: W)
         where W: Fn(Addr, Data)
     {
@@ -238,6 +246,21 @@ impl Cpu {
         self.registers.borrow_mut().inc_sp();
         let addr = 0x0100 | self.registers.borrow().get(ByteRegister::SP) as Addr;
         read(addr)
+    }
+
+    fn pop_pc<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let lower = self.pop(&read) as u16;
+        let upper = self.pop(&read) as u16;
+        self.registers.borrow_mut().set_pc(upper << 8 | lower);
+    }
+
+    fn pop_status<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let status = self.pop(&read) as u8;
+        self.registers.borrow_mut().set_p(status);
     }
 
     fn lda<R>(&self, code: &Opecode, opeland: Word, read: R)
@@ -708,195 +731,129 @@ impl Cpu {
         write(opeland, data);
     }
 
-    /*          
-       case 'PHA': {
-        this.push(this.registers.A);
-        break;
-      }
+    fn clc(&self) {
+        self.registers.borrow_mut().set_carry(false);
+    }
 
-      case 'JMP': {
-        this.registers.PC = addrOrData;
-        break;
-      }
-      case 'JSR': {
-        const PC = this.registers.PC - 1;
-        this.push((PC >> 8) & 0xFF);
-        this.push(PC & 0xFF);
-        this.registers.PC = addrOrData;
-        break;
-      }
-      case 'RTS': {
-        this.popPC();
-        this.registers.PC++;
-        break;
-      }
-      case 'RTI': {
-        this.popStatus();
-        this.popPC();
-        this.registers.P.reserved = true;
-        break;
-      }
-      case 'BCC': {
-        if (!this.registers.P.carry) this.branch(addrOrData);
-        break;
-      }
-      case 'BCS': {
-        if (this.registers.P.carry) this.branch(addrOrData);
-        break;
-      }
-      case 'BEQ': {
-        if (this.registers.P.zero) this.branch(addrOrData);
-        break;
-      }
-      case 'BMI': {
-        if (this.registers.P.negative) this.branch(addrOrData);
-        break;
-      }
-      case 'BNE': {
-        if (!this.registers.P.zero) this.branch(addrOrData);
-        break;
-      }
-      case 'BPL': {
-        if (!this.registers.P.negative) this.branch(addrOrData);
-        break;
-      }
-      case 'BVS': {
-        if (this.registers.P.overflow) this.branch(addrOrData);
-        break;
-      }
-      case 'BVC': {
-        if (!this.registers.P.overflow) this.branch(addrOrData);
-        break;
-      }
-      case 'CLD': {
-        this.registers.P.decimal = false;
-        break;
-      }
-      case 'CLC': {
-        this.registers.P.carry = false;
-        break;
-      }
-      case 'CLI': {
-        this.registers.P.interrupt = false;
-        break;
-      }
-      case 'CLV': {
-        this.registers.P.overflow = false;
-        break;
-      }
-      case 'SEC': {
-        this.registers.P.carry = true;
-        break;
-      }
-      case 'SEI': {
-        this.registers.P.interrupt = true;
-        break;
-      }
-      case 'SED': {
-        this.registers.P.decimal = true;
-        break;
-      }
-      case 'BRK': {
-        const interrupt = this.registers.P.interrupt;
-        this.registers.PC++;
-        this.push((this.registers.PC >> 8) & 0xFF);
-        this.push(this.registers.PC & 0xFF);
-        this.registers.P.break = true;
-        this.pushStatus();
-        this.registers.P.interrupt = true;
+    fn cli(&self) {
+        self.registers.borrow_mut().set_interrupt(false);
+    }
+
+    fn clv(&self) {
+        self.registers.borrow_mut().set_overflow(false);
+    }
+
+    fn sec(&self) {
+        self.registers.borrow_mut().set_carry(true);
+    }
+
+    fn sei(&self) {
+        self.registers.borrow_mut().set_interrupt(true);
+    }
+
+    fn brk<R, W>(&self, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let interrupt = self.registers
+            .borrow()
+            .get_status(StatusName::interrupt);
+        self.registers.borrow_mut().inc_pc();
+        self.push_pc(&write);
+        self.registers.borrow_mut().set_break(true);
+        self.push_status(&write);
+        self.registers.borrow_mut().set_interrupt(true);
         // Ignore interrupt when already set.
-        if (!interrupt) {
-          this.registers.PC = this.read(0xFFFE, "Word");
+        if !interrupt {
+            let fetched = self.read_word(&read, 0xFFFE);
+            self.registers.borrow_mut().set_pc(fetched);
         }
-        this.registers.PC--;
-        break;
-      }
-      case 'NOP': {
-        break;
-      }
-      // Unofficial Opecode
-      case 'NOPD': {
-        this.registers.PC++;
-        break;
-      }
-      case 'NOPI': {
-        this.registers.PC += 2;
-        break;
-      }
-      case 'LAX': {
-        this.registers.A = this.registers.X = this.read(addrOrData);
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'SAX': {
-        const operated = this.registers.A & this.registers.X;
-        this.write(addrOrData, operated);
-        break;
-      }
-      case 'DCP': {
-        const operated = (this.read(addrOrData) - 1) & 0xFF;
-        this.registers.P.negative = !!(((this.registers.A - operated) & 0x1FF) & 0x80);
-        this.registers.P.zero = !((this.registers.A - operated) & 0x1FF);
-        this.write(addrOrData, operated);
-        break;
-      }
-      case 'ISB': {
-        const data = (this.read(addrOrData) + 1) & 0xFF;
-        const operated = (~data & 0xFF) + this.registers.A + this.registers.P.carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated > 0xFF;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'SLO': {
-        let data = this.read(addrOrData);
-        this.registers.P.carry = !!(data & 0x80);
-        data = (data << 1) & 0xFF;
-        this.registers.A |= data;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'RLA': {
-        const data = (this.read(addrOrData) << 1) + this.registers.P.carry;
-        this.registers.P.carry = !!(data & 0x100);
-        this.registers.A = (data & this.registers.A) & 0xFF;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'SRE': {
-        let data = this.read(addrOrData);
-        this.registers.P.carry = !!(data & 0x01)
-        data >>= 1;
-        this.registers.A ^= data;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'RRA': {
-        let data = this.read(addrOrData);
-        const carry = !!(data & 0x01);
-        data = (data >> 1) | (this.registers.P.carry ? 0x80 : 0x00);
-        const operated = data + this.registers.A + carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        this.registers.P.carry = operated > 0xFF;
-        this.write(addrOrData, data);
-        break;
-      }
-      */
+        self.registers.borrow_mut().dec_pc();
+    }
+
+    fn jsr<W>(&self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let pc = self.registers.borrow().get_pc() - 1;
+        self.push((pc >> 8) as u8, &write);
+        self.push(pc as u8, &write);
+        self.registers.borrow_mut().set_pc(opeland);
+    }
+
+    fn jmp(&self, opeland: Word) {
+        self.registers.borrow_mut().set_pc(opeland);
+    }
+
+    fn rti<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.pop_status(&read);
+        self.pop_pc(&read);
+        self.registers.borrow_mut().set_reserved(true);
+    }
+
+    fn rts<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.pop_pc(&read);
+        self.registers.borrow_mut().inc_pc();
+    }
+
+    fn bcc(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::carry) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bcs(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::carry) {
+            self.branch(opeland)
+        }
+    }
+
+    fn beq(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::zero) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bmi(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::negative) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bne(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::zero) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bpl(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::negative) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bvs(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::overflow) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bvc(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::overflow) {
+            self.branch(opeland)
+        }
+    }
+
+    fn cld(&self) {
+        self.registers.borrow_mut().set_decimal(true);
+    }
+
+    fn sed(&self) {
+        self.registers.borrow_mut().set_decimal(true);
+    }
 }
 
 

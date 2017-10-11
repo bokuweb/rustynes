@@ -184,6 +184,11 @@ impl Registers {
         self
     }
 
+    pub fn set_decimal(&mut self, v: bool) -> &mut Self {
+        self.P.decimal_mode = v;
+        self
+    }
+
     pub fn set_carry(&mut self, v: bool) -> &mut Self {
         self.P.carry = v;
         self
@@ -217,6 +222,16 @@ impl Registers {
 
     pub fn dec_sp(&mut self) -> &mut Self {
         self.Sp -= 1;
+        self
+    }
+
+    pub fn inc_pc(&mut self) -> &mut Self {
+        self.Pc += 1;
+        self
+    }
+
+    pub fn dec_pc(&mut self) -> &mut Self {
+        self.Pc -= 1;
         self
     }
 }
