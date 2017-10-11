@@ -15,16 +15,16 @@ use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus::CpuBus;
 // use std::rc::Rc;
-use std::cell::RefCell;
-use nes::types::{Data, Addr, Word};
+// use std::cell::RefCell;
+use nes::types::{Data, Addr};
 // use nes::helper::*;
 
 #[derive(Debug)]
 pub struct Nes {
-    cpu: RefCell<Cpu>,
-    ppu: RefCell<Ppu>,
-    work_ram: RefCell<Ram>,
-    character_ram: RefCell<Ram>,
+    cpu: Cpu,
+    ppu: Ppu,
+    work_ram: Ram,
+    character_ram: Ram,
     program_rom: Rom,
 }
 
@@ -33,23 +33,22 @@ impl Nes {
         let cassette = parser::parse(buf);
         // let character_ram = parser::parse(buf).character_ram;
         Nes {
-            cpu: RefCell::new(Cpu::new()),
-            ppu: RefCell::new(Ppu::new()),
+            cpu: Cpu::new(),
+            ppu: Ppu::new(),
             program_rom: Rom::new(cassette.program_rom),
-            work_ram: RefCell::new(Ram::new(vec![0; 0x0800])),
-            character_ram: RefCell::new(Ram::new(vec![0; 0x0800])),
+            work_ram: Ram::new(vec![0; 0x0800]),
+            character_ram: Ram::new(vec![0; 0x0800]),
         }
     }
 
     pub fn reset(&self) {
-        self.cpu.borrow_mut().reset(|addr: Addr| self.read(addr));
+        self.cpu.reset(|addr: Addr| self.read(addr));
     }
 
     pub fn run(&self) {
         let mut cycle = 0;
         loop {
             cycle += self.cpu
-                .borrow_mut()
                 .run(|addr: Addr| self.read(addr),
                      |addr: Addr, data: Data| self.write(addr, data));
             if cycle > 20 {

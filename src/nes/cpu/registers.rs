@@ -66,7 +66,7 @@ impl Registers {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self) -> &mut Self {
         self.A = 0;
         self.X = 0;
         self.Y = 0;
@@ -80,6 +80,7 @@ impl Registers {
         self.P.interrupt = true;
         self.P.zero = false;
         self.P.carry = false;
+        self
     }
 
     pub fn get(&self, name: ByteRegister) -> u8 {
@@ -183,6 +184,11 @@ impl Registers {
         self
     }
 
+    pub fn set_decimal(&mut self, v: bool) -> &mut Self {
+        self.P.decimal_mode = v;
+        self
+    }
+
     pub fn set_carry(&mut self, v: bool) -> &mut Self {
         self.P.carry = v;
         self
@@ -216,6 +222,16 @@ impl Registers {
 
     pub fn dec_sp(&mut self) -> &mut Self {
         self.Sp -= 1;
+        self
+    }
+
+    pub fn inc_pc(&mut self) -> &mut Self {
+        self.Pc += 1;
+        self
+    }
+
+    pub fn dec_pc(&mut self) -> &mut Self {
+        self.Pc -= 1;
         self
     }
 }

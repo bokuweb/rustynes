@@ -5,26 +5,26 @@ use self::opecode::*;
 use self::registers::*;
 use super::types::{Data, Addr, Word};
 use super::helper::*;
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Cpu {
-    registers: Registers,
+    registers: RefCell<Registers>,
 }
 
 impl Cpu {
     pub fn new() -> Cpu {
-        Cpu { registers: Registers::new() }
+        Cpu { registers: RefCell::new(Registers::new()) }
     }
 
-    pub fn reset<R>(&mut self, read: R)
+    pub fn reset<R>(&self, read: R)
         where R: Fn(Addr) -> Data
     {
-        self.registers.reset();
         let pc = self.read_word(&read, 0xFFFC);
-        self.registers.set_pc(pc);
+        self.registers.borrow_mut().reset().set_pc(pc);
     }
 
-    pub fn run<R, W>(&mut self, read: R, write: W) -> Data
+    pub fn run<R, W>(&self, read: R, write: W) -> Data
         where R: Fn(Addr) -> Data,
               W: Fn(Addr, Data)
     {
@@ -53,70 +53,70 @@ impl Cpu {
             Instruction::ADC => self.adc(&code, opeland, &read),
             Instruction::SBC => self.sbc(&code, opeland, &read),
             Instruction::CPX => self.cpx(&code, opeland, &read),
-            Instruction::CPY => println!("{}", "TODO:"),
-            Instruction::CMP => println!("{}", "TODO:"),
-            Instruction::AND => println!("{}", "TODO:"),
-            Instruction::EOR => println!("{}", "TODO:"),
-            Instruction::ORA => println!("{}", "TODO:"),
-            Instruction::BIT => println!("{}", "TODO:"),
-            Instruction::ASL => println!("{}", "TODO:"),
-            Instruction::LSR => println!("{}", "TODO:"),
-            Instruction::ROL => println!("{}", "TODO:"),
-            Instruction::ROR => println!("{}", "TODO:"),
-            Instruction::INX => println!("{}", "TODO:"),
-            Instruction::INY => println!("{}", "TODO:"),
-            Instruction::INC => println!("{}", "TODO:"),
-            Instruction::DEX => println!("{}", "TODO:"),
-            Instruction::DEY => println!("{}", "TODO:"),
-            Instruction::DEC => println!("{}", "TODO:"),
-            Instruction::CLC => println!("{}", "TODO:"),
-            Instruction::CLI => println!("{}", "TODO:"),
-            Instruction::CLV => println!("{}", "TODO:"),
-            Instruction::SEC => println!("{}", "TODO:"),
-            Instruction::SEI => println!("{}", "TODO:"),
-            Instruction::NOP => println!("{}", "TODO:"),
-            Instruction::BRK => println!("{}", "TODO:"),
-            Instruction::JSR => println!("{}", "TODO:"),
-            Instruction::JMP => println!("{}", "TODO:"),
-            Instruction::RTI => println!("{}", "TODO:"),
-            Instruction::RTS => println!("{}", "TODO:"),
-            Instruction::BPL => println!("{}", "TODO:"),
-            Instruction::BMI => println!("{}", "TODO:"),
-            Instruction::BVC => println!("{}", "TODO:"),
-            Instruction::BVS => println!("{}", "TODO:"),
-            Instruction::BCC => println!("{}", "TODO:"),
-            Instruction::BCS => println!("{}", "TODO:"),
-            Instruction::BNE => println!("{}", "TODO:"),
-            Instruction::BEQ => println!("{}", "TODO:"),
-            Instruction::SED => println!("{}", "TODO:"),
-            Instruction::CLD => println!("{}", "TODO:"),
-            Instruction::LAX => println!("{}", "TODO:"),
-            Instruction::SAX => println!("{}", "TODO:"),
-            Instruction::DCP => println!("{}", "TODO:"),
-            Instruction::ISB => println!("{}", "TODO:"),
-            Instruction::SLO => println!("{}", "TODO:"),
-            Instruction::RLA => println!("{}", "TODO:"),
-            Instruction::SRE => println!("{}", "TODO:"),
-            Instruction::RRA => println!("{}", "TODO:"),
+            Instruction::CPY => self.cpy(&code, opeland, &read),
+            Instruction::CMP => self.cmp(&code, opeland, &read),
+            Instruction::AND => self.and(&code, opeland, &read),
+            Instruction::EOR => self.eor(&code, opeland, &read),
+            Instruction::ORA => self.ora(&code, opeland, &read),
+            Instruction::BIT => self.bit(opeland, &read),
+            Instruction::ASL => self.asl(&code, opeland, &read, &write),
+            Instruction::LSR => self.lsr(&code, opeland, &read, &write),
+            Instruction::ROL => self.rol(&code, opeland, &read, &write),
+            Instruction::ROR => self.ror(&code, opeland, &read, &write),
+            Instruction::INX => self.inx(),
+            Instruction::INY => self.iny(),
+            Instruction::INC => self.inc(opeland, &read, &write),
+            Instruction::DEX => self.dex(),
+            Instruction::DEY => self.dey(),
+            Instruction::DEC => self.dec(opeland, &read, &write),
+            Instruction::CLC => self.clc(),
+            Instruction::CLI => self.cli(),
+            Instruction::CLV => self.clv(),
+            Instruction::SEC => self.sec(),
+            Instruction::SEI => self.sei(),
+            Instruction::NOP => (),
+            Instruction::BRK => self.brk(&read, &write),
+            Instruction::JSR => self.jsr(opeland, &write),
+            Instruction::JMP => self.jmp(opeland),
+            Instruction::RTI => self.rti(&read),
+            Instruction::RTS => self.rts(&read),
+            Instruction::BPL => self.bpl(opeland),
+            Instruction::BMI => self.bmi(opeland),
+            Instruction::BVC => self.bvc(opeland),
+            Instruction::BVS => self.bvs(opeland),
+            Instruction::BCC => self.bcc(opeland),
+            Instruction::BCS => self.bcs(opeland),
+            Instruction::BNE => self.bne(opeland),
+            Instruction::BEQ => self.beq(opeland),
+            Instruction::SED => self.sed(),
+            Instruction::CLD => self.cld(),
+            Instruction::LAX => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SAX => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::DCP => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::ISB => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SLO => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::RLA => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::SRE => println!("{}", "TODO:Undocumented instruction"),
+            Instruction::RRA => println!("{}", "TODO:Undocumented instruction"),
         }
         code.cycle
     }
 
-    fn fetch<R>(&mut self, read: R) -> Data
+    fn fetch<R>(&self, read: R) -> Data
         where R: Fn(Addr) -> Data
     {
-        let code = read(self.registers.get_pc());
-        self.registers.update_pc();
+        let code = read(self.registers.borrow().get_pc());
+        self.registers.borrow_mut().update_pc();
         code
     }
 
-    fn fetch_word<R>(&mut self, read: R) -> Word
+    fn fetch_word<R>(&self, read: R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let lower = read(self.registers.get_pc()) as Word;
-        self.registers.update_pc();
-        let upper = read(self.registers.get_pc()) as Word;
-        self.registers.update_pc();
+        let lower = read(self.registers.borrow().get_pc()) as Word;
+        self.registers.borrow_mut().update_pc();
+        let upper = read(self.registers.borrow().get_pc()) as Word;
+        self.registers.borrow_mut().update_pc();
         (upper << 8 | lower) as Word
     }
 
@@ -128,62 +128,63 @@ impl Cpu {
         (upper << 8 | lower) as Word
     }
 
-    fn fetch_relative<R>(&mut self, ref read: &R) -> Word
+    fn fetch_relative<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let base = self.fetch(read) as Word;
         if base < 0x80 {
-            base + self.registers.get_pc()
+            base + self.registers.borrow().get_pc()
         } else {
-            base + self.registers.get_pc() - 256
+            base + self.registers.borrow().get_pc() - 256
         }
     }
 
-    fn fetch_zeropage_x<R>(&mut self, ref read: &R) -> Word
+    fn fetch_zeropage_x<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Word;
-        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFF as Word
+        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFF as Word
     }
 
-    fn fetch_zeropage_y<R>(&mut self, ref read: &R) -> Word
+    fn fetch_zeropage_y<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Word;
-        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFF as Word
+        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFF as Word
     }
 
-    fn fetch_absolute_x<R>(&mut self, ref read: &R) -> Word
+    fn fetch_absolute_x<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
-        (addr + self.registers.get(ByteRegister::X) as Word) & 0xFFFF
+        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFFFF
     }
 
-    fn fetch_absolute_y<R>(&mut self, ref read: &R) -> Word
+    fn fetch_absolute_y<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
-        (addr + self.registers.get(ByteRegister::Y) as Word) & 0xFFFF
+        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFFFF
     }
 
-    fn fetch_pre_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+    fn fetch_pre_indexed_indirect<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
-        let addr = ((self.fetch(read) + self.registers.get(ByteRegister::X)) & 0xFF) as Addr;
+        let addr = ((self.fetch(read) + self.registers.borrow().get(ByteRegister::X)) & 0xFF) as
+                   Addr;
         let addr = (read(addr) as Addr) + ((read((addr + 1) as Addr & 0xFF) as Addr) << 8);
         addr & 0xFFFF
     }
 
-    fn fetch_post_indexed_indirect<R>(&mut self, ref read: &R) -> Word
+    fn fetch_post_indexed_indirect<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch(read) as Addr;
         let addr = (read(addr) as Addr) + ((read((addr + 1) & 0xFF) as Addr) << 8);
-        addr + (self.registers.get(ByteRegister::Y) as Addr) & 0xFFFF
+        addr + (self.registers.borrow().get(ByteRegister::Y) as Addr) & 0xFFFF
     }
 
-    fn fetch_indirect_absolute<R>(&mut self, ref read: &R) -> Word
+    fn fetch_indirect_absolute<R>(&self, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         let addr = self.fetch_word(read);
@@ -192,7 +193,7 @@ impl Cpu {
         addr & 0xFFFF
     }
 
-    fn fetch_opeland<R>(&mut self, code: &Opecode, ref read: &R) -> Word
+    fn fetch_opeland<R>(&self, code: &Opecode, ref read: &R) -> Word
         where R: Fn(Addr) -> Data
     {
         match code.mode {
@@ -212,34 +213,57 @@ impl Cpu {
         }
     }
 
-    fn branch(&mut self, addr: Addr) {
-        self.registers.set_pc(addr);
+    fn branch(&self, addr: Addr) {
+        self.registers.borrow_mut().set_pc(addr);
     }
 
-    fn push_status<W>(&mut self, write: W)
+    fn push_status<W>(&self, write: W)
         where W: Fn(Addr, Data)
     {
-        let status = self.registers.get(ByteRegister::P);
+        let status = self.registers.borrow().get(ByteRegister::P);
         self.push(status, &write);
     }
 
-    fn push<W>(&mut self, data: Data, write: W)
+    fn push_pc<W>(&self, write: W)
         where W: Fn(Addr, Data)
     {
-        let addr = self.registers.get(ByteRegister::SP) as Addr;
-        write((addr | 0x0100), data);
-        self.registers.dec_sp();
+        let pc = self.registers.borrow().get_pc();
+        self.push((pc >> 8) as u8, &write);
+        self.push(pc as u8, &write);
     }
 
-    fn pop<R>(&mut self, read: R) -> Data
+    fn push<W>(&self, data: Data, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let addr = self.registers.borrow().get(ByteRegister::SP) as Addr;
+        write((addr | 0x0100), data);
+        self.registers.borrow_mut().dec_sp();
+    }
+
+    fn pop<R>(&self, read: R) -> Data
         where R: Fn(Addr) -> Data
     {
-        self.registers.inc_sp();
-        let addr = 0x0100 | self.registers.get(ByteRegister::SP) as Addr;
+        self.registers.borrow_mut().inc_sp();
+        let addr = 0x0100 | self.registers.borrow().get(ByteRegister::SP) as Addr;
         read(addr)
     }
 
-    fn lda<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn pop_pc<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let lower = self.pop(&read) as u16;
+        let upper = self.pop(&read) as u16;
+        self.registers.borrow_mut().set_pc(upper << 8 | lower);
+    }
+
+    fn pop_status<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let status = self.pop(&read) as u8;
+        self.registers.borrow_mut().set_p(status);
+    }
+
+    fn lda<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -247,12 +271,13 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_acc(computed)
             .update_negative(computed)
             .update_zero(computed);
     }
 
-    fn ldx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn ldx<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -260,12 +285,13 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_x(computed)
             .update_negative(computed)
             .update_zero(computed);
     }
 
-    fn ldy<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn ldy<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let computed = match code.mode {
@@ -273,6 +299,7 @@ impl Cpu {
             _ => read(opeland),
         };
         self.registers
+            .borrow_mut()
             .set_y(computed)
             .update_negative(computed)
             .update_zero(computed);
@@ -281,108 +308,115 @@ impl Cpu {
     fn sta<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::A));
+        write(opeland, self.registers.borrow().get(ByteRegister::A));
     }
 
     fn stx<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::X));
+        write(opeland, self.registers.borrow().get(ByteRegister::X));
     }
 
     fn sty<W>(&self, opeland: Word, write: W)
         where W: Fn(Addr, Data)
     {
-        write(opeland, self.registers.get(ByteRegister::Y));
+        write(opeland, self.registers.borrow().get(ByteRegister::Y));
     }
 
-    fn txa(&mut self) {
-        let x = self.registers.get(ByteRegister::X);
+    fn txa(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X);
         self.registers
+            .borrow_mut()
             .set_acc(x)
             .update_negative(x)
             .update_zero(x);
     }
 
-    fn tya(&mut self) {
-        let y = self.registers.get(ByteRegister::Y);
+    fn tya(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y);
         self.registers
+            .borrow_mut()
             .set_acc(y)
             .update_negative(y)
             .update_zero(y);
     }
 
-    fn txs(&mut self) {
-        let x = self.registers.get(ByteRegister::X);
-        self.registers.set_sp(x);
+    fn txs(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X);
+        self.registers.borrow_mut().set_sp(x);
     }
 
-    fn tay(&mut self) {
-        let acc = self.registers.get(ByteRegister::A);
+    fn tay(&self) {
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.registers
+            .borrow_mut()
             .set_y(acc)
             .update_negative(acc)
             .update_zero(acc);
     }
 
-    fn tax(&mut self) {
-        let acc = self.registers.get(ByteRegister::A);
+    fn tax(&self) {
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.registers
+            .borrow_mut()
             .set_x(acc)
             .update_negative(acc)
             .update_zero(acc);
     }
 
-    fn tsx(&mut self) {
-        let sp = self.registers.get(ByteRegister::SP);
+    fn tsx(&self) {
+        let sp = self.registers.borrow().get(ByteRegister::SP);
         self.registers
+            .borrow_mut()
             .set_x(sp)
             .update_negative(sp)
             .update_zero(sp);
     }
 
-    fn php<W>(&mut self, ref write: W)
+    fn php<W>(&self, ref write: W)
         where W: Fn(Addr, Data)
     {
-        self.registers.set_break(true);
+        self.registers.borrow_mut().set_break(true);
         self.push_status(&write);
     }
 
-    fn plp<R>(&mut self, ref read: R)
+    fn plp<R>(&self, ref read: R)
         where R: Fn(Addr) -> Data
     {
-        self.registers.set_reserved(true);
+        self.registers.borrow_mut().set_reserved(true);
         let status = self.pop(&read);
-        self.registers.set_p(status);
+        self.registers.borrow_mut().set_p(status);
     }
 
-    fn pha<W>(&mut self, ref write: W)
+    fn pha<W>(&self, ref write: W)
         where W: Fn(Addr, Data)
     {
-        let acc = self.registers.get(ByteRegister::A);
+        let acc = self.registers.borrow().get(ByteRegister::A);
         self.push(acc, &write);
     }
 
-    fn pla<R>(&mut self, ref read: R)
+    fn pla<R>(&self, ref read: R)
         where R: Fn(Addr) -> Data
     {
         let v = self.pop(&read);
         self.registers
+            .borrow_mut()
             .set_acc(v)
             .update_negative(v)
             .update_zero(v);
     }
 
-    fn adc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn adc<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = fetched + self.registers.get(ByteRegister::A) +
-                       bool_to_u8(self.registers.get_status(StatusName::carry));
+        let computed = fetched + self.registers.borrow().get(ByteRegister::A) +
+                       bool_to_u8(self.registers.borrow().get_status(StatusName::carry));
         self.registers
+            .borrow_mut()
             .update_overflow(fetched, computed)
             .update_negative(computed)
             .update_zero(computed)
@@ -390,16 +424,17 @@ impl Cpu {
             .set_acc(computed);
     }
 
-    fn sbc<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn sbc<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = self.registers.get(ByteRegister::A) - fetched -
-                       bool_to_u8(!self.registers.get_status(StatusName::carry));
+        let computed = self.registers.borrow().get(ByteRegister::A) - fetched -
+                       bool_to_u8(!self.registers.borrow().get_status(StatusName::carry));
         self.registers
+            .borrow_mut()
             .update_overflow(computed, fetched)
             .update_negative(computed)
             .update_zero(computed)
@@ -407,411 +442,454 @@ impl Cpu {
             .set_acc(computed);
     }
 
-
-    fn cpx<R>(&mut self, code: &Opecode, opeland: Word, read: R)
+    fn cpx<R>(&self, code: &Opecode, opeland: Word, read: R)
         where R: Fn(Addr) -> Data
     {
         let fetched = match code.mode {
             Addressing::Immediate => opeland as Data,
             _ => read(opeland),
         };
-        let computed = self.registers.get(ByteRegister::X) - fetched;
+        let computed = self.registers.borrow().get(ByteRegister::X) - fetched;
         self.registers
+            .borrow_mut()
             .update_negative(computed)
             .update_zero(computed)
             .set_carry(computed >= 0 as u8);
     }
 
+    fn cpy<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::Y) - fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8);
+    }
 
-    /*
+    fn cmp<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) - fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_carry(computed >= 0 as u8);
+    }
 
+    fn and<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) & fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
 
-      case 'AND': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data & this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
-      case 'ASL': {
-        if (mode === 'accumulator') {
-          const acc = this.registers.A;
-          this.registers.P.carry = !!(acc & 0x80);
-          this.registers.A = (acc << 1) & 0xFF;
-          this.registers.P.zero = !this.registers.A;
-          this.registers.P.negative = !!(this.registers.A & 0x80);
-        } else {
-          const data = this.read(addrOrData);
-          this.registers.P.carry = !!(data & 0x80);
-          const shifted = (data << 1) & 0xFF;
-          this.write(addrOrData, shifted);
-          this.registers.P.zero = !shifted;
-          this.registers.P.negative = !!(shifted & 0x80);
-        }
-        break;
-      }
-      case 'BIT': {
-        const data = this.read(addrOrData);
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.overflow = !!(data & 0x40);
-        this.registers.P.zero = !(this.registers.A & data);
-        break;
-      }
-      case 'CMP': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.A - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
-      case 'CPX': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.X - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
-      case 'CPY': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const compared = this.registers.Y - data;
-        this.registers.P.carry = compared >= 0;
-        this.registers.P.negative = !!(compared & 0x80);
-        this.registers.P.zero = !(compared & 0xff);
-        break;
-      }
-      case 'DEC': {
-        const data = (this.read(addrOrData) - 1) & 0xFF;
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.zero = !data;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'DEX': {
-        this.registers.X = (this.registers.X - 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'DEY': {
-        this.registers.Y = (this.registers.Y - 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-      case 'EOR': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data ^ this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
-      case 'INC': {
-        const data = (this.read(addrOrData) + 1) & 0xFF;
-        this.registers.P.negative = !!(data & 0x80);
-        this.registers.P.zero = !data;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'INX': {
-        this.registers.X = (this.registers.X + 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.X & 0x80);
-        this.registers.P.zero = !this.registers.X;
-        break;
-      }
-      case 'INY': {
-        this.registers.Y = (this.registers.Y + 1) & 0xFF;
-        this.registers.P.negative = !!(this.registers.Y & 0x80);
-        this.registers.P.zero = !this.registers.Y;
-        break;
-      }
-      case 'LSR': {
-        if (mode === 'accumulator') {
-          const acc = this.registers.A & 0xFF;
-          this.registers.P.carry = !!(acc & 0x01);
-          this.registers.A = acc >> 1;
-          this.registers.P.zero = !this.registers.A;
-        } else {
-          const data = this.read(addrOrData);
-          this.registers.P.carry = !!(data & 0x01);
-          this.registers.P.zero = !(data >> 1);
-          this.write(addrOrData, data >> 1);
-        }
-        this.registers.P.negative = false;
-        break;
-      }
-      case 'ORA': {
-        const data = mode === 'immediate' ? addrOrData : this.read(addrOrData);
-        const operated = data | this.registers.A;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !operated;
-        this.registers.A = operated & 0xFF;
-        break;
-      }
-      case 'ROL': {
-        if (mode === 'accumulator') {
-          const acc = this.registers.A;
-          this.registers.A = (acc << 1) & 0xFF | (this.registers.P.carry ? 0x01 : 0x00);
-          this.registers.P.carry = !!(acc & 0x80);
-          this.registers.P.zero = !this.registers.A;
-          this.registers.P.negative = !!(this.registers.A & 0x80);
-        } else {
-          const data = this.read(addrOrData);
-          const writeData = (data << 1 | (this.registers.P.carry ? 0x01 : 0x00)) & 0xFF;
-          this.write(addrOrData, writeData);
-          this.registers.P.carry = !!(data & 0x80);
-          this.registers.P.zero = !writeData;
-          this.registers.P.negative = !!(writeData & 0x80);
-        }
-        break;
-      }
-      case 'ROR': {
-        if (mode === 'accumulator') {
-          const acc = this.registers.A;
-          this.registers.A = acc >> 1 | (this.registers.P.carry ? 0x80 : 0x00);
-          this.registers.P.carry = !!(acc & 0x01);
-          this.registers.P.zero = !this.registers.A;
-          this.registers.P.negative = !!(this.registers.A & 0x80);
-        } else {
-          const data = this.read(addrOrData);
-          const writeData = data >> 1 | (this.registers.P.carry ? 0x80 : 0x00);
-          this.write(addrOrData, writeData);
-          this.registers.P.carry = !!(data & 0x01);
-          this.registers.P.zero = !writeData;
-          this.registers.P.negative = !!(writeData & 0x80);
-        }
-        break;
-      }
+    fn eor<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) ^ fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
 
-      case 'PHA': {
-        this.push(this.registers.A);
-        break;
-      }
+    fn ora<R>(&self, code: &Opecode, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = match code.mode {
+            Addressing::Immediate => opeland as Data,
+            _ => read(opeland),
+        };
+        let computed = self.registers.borrow().get(ByteRegister::A) | fetched;
+        self.registers
+            .borrow_mut()
+            .update_negative(computed)
+            .update_zero(computed)
+            .set_acc(computed);
+    }
 
+    fn bit<R>(&self, opeland: Word, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        let fetched = read(opeland);
+        self.registers
+            .borrow_mut()
+            .update_negative(fetched)
+            .update_zero(fetched & self.registers.borrow().get(ByteRegister::A))
+            .set_overflow(fetched & 0x40 == 0x40);
+    }
 
+    fn asl<R, W>(&self, code: &Opecode, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        match code.mode {
+            Addressing::Accumulator => {
+                let acc = self.registers.borrow().get(ByteRegister::A);
+                let shifted = (acc << 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(acc & 0x80 == 0x80)
+                    .update_negative(shifted)
+                    .update_zero(shifted)
+                    .set_acc(shifted);
+            }
+            _ => {
+                let fetched = read(opeland);
+                let shifted = (fetched << 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(fetched & 0x80 == 0x80)
+                    .update_negative(shifted)
+                    .update_zero(shifted);
+                write(opeland, shifted);
+            }
+        };
+    }
 
-      case 'JMP': {
-        this.registers.PC = addrOrData;
-        break;
-      }
-      case 'JSR': {
-        const PC = this.registers.PC - 1;
-        this.push((PC >> 8) & 0xFF);
-        this.push(PC & 0xFF);
-        this.registers.PC = addrOrData;
-        break;
-      }
-      case 'RTS': {
-        this.popPC();
-        this.registers.PC++;
-        break;
-      }
-      case 'RTI': {
-        this.popStatus();
-        this.popPC();
-        this.registers.P.reserved = true;
-        break;
-      }
-      case 'BCC': {
-        if (!this.registers.P.carry) this.branch(addrOrData);
-        break;
-      }
-      case 'BCS': {
-        if (this.registers.P.carry) this.branch(addrOrData);
-        break;
-      }
-      case 'BEQ': {
-        if (this.registers.P.zero) this.branch(addrOrData);
-        break;
-      }
-      case 'BMI': {
-        if (this.registers.P.negative) this.branch(addrOrData);
-        break;
-      }
-      case 'BNE': {
-        if (!this.registers.P.zero) this.branch(addrOrData);
-        break;
-      }
-      case 'BPL': {
-        if (!this.registers.P.negative) this.branch(addrOrData);
-        break;
-      }
-      case 'BVS': {
-        if (this.registers.P.overflow) this.branch(addrOrData);
-        break;
-      }
-      case 'BVC': {
-        if (!this.registers.P.overflow) this.branch(addrOrData);
-        break;
-      }
-      case 'CLD': {
-        this.registers.P.decimal = false;
-        break;
-      }
-      case 'CLC': {
-        this.registers.P.carry = false;
-        break;
-      }
-      case 'CLI': {
-        this.registers.P.interrupt = false;
-        break;
-      }
-      case 'CLV': {
-        this.registers.P.overflow = false;
-        break;
-      }
-      case 'SEC': {
-        this.registers.P.carry = true;
-        break;
-      }
-      case 'SEI': {
-        this.registers.P.interrupt = true;
-        break;
-      }
-      case 'SED': {
-        this.registers.P.decimal = true;
-        break;
-      }
-      case 'BRK': {
-        const interrupt = this.registers.P.interrupt;
-        this.registers.PC++;
-        this.push((this.registers.PC >> 8) & 0xFF);
-        this.push(this.registers.PC & 0xFF);
-        this.registers.P.break = true;
-        this.pushStatus();
-        this.registers.P.interrupt = true;
+    fn lsr<R, W>(&self, code: &Opecode, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        match code.mode {
+            Addressing::Accumulator => {
+                let acc = self.registers.borrow().get(ByteRegister::A);
+                let shifted = (acc >> 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(acc & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted)
+                    .set_acc(shifted);
+            }
+            _ => {
+                let fetched = read(opeland);
+                let shifted = (fetched >> 1) as u8;
+                self.registers
+                    .borrow_mut()
+                    .set_carry(fetched & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted);
+                write(opeland, shifted);
+            }
+        };
+    }
+
+    fn ror<R, W>(&self, code: &Opecode, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let shift = |v: u8| {
+            ((v >> 1) |
+             if self.registers.borrow().get_status(StatusName::carry) {
+                 0x80
+             } else {
+                 0x00
+             }) as u8
+        };
+        match code.mode {
+            Addressing::Accumulator => {
+                let acc = self.registers.borrow().get(ByteRegister::A);
+                let shifted = shift(acc);
+                self.registers
+                    .borrow_mut()
+                    .set_carry(acc & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted)
+                    .set_acc(shifted);
+            }
+            _ => {
+                let fetched = read(opeland);
+                let shifted = shift(fetched);
+                self.registers
+                    .borrow_mut()
+                    .set_carry(fetched & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted);
+                write(opeland, shifted);
+            }
+        };
+    }
+
+    fn rol<R, W>(&self, code: &Opecode, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let shift = |v: u8| {
+            ((v << 1) |
+             if self.registers.borrow().get_status(StatusName::carry) {
+                 0x01
+             } else {
+                 0x00
+             }) as u8
+        };
+        match code.mode {
+            Addressing::Accumulator => {
+                let acc = self.registers.borrow().get(ByteRegister::A);
+                let shifted = shift(acc);
+                self.registers
+                    .borrow_mut()
+                    .set_carry(acc & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted)
+                    .set_acc(shifted);
+            }
+            _ => {
+                let fetched = read(opeland);
+                let shifted = shift(fetched);
+                self.registers
+                    .borrow_mut()
+                    .set_carry(fetched & 0x01 == 0x01)
+                    .update_negative(shifted)
+                    .update_zero(shifted);
+                write(opeland, shifted);
+            }
+        };
+    }
+
+    fn inx(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X) + 1;
+        self.registers
+            .borrow_mut()
+            .set_x(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn iny(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y) + 1;
+        self.registers
+            .borrow_mut()
+            .set_y(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn inc<R, W>(&self, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let data = read(opeland) + 1 as u8;
+        self.registers
+            .borrow_mut()
+            .update_negative(data)
+            .update_zero(data);
+        write(opeland, data);
+    }
+
+    fn dex(&self) {
+        let x = self.registers.borrow().get(ByteRegister::X) - 1;
+        self.registers
+            .borrow_mut()
+            .set_x(x)
+            .update_negative(x)
+            .update_zero(x);
+    }
+
+    fn dey(&self) {
+        let y = self.registers.borrow().get(ByteRegister::Y) - 1;
+        self.registers
+            .borrow_mut()
+            .set_y(y)
+            .update_negative(y)
+            .update_zero(y);
+    }
+
+    fn dec<R, W>(&self, opeland: Word, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let data = read(opeland) - 1 as u8;
+        self.registers
+            .borrow_mut()
+            .update_negative(data)
+            .update_zero(data);
+        write(opeland, data);
+    }
+
+    fn clc(&self) {
+        self.registers.borrow_mut().set_carry(false);
+    }
+
+    fn cli(&self) {
+        self.registers.borrow_mut().set_interrupt(false);
+    }
+
+    fn clv(&self) {
+        self.registers.borrow_mut().set_overflow(false);
+    }
+
+    fn sec(&self) {
+        self.registers.borrow_mut().set_carry(true);
+    }
+
+    fn sei(&self) {
+        self.registers.borrow_mut().set_interrupt(true);
+    }
+
+    fn brk<R, W>(&self, read: R, write: W)
+        where R: Fn(Addr) -> Data,
+              W: Fn(Addr, Data)
+    {
+        let interrupt = self.registers
+            .borrow()
+            .get_status(StatusName::interrupt);
+        self.registers.borrow_mut().inc_pc();
+        self.push_pc(&write);
+        self.registers.borrow_mut().set_break(true);
+        self.push_status(&write);
+        self.registers.borrow_mut().set_interrupt(true);
         // Ignore interrupt when already set.
-        if (!interrupt) {
-          this.registers.PC = this.read(0xFFFE, "Word");
+        if !interrupt {
+            let fetched = self.read_word(&read, 0xFFFE);
+            self.registers.borrow_mut().set_pc(fetched);
         }
-        this.registers.PC--;
-        break;
-      }
-      case 'NOP': {
-        break;
-      }
-      // Unofficial Opecode
-      case 'NOPD': {
-        this.registers.PC++;
-        break;
-      }
-      case 'NOPI': {
-        this.registers.PC += 2;
-        break;
-      }
-      case 'LAX': {
-        this.registers.A = this.registers.X = this.read(addrOrData);
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !this.registers.A;
-        break;
-      }
-      case 'SAX': {
-        const operated = this.registers.A & this.registers.X;
-        this.write(addrOrData, operated);
-        break;
-      }
-      case 'DCP': {
-        const operated = (this.read(addrOrData) - 1) & 0xFF;
-        this.registers.P.negative = !!(((this.registers.A - operated) & 0x1FF) & 0x80);
-        this.registers.P.zero = !((this.registers.A - operated) & 0x1FF);
-        this.write(addrOrData, operated);
-        break;
-      }
-      case 'ISB': {
-        const data = (this.read(addrOrData) + 1) & 0xFF;
-        const operated = (~data & 0xFF) + this.registers.A + this.registers.P.carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.carry = operated > 0xFF;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'SLO': {
-        let data = this.read(addrOrData);
-        this.registers.P.carry = !!(data & 0x80);
-        data = (data << 1) & 0xFF;
-        this.registers.A |= data;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'RLA': {
-        const data = (this.read(addrOrData) << 1) + this.registers.P.carry;
-        this.registers.P.carry = !!(data & 0x100);
-        this.registers.A = (data & this.registers.A) & 0xFF;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'SRE': {
-        let data = this.read(addrOrData);
-        this.registers.P.carry = !!(data & 0x01)
-        data >>= 1;
-        this.registers.A ^= data;
-        this.registers.P.negative = !!(this.registers.A & 0x80);
-        this.registers.P.zero = !(this.registers.A & 0xFF);
-        this.write(addrOrData, data);
-        break;
-      }
-      case 'RRA': {
-        let data = this.read(addrOrData);
-        const carry = !!(data & 0x01);
-        data = (data >> 1) | (this.registers.P.carry ? 0x80 : 0x00);
-        const operated = data + this.registers.A + carry;
-        const overflow = (!(((this.registers.A ^ data) & 0x80) != 0) && (((this.registers.A ^ operated) & 0x80)) != 0);
-        this.registers.P.overflow = overflow;
-        this.registers.P.negative = !!(operated & 0x80);
-        this.registers.P.zero = !(operated & 0xFF);
-        this.registers.A = operated & 0xFF;
-        this.registers.P.carry = operated > 0xFF;
-        this.write(addrOrData, data);
-        break;
-      }
-      */
+        self.registers.borrow_mut().dec_pc();
+    }
+
+    fn jsr<W>(&self, opeland: Word, write: W)
+        where W: Fn(Addr, Data)
+    {
+        let pc = self.registers.borrow().get_pc() - 1;
+        self.push((pc >> 8) as u8, &write);
+        self.push(pc as u8, &write);
+        self.registers.borrow_mut().set_pc(opeland);
+    }
+
+    fn jmp(&self, opeland: Word) {
+        self.registers.borrow_mut().set_pc(opeland);
+    }
+
+    fn rti<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.pop_status(&read);
+        self.pop_pc(&read);
+        self.registers.borrow_mut().set_reserved(true);
+    }
+
+    fn rts<R>(&self, read: R)
+        where R: Fn(Addr) -> Data
+    {
+        self.pop_pc(&read);
+        self.registers.borrow_mut().inc_pc();
+    }
+
+    fn bcc(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::carry) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bcs(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::carry) {
+            self.branch(opeland)
+        }
+    }
+
+    fn beq(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::zero) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bmi(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::negative) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bne(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::zero) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bpl(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::negative) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bvs(&self, opeland: Word) {
+        if self.registers.borrow().get_status(StatusName::overflow) {
+            self.branch(opeland)
+        }
+    }
+
+    fn bvc(&self, opeland: Word) {
+        if !self.registers.borrow().get_status(StatusName::overflow) {
+            self.branch(opeland)
+        }
+    }
+
+    fn cld(&self) {
+        self.registers.borrow_mut().set_decimal(true);
+    }
+
+    fn sed(&self) {
+        self.registers.borrow_mut().set_decimal(true);
+    }
 }
 
 
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
+    cpu.registers.borrow_mut().set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDA,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
     cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.get(ByteRegister::A) == 255);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 255);
 }
 
 #[test]
 fn ldx_immidiate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
+    cpu.registers.borrow_mut().set_pc(0x0000);
     let rom = vec![0x00];
     let code = Opecode {
         name: Instruction::LDX,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.get(ByteRegister::X) == 255);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 255);
 }
 
 #[test]
 fn sta() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -823,8 +901,8 @@ fn sta() {
 #[test]
 fn stx() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_x(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -836,8 +914,8 @@ fn stx() {
 #[test]
 fn sty() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_y(0xA5);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_y(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0xA5);
@@ -849,55 +927,55 @@ fn sty() {
 #[test]
 fn tax() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     cpu.tax();
-    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
 
 #[test]
 fn tay() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_acc(0xA5);
+    cpu.registers.borrow_mut().set_acc(0xA5);
     cpu.tay();
-    assert!(cpu.registers.get(ByteRegister::Y) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::Y) == 0xA5);
 }
 
 #[test]
 fn txa() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_x(0xA5);
     cpu.txa();
-    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
 
 #[test]
 fn tya() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_y(0xA5);
+    cpu.registers.borrow_mut().set_y(0xA5);
     cpu.tya();
-    assert!(cpu.registers.get(ByteRegister::A) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
 }
 
 #[test]
 fn txs() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_x(0xA5);
+    cpu.registers.borrow_mut().set_x(0xA5);
     cpu.txs();
-    assert!(cpu.registers.get(ByteRegister::SP) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::SP) == 0xA5);
 }
 
 #[test]
 fn tsx() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     cpu.tsx();
-    assert!(cpu.registers.get(ByteRegister::X) == 0xA5);
+    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
 }
 
 #[test]
 fn php() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0x34);
@@ -909,20 +987,20 @@ fn php() {
 #[test]
 fn plp() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
+    cpu.registers.borrow_mut().set_sp(0xA5);
     let read = |addr: Addr| {
         assert_eq!(addr, 0x01A6);
         0xA5 as u8
     };
     cpu.plp(&read);
-    assert_eq!(cpu.registers.get(ByteRegister::P), 0xA5);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::P), 0xA5);
 }
 
 #[test]
 fn pha() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_sp(0xA5);
-    cpu.registers.set_acc(0x5A);
+    cpu.registers.borrow_mut().set_sp(0xA5);
+    cpu.registers.borrow_mut().set_acc(0x5A);
     let mut mem = 0;
     let write = |addr: Addr, data: Data| {
         assert!(data == 0x5A);
@@ -934,41 +1012,282 @@ fn pha() {
 #[test]
 fn adc_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0x05);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x05);
     let code = Opecode {
         name: Instruction::ADC,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get(ByteRegister::A) == 0xAA);
+    cpu.adc(&code, 0xA5, |addr: Addr| 0 /* mock */);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xAA);
 }
 
 #[test]
 fn sbc_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_acc(0x10);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x10);
     let code = Opecode {
         name: Instruction::SBC,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get(ByteRegister::A) == 0x09);
+    cpu.sbc(&code, 0x06, |addr: Addr| 0 /* mock */);
+    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0x09);
 }
 
 #[test]
 fn cpx_immediate() {
     let mut cpu = Cpu::new();
-    cpu.registers.set_pc(0x0000);
-    cpu.registers.set_x(0x05);
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_x(0x05);
     let code = Opecode {
         name: Instruction::CPX,
         mode: Addressing::Immediate,
-        cycle: 1, // dummy
+        cycle: 1, // mock
     };
-    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* dummy */);
-    assert!(cpu.registers.get_status(StatusName::carry));
+    cpu.cpx(&code, 0x04, |addr: Addr| 0 /* mock */);
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn cpy_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_y(0x05);
+    let code = Opecode {
+        name: Instruction::CPY,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.cpy(&code, 0x04, |addr: Addr| 0 /* mock */);
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn cmp_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x05);
+    let code = Opecode {
+        name: Instruction::CMP,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.cmp(&code, 0x04, |addr: Addr| 0 /* mock */);
+    assert!(cpu.registers.borrow().get_status(StatusName::carry));
+}
+
+#[test]
+fn and_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
+    let code = Opecode {
+        name: Instruction::AND,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.and(&code, 0x05, |addr: Addr| 0 /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0x05);
+}
+
+#[test]
+fn eor_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA5);
+    let code = Opecode {
+        name: Instruction::EOR,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.eor(&code, 0x05, |addr: Addr| 0 /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xA0);
+}
+
+#[test]
+fn ora_immediate() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0xA0);
+    let code = Opecode {
+        name: Instruction::ORA,
+        mode: Addressing::Immediate,
+        cycle: 1, // mock
+    };
+    cpu.ora(&code, 0x05, |addr: Addr| 0 /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xA5);
+}
+
+#[test]
+fn asl_accumlator() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x55);
+    let code = Opecode {
+        name: Instruction::ASL,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.asl(&code,
+            0x00,
+            |addr: Addr| 0,
+            |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xAA);
+}
+
+#[test]
+fn lsr_accumlator() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x55);
+    let code = Opecode {
+        name: Instruction::LSR,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.lsr(&code,
+            0x00,
+            |addr: Addr| 0,
+            |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0x2A);
+}
+
+#[test]
+fn ror_accumlator_with_carry() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    cpu.registers.borrow_mut().set_acc(0x55);
+    cpu.registers.borrow_mut().set_carry(true);
+    let code = Opecode {
+        name: Instruction::ROR,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.ror(&code,
+            0x00,
+            |addr: Addr| 0,
+            |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xAA);
+}
+
+#[test]
+fn ror_accumlator_without_carry() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_acc(0x55);
+    let code = Opecode {
+        name: Instruction::ROR,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.ror(&code,
+            0x00,
+            |addr: Addr| 0,
+            |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0x2A);
+}
+
+
+#[test]
+fn rol_accumlator_with_carry() {
+    let mut cpu = Cpu::new();
+    cpu.registers
+        .borrow_mut()
+        .set_pc(0x0000)
+        .set_acc(0x55)
+        .set_carry(true);
+    let code = Opecode {
+        name: Instruction::ROL,
+        mode: Addressing::Accumulator,
+        cycle: 1, // mock
+    };
+    cpu.rol(&code,
+            0x00,
+            |addr: Addr| 0,
+            |addr: Addr, data: Data| () /* mock */);
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::A), 0xAB);
+}
+
+#[test]
+fn inx() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_x(0xA5);
+    let code = Opecode {
+        name: Instruction::INX,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.inx();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::X), 0xA6);
+}
+
+#[test]
+fn iny() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_y(0xA5);
+    let code = Opecode {
+        name: Instruction::INY,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.iny();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::Y), 0xA6);
+}
+
+#[test]
+fn inc() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    let code = Opecode {
+        name: Instruction::INC,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.inc(0x55, |addr: Addr| 0xA5, |addr: Addr, data: Data| {
+        assert_eq!(addr, 0x55);
+        assert_eq!(data, 0xA6);
+    });
+}
+
+#[test]
+fn dex() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_x(0xA5);
+    let code = Opecode {
+        name: Instruction::DEX,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dex();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::X), 0xA4);
+}
+
+#[test]
+fn dey() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000).set_y(0xA5);
+    let code = Opecode {
+        name: Instruction::DEY,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dey();
+    assert_eq!(cpu.registers.borrow().get(ByteRegister::Y), 0xA4);
+}
+
+#[test]
+fn dec() {
+    let mut cpu = Cpu::new();
+    cpu.registers.borrow_mut().set_pc(0x0000);
+    let code = Opecode {
+        name: Instruction::DEC,
+        mode: Addressing::Implied,
+        cycle: 1, // mock
+    };
+    cpu.dec(0x55, |addr: Addr| 0xA5, |addr: Addr, data: Data| {
+        assert_eq!(addr, 0x55);
+        assert_eq!(data, 0xA4);
+    });
 }
