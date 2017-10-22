@@ -1,7 +1,6 @@
 mod tile;
 
 use std::cell::Cell;
-use self::sprite::*;
 
 const CYCLES_PER_LINE: usize = 341;
 
