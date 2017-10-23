@@ -1,5 +1,7 @@
 use std::cell::Cell;
 
+use super::types::Addr;
+
 #[derive(Debug)]
 pub struct Background {
 }
