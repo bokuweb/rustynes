@@ -13,6 +13,7 @@ pub struct Ppu {
     line: Cell<usize>,
     vram: Ram,
     cram: Ram,
+    // background: Vec<Tile>,
 }
 
 pub struct RenderingContext {}
@@ -75,4 +76,15 @@ impl Ppu {
         }
         None
     }
+
+    fn get_scroll_tile_y(&self) -> u8 {
+      // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
+    }
+
+    fn get_tile_y(&self) -> u8 {
+      self.line / 8 + self.get_scroll_tile_y();
+    }
+
+    fn build_background(&mut self) {
+    } 
 }
