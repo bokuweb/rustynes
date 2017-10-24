@@ -24,7 +24,7 @@ pub struct Nes {
     cpu: Cpu,
     ppu: Ppu,
     work_ram: Ram,
-    character_ram: Ram,
+    // character_ram: Ram,
     program_rom: Rom,
 }
 
@@ -34,10 +34,10 @@ impl Nes {
         // let character_ram = parser::parse(buf).character_ram;
         Nes {
             cpu: Cpu::new(),
-            ppu: Ppu::new(),
+            ppu: Ppu::new(cassette.character_ram),
             program_rom: Rom::new(cassette.program_rom),
             work_ram: Ram::new(vec![0; 0x0800]),
-            character_ram: Ram::new(vec![0; 0x0800]),
+            // character_ram: Ram::new(vec![0; 0x0800]),
         }
     }
 

@@ -1,6 +1,9 @@
 mod tile;
+mod sprite_helper;
 
+use self::super::ram::Ram;
 use std::cell::Cell;
+use sprite_helper::*;
 
 const CYCLES_PER_LINE: usize = 341;
 
@@ -8,15 +11,19 @@ const CYCLES_PER_LINE: usize = 341;
 pub struct Ppu {
     cycle: Cell<usize>,
     line: Cell<usize>,
+    vram: Ram,
+    cram: Ram,
 }
 
 pub struct RenderingContext {}
 
 impl Ppu {
-    pub fn new() -> Ppu {
+    pub fn new(character_ram: Vec<u8>) -> Ppu {
         Ppu {
             cycle: Cell::new(0),
             line: Cell::new(0),
+            vram: Ram::new(vec![0; 0x2000]),
+            cram: Ram::new(character_ram),
         }
     }
 
