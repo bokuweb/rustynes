@@ -2,7 +2,7 @@ use super::types::{Data, Addr, Word};
 use super::helper::*;
 
 #[derive(Debug)]
-pub struct Status {
+struct Status {
     negative: bool,
     overflow: bool,
     reserved: bool,
@@ -24,8 +24,64 @@ pub struct CpuRegisters {
     P: Status,
 }
 
+pub trait RegisterAccessor {
+    fn get_PC(&self) -> u16;
+
+    fn get_A(&self) -> u8;
+
+    fn get_X(&self) -> u8;
+
+    fn get_Y(&self) -> u8;
+
+    fn get_SP(&self) -> u8;
+
+    fn get_P(&self) -> u8;
+
+    fn set_A(&mut self, v: u8) -> &mut Self;
+
+    fn set_X(&mut self, v: u8) -> &mut Self;
+
+    fn set_Y(&mut self, v: u8) -> &mut Self;
+
+    fn set_PC(&mut self, v: u16) -> &mut Self;
+
+    fn set_P(&mut self, v: u8) -> &mut Self;
+
+    fn set_SP(&mut self, v: u8) -> &mut Self;
+
+    fn set_negative(&mut self, v: bool) -> &mut Self;
+
+    fn set_overflow(&mut self, v: bool) -> &mut Self;
+
+    fn set_reserved(&mut self, v: bool) -> &mut Self;
+
+    fn set_break(&mut self, v: bool) -> &mut Self;
+
+    fn set_interrupt(&mut self, v: bool) -> &mut Self;
+
+    fn set_zero(&mut self, v: bool) -> &mut Self;
+
+    fn set_decimal(&mut self, v: bool) -> &mut Self;
+
+    fn set_carry(&mut self, v: bool) -> &mut Self;
+
+    fn update_negative_by(&mut self, v: u8) -> &mut Self;
+
+    fn update_overflow_by(&mut self, fetched: u8, computed: u8) -> &mut Self;
+
+    fn update_zero_by(&mut self, v: u8) -> &mut Self;
+
+    fn inc_SP(&mut self) -> &mut Self;
+
+    fn dec_SP(&mut self) -> &mut Self;
+
+    fn inc_PC(&mut self) -> &mut Self;
+
+    fn dec_PC(&mut self) -> &mut Self;
+}
+
 // #[derive(Debug)]
-// pub enum ByteRegister {
+//  enum ByteRegister {
 //     A,
 //     X,
 //     Y,
@@ -33,18 +89,17 @@ pub struct CpuRegisters {
 //     P,
 // }
 
-#[derive(Debug)]
-pub enum StatusName {
-    negative,
-    overflow,
-    reserved,
-    break_mode,
-    decimal_mode,
-    interrupt,
-    zero,
-    carry,
-}
-
+// #[derive(Debug)]
+//  enum StatusName {
+//     negative,
+//     overflow,
+//     reserved,
+//     break_mode,
+//     decimal_mode,
+//     interrupt,
+//     zero,
+//     carry,
+// }
 impl CpuRegisters {
     pub fn new() -> Self {
         CpuRegisters {
@@ -65,40 +120,34 @@ impl CpuRegisters {
             },
         }
     }
-
-    pub fn get_status(&self, name: StatusName) -> bool {
-        match name {
-            StatusName::negative => self.P.negative,
-            StatusName::overflow => self.P.overflow,
-            StatusName::reserved => self.P.reserved,
-            StatusName::break_mode => self.P.break_mode,
-            StatusName::decimal_mode => self.P.decimal_mode,
-            StatusName::interrupt => self.P.interrupt,
-            StatusName::zero => self.P.zero,
-            StatusName::carry => self.P.carry,
-        }
-    }
-
+}
+impl CpuRegisters {
+    #[allow(non_snake_case)]
     pub fn get_PC(&self) -> u16 {
         self.PC
     }
 
+    #[allow(non_snake_case)]
     pub fn get_A(&self) -> u8 {
         self.A
     }
 
+    #[allow(non_snake_case)]
     pub fn get_X(&self) -> u8 {
         self.X
     }
 
+    #[allow(non_snake_case)]
     pub fn get_Y(&self) -> u8 {
         self.X
     }
 
+    #[allow(non_snake_case)]
     pub fn get_SP(&self) -> u8 {
         self.SP
     }
 
+    #[allow(non_snake_case)]
     pub fn get_P(&self) -> u8 {
         bool_to_u8(self.P.negative) << 7 | bool_to_u8(self.P.overflow) << 6 |
         bool_to_u8(self.P.reserved) << 5 | bool_to_u8(self.P.break_mode) << 4 |
@@ -106,26 +155,27 @@ impl CpuRegisters {
         bool_to_u8(self.P.zero) << 1 | bool_to_u8(self.P.carry) as u8
     }
 
-    pub fn set_acc(&mut self, v: u8) -> &mut Self {
+    pub fn set_A(&mut self, v: u8) -> &mut Self {
         self.A = v;
         self
     }
 
-    pub fn set_x(&mut self, v: u8) -> &mut Self {
+    pub fn set_X(&mut self, v: u8) -> &mut Self {
         self.X = v;
         self
     }
 
-    pub fn set_y(&mut self, v: u8) -> &mut Self {
+    pub fn set_Y(&mut self, v: u8) -> &mut Self {
         self.Y = v;
         self
     }
 
-    pub fn set_pc(&mut self, v: u16) {
+    pub fn set_PC(&mut self, v: u16) -> &mut Self {
         self.PC = v;
+        self
     }
 
-    pub fn set_p(&mut self, v: u8) -> &mut Self {
+    pub fn set_P(&mut self, v: u8) -> &mut Self {
         self.P.negative = v & 0x80 == 0x80;
         self.P.overflow = v & 0x40 == 0x40;
         self.P.reserved = v & 0x20 == 0x20;
@@ -137,7 +187,7 @@ impl CpuRegisters {
         self
     }
 
-    pub fn set_sp(&mut self, v: u8) -> &mut Self {
+    pub fn set_SP(&mut self, v: u8) -> &mut Self {
         self.SP = v;
         self
     }
@@ -182,43 +232,38 @@ impl CpuRegisters {
         self
     }
 
-    pub fn update_negative(&mut self, v: u8) -> &mut Self {
+    pub fn update_negative_by(&mut self, v: u8) -> &mut Self {
         self.P.negative = v & 0x80 == 0x80;
         self
     }
 
-    pub fn update_overflow(&mut self, fetched: u8, computed: u8) -> &mut Self {
+    pub fn update_overflow_by(&mut self, fetched: u8, computed: u8) -> &mut Self {
         self.P.overflow = !(((self.A ^ fetched) & 0x80) != 0) &&
                           (((self.A ^ computed) & 0x80)) != 0;
         self
     }
 
-    pub fn update_zero(&mut self, v: u8) -> &mut Self {
+    pub fn update_zero_by(&mut self, v: u8) -> &mut Self {
         self.P.zero = v == 0;
         self
     }
 
-    pub fn update_PC(&mut self) -> &mut Self {
-        self.PC += 1;
-        self
-    }
-
-    pub fn inc_sp(&mut self) -> &mut Self {
+    pub fn inc_SP(&mut self) -> &mut Self {
         self.SP += 1;
         self
     }
 
-    pub fn dec_sp(&mut self) -> &mut Self {
+    pub fn dec_SP(&mut self) -> &mut Self {
         self.SP -= 1;
         self
     }
 
-    pub fn inc_pc(&mut self) -> &mut Self {
+    pub fn inc_PC(&mut self) -> &mut Self {
         self.PC += 1;
         self
     }
 
-    pub fn dec_pc(&mut self) -> &mut Self {
+    pub fn dec_PC(&mut self) -> &mut Self {
         self.PC -= 1;
         self
     }

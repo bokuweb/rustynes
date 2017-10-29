@@ -1,11 +1,11 @@
 use super::opecode::*;
-use super::super::cpu_registers::CpuRegisters;
+use super::super::cpu_registers::{CpuRegisters};
 use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 
 pub fn fetch(ref mut registers: &mut CpuRegisters, ref mut bus: &mut CpuBus) -> Data {
     let code = bus.read(registers.get_PC());
-    registers.update_PC();
+    registers.inc_PC();
     code
 }
 
@@ -32,9 +32,9 @@ pub fn fetch_opeland(code: &Opecode,
 
 pub fn fetch_word(ref mut registers: &mut CpuRegisters, ref mut bus: &mut CpuBus) -> Word {
     let lower = bus.read(registers.get_PC()) as Word;
-    registers.update_PC();
+    registers.inc_PC();
     let upper = bus.read(registers.get_PC()) as Word;
-    registers.update_PC();
+    registers.inc_PC();
     (upper << 8 | lower) as Word
 }
 
