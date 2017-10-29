@@ -1,5 +1,5 @@
-use super::super::types::{Data, Addr, Word};
-use super::super::helper::*;
+use super::types::{Data, Addr, Word};
+use super::helper::*;
 
 #[derive(Debug)]
 pub struct Status {
@@ -15,23 +15,23 @@ pub struct Status {
 
 #[derive(Debug)]
 #[allow(non_snake_case)]
-pub struct Registers {
+pub struct CpuRegisters {
     A: u8,
     X: u8,
     Y: u8,
-    Sp: u8,
-    Pc: u16,
+    SP: u8,
+    PC: u16,
     P: Status,
 }
 
-#[derive(Debug)]
-pub enum ByteRegister {
-    A,
-    X,
-    Y,
-    SP,
-    P,
-}
+// #[derive(Debug)]
+// pub enum ByteRegister {
+//     A,
+//     X,
+//     Y,
+//     SP,
+//     P,
+// }
 
 #[derive(Debug)]
 pub enum StatusName {
@@ -45,14 +45,14 @@ pub enum StatusName {
     carry,
 }
 
-impl Registers {
+impl CpuRegisters {
     pub fn new() -> Self {
-        Registers {
+        CpuRegisters {
             A: 0,
             X: 0,
             Y: 0,
-            Pc: 0x8000,
-            Sp: 0xFD,
+            PC: 0x8000,
+            SP: 0xFD,
             P: Status {
                 negative: false,
                 overflow: false,
@@ -63,40 +63,6 @@ impl Registers {
                 zero: false,
                 carry: false,
             },
-        }
-    }
-
-    pub fn reset(&mut self) -> &mut Self {
-        self.A = 0;
-        self.X = 0;
-        self.Y = 0;
-        self.Pc = 0x8000;
-        self.Sp = 0xFD;
-        self.P.negative = false;
-        self.P.overflow = false;
-        self.P.reserved = true;
-        self.P.break_mode = true;
-        self.P.decimal_mode = false;
-        self.P.interrupt = true;
-        self.P.zero = false;
-        self.P.carry = false;
-        self
-    }
-
-    pub fn get(&self, name: ByteRegister) -> u8 {
-        match name {
-            ByteRegister::A => self.A,
-            ByteRegister::X => self.X,
-            ByteRegister::Y => self.Y,
-            ByteRegister::SP => self.Sp,
-            ByteRegister::P => {
-                bool_to_u8(self.P.negative) << 7 | bool_to_u8(self.P.overflow) << 6 |
-                bool_to_u8(self.P.reserved) << 5 |
-                bool_to_u8(self.P.break_mode) << 4 |
-                bool_to_u8(self.P.decimal_mode) << 3 |
-                bool_to_u8(self.P.interrupt) << 2 | bool_to_u8(self.P.zero) << 1 |
-                bool_to_u8(self.P.carry) as u8
-            }
         }
     }
 
@@ -113,8 +79,31 @@ impl Registers {
         }
     }
 
-    pub fn get_pc(&self) -> u16 {
-        self.Pc
+    pub fn get_PC(&self) -> u16 {
+        self.PC
+    }
+
+    pub fn get_A(&self) -> u8 {
+        self.A
+    }
+
+    pub fn get_X(&self) -> u8 {
+        self.X
+    }
+
+    pub fn get_Y(&self) -> u8 {
+        self.X
+    }
+
+    pub fn get_SP(&self) -> u8 {
+        self.SP
+    }
+
+    pub fn get_P(&self) -> u8 {
+        bool_to_u8(self.P.negative) << 7 | bool_to_u8(self.P.overflow) << 6 |
+        bool_to_u8(self.P.reserved) << 5 | bool_to_u8(self.P.break_mode) << 4 |
+        bool_to_u8(self.P.decimal_mode) << 3 | bool_to_u8(self.P.interrupt) << 2 |
+        bool_to_u8(self.P.zero) << 1 | bool_to_u8(self.P.carry) as u8
     }
 
     pub fn set_acc(&mut self, v: u8) -> &mut Self {
@@ -132,9 +121,8 @@ impl Registers {
         self
     }
 
-    pub fn set_pc(&mut self, v: u16) -> &mut Self {
-        self.Pc = v;
-        self
+    pub fn set_pc(&mut self, v: u16) {
+        self.PC = v;
     }
 
     pub fn set_p(&mut self, v: u8) -> &mut Self {
@@ -150,7 +138,7 @@ impl Registers {
     }
 
     pub fn set_sp(&mut self, v: u8) -> &mut Self {
-        self.Sp = v;
+        self.SP = v;
         self
     }
 
@@ -210,28 +198,28 @@ impl Registers {
         self
     }
 
-    pub fn update_pc(&mut self) -> &mut Self {
-        self.Pc += 1;
+    pub fn update_PC(&mut self) -> &mut Self {
+        self.PC += 1;
         self
     }
 
     pub fn inc_sp(&mut self) -> &mut Self {
-        self.Sp += 1;
+        self.SP += 1;
         self
     }
 
     pub fn dec_sp(&mut self) -> &mut Self {
-        self.Sp -= 1;
+        self.SP -= 1;
         self
     }
 
     pub fn inc_pc(&mut self) -> &mut Self {
-        self.Pc += 1;
+        self.PC += 1;
         self
     }
 
     pub fn dec_pc(&mut self) -> &mut Self {
-        self.Pc -= 1;
+        self.PC -= 1;
         self
     }
 }

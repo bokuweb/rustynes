@@ -2,27 +2,27 @@ use std::cell::RefCell;
 
 use nes::rom::Rom;
 use nes::ram::Ram;
-use nes::ppu::Ppu;
+// use nes::ppu::Ppu;
 
 pub struct CpuBus<'a> {
     program_rom: &'a Rom,
-    character_memory: &'a Ram,
     work_ram: &'a Ram,
-    ppu: &'a Ppu,
+    // ppu: &'a Ppu,
 }
 
 impl<'a> CpuBus<'a> {
-    pub fn new(program_rom: &'a Rom,
-               character_memory: &'a Ram,
-               work_ram: &'a Ram,
-               ppu: &'a Ppu)
-               -> CpuBus<'a> {
+    pub fn new(program_rom: &'a Rom, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> CpuBus<'a> {
         CpuBus {
             program_rom,
-            character_memory,
             work_ram,
-            ppu,
+            // ppu,
         }
+    }
+
+    pub fn read_word(&self, addr: u16) -> u16 {
+        let lower = self.read(addr) as u16;
+        let upper = self.read(addr + 1) as u16;
+        (upper << 8 | lower) as u16
     }
 
     pub fn read(&self, addr: u16) -> u8 {

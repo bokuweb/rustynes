@@ -5,19 +5,18 @@ extern crate libc;
 mod nes;
 mod externs;
 
-use nes::Nes;
+use nes::Context;
 
-fn main() {
-}
+fn main() {}
 
 #[no_mangle]
 pub fn run(len: usize, ptr: *mut u8) {
     let buf: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(ptr, len) };
-    let nes = Nes::new(buf);
-    nes.reset();
+    let mut ctx = Context::new(buf);
+    nes::reset(&mut ctx);
     let main_loop = || {
         // externs::eval(&format!("console.log({:?});", a));
-        nes.run();
+        nes::run(&mut ctx);
         let js = ["const canvas = document.querySelector('canvas');",
                   "const ctx = canvas.getContext('2d');",
                   "const image = ctx.createImageData(256, 240);",

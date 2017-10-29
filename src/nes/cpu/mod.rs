@@ -1,218 +1,98 @@
 mod opecode;
-mod registers;
+mod fetch;
+mod instructions;
 
 use self::opecode::*;
-use self::registers::*;
+use self::fetch::*;
+use self::instructions::*;
+
+use super::cpu_registers::CpuRegisters;
+use super::bus::cpu_bus::CpuBus;
 use super::types::{Data, Addr, Word};
 use super::helper::*;
-use std::cell::RefCell;
 
-#[derive(Debug)]
-pub struct Cpu {
-    registers: RefCell<Registers>,
+pub fn reset(ref mut registers: &mut CpuRegisters, bus: &CpuBus) {
+    let pc = bus.read_word(0xFFFC);
+    registers.set_pc(pc);
 }
 
-impl Cpu {
-    pub fn new() -> Cpu {
-        Cpu { registers: RefCell::new(Registers::new()) }
+pub fn run(ref mut registers: &mut CpuRegisters, ref mut bus: &mut CpuBus) -> Data {
+    println!("registers {:?}", registers);
+    let code = fetch(registers, bus);
+    let ref map = opecode::MAP;
+    let code = &*map.get(&code).unwrap();
+    let opeland = fetch_opeland(&code, registers, bus);
+    match code.name {
+        // Instruction::LDA => self.lda(&code, opeland, &read),
+        // Instruction::LDX => self.ldx(&code, opeland, &read),
+        // Instruction::LDY => self.ldy(&code, opeland, &read),
+        Instruction::STA => sta(opeland, registers, bus),
+        // Instruction::STX => self.stx(opeland, &write),
+        // Instruction::STY => self.sty(opeland, &write),
+        // Instruction::TXA => self.txa(),
+        // Instruction::TYA => self.tya(),
+        // Instruction::TXS => self.txs(),
+        // Instruction::TAY => self.tay(),
+        // Instruction::TAX => self.tax(),
+        // Instruction::TSX => self.tsx(),
+        // Instruction::PHP => self.php(bus),
+        // Instruction::PLP => self.plp(&read),
+        // Instruction::PHA => self.pha(&write),
+        // Instruction::PLA => self.pla(&read),
+        // Instruction::ADC => self.adc(&code, opeland, &read),
+        // Instruction::SBC => self.sbc(&code, opeland, &read),
+        // Instruction::CPX => self.cpx(&code, opeland, &read),
+        // Instruction::CPY => self.cpy(&code, opeland, &read),
+        // Instruction::CMP => self.cmp(&code, opeland, &read),
+        // Instruction::AND => self.and(&code, opeland, &read),
+        // Instruction::EOR => self.eor(&code, opeland, &read),
+        // Instruction::ORA => self.ora(&code, opeland, &read),
+        // Instruction::BIT => self.bit(opeland, &read),
+        // Instruction::ASL => self.asl(&code, opeland, &read, &write),
+        // Instruction::LSR => self.lsr(&code, opeland, &read, &write),
+        // Instruction::ROL => self.rol(&code, opeland, &read, &write),
+        // Instruction::ROR => self.ror(&code, opeland, &read, &write),
+        // Instruction::INX => self.inx(),
+        // Instruction::INY => self.iny(),
+        // Instruction::INC => self.inc(opeland, &read, &write),
+        // Instruction::DEX => self.dex(),
+        // Instruction::DEY => self.dey(),
+        // Instruction::DEC => self.dec(opeland, &read, &write),
+        // Instruction::CLC => self.clc(),
+        // Instruction::CLI => self.cli(),
+        // Instruction::CLV => self.clv(),
+        // Instruction::SEC => self.sec(),
+        // Instruction::SEI => self.sei(),
+        // Instruction::NOP => (),
+        // Instruction::BRK => self.brk(&read, &write),
+        // Instruction::JSR => self.jsr(opeland, &write),
+        // Instruction::JMP => self.jmp(opeland),
+        // Instruction::RTI => self.rti(&read),
+        // Instruction::RTS => self.rts(&read),
+        // Instruction::BPL => self.bpl(opeland),
+        // Instruction::BMI => self.bmi(opeland),
+        // Instruction::BVC => self.bvc(opeland),
+        // Instruction::BVS => self.bvs(opeland),
+        // Instruction::BCC => self.bcc(opeland),
+        // Instruction::BCS => self.bcs(opeland),
+        // Instruction::BNE => self.bne(opeland),
+        // Instruction::BEQ => self.beq(opeland),
+        // Instruction::SED => self.sed(),
+        // Instruction::CLD => self.cld(),
+        // Instruction::LAX => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::SAX => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::DCP => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::ISB => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::SLO => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::RLA => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::SRE => println!("{}", "TODO:Undocumented instruction"),
+        // Instruction::RRA => println!("{}", "TODO:Undocumented instruction"),
+        _ => println!("{}", "TODO:Undocumented instruction"),
     }
+    code.cycle
+}
 
-    pub fn reset<R>(&self, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        let pc = self.read_word(&read, 0xFFFC);
-        self.registers.borrow_mut().reset().set_pc(pc);
-    }
-
-    pub fn run<R, W>(&self, read: R, write: W) -> Data
-        where R: Fn(Addr) -> Data,
-              W: Fn(Addr, Data)
-    {
-        println!("registers {:?}", self.registers);
-        let code = self.fetch(&read);
-        let ref map = opecode::MAP;
-        let code = &*map.get(&code).unwrap();
-        let opeland = self.fetch_opeland(&code, &read);
-        match code.name {
-            Instruction::LDA => self.lda(&code, opeland, &read),
-            Instruction::LDX => self.ldx(&code, opeland, &read),
-            Instruction::LDY => self.ldy(&code, opeland, &read),
-            Instruction::STA => self.sta(opeland, &write),
-            Instruction::STX => self.stx(opeland, &write),
-            Instruction::STY => self.sty(opeland, &write),
-            Instruction::TXA => self.txa(),
-            Instruction::TYA => self.tya(),
-            Instruction::TXS => self.txs(),
-            Instruction::TAY => self.tay(),
-            Instruction::TAX => self.tax(),
-            Instruction::TSX => self.tsx(),
-            Instruction::PHP => self.php(&write),
-            Instruction::PLP => self.plp(&read),
-            Instruction::PHA => self.pha(&write),
-            Instruction::PLA => self.pla(&read),
-            Instruction::ADC => self.adc(&code, opeland, &read),
-            Instruction::SBC => self.sbc(&code, opeland, &read),
-            Instruction::CPX => self.cpx(&code, opeland, &read),
-            Instruction::CPY => self.cpy(&code, opeland, &read),
-            Instruction::CMP => self.cmp(&code, opeland, &read),
-            Instruction::AND => self.and(&code, opeland, &read),
-            Instruction::EOR => self.eor(&code, opeland, &read),
-            Instruction::ORA => self.ora(&code, opeland, &read),
-            Instruction::BIT => self.bit(opeland, &read),
-            Instruction::ASL => self.asl(&code, opeland, &read, &write),
-            Instruction::LSR => self.lsr(&code, opeland, &read, &write),
-            Instruction::ROL => self.rol(&code, opeland, &read, &write),
-            Instruction::ROR => self.ror(&code, opeland, &read, &write),
-            Instruction::INX => self.inx(),
-            Instruction::INY => self.iny(),
-            Instruction::INC => self.inc(opeland, &read, &write),
-            Instruction::DEX => self.dex(),
-            Instruction::DEY => self.dey(),
-            Instruction::DEC => self.dec(opeland, &read, &write),
-            Instruction::CLC => self.clc(),
-            Instruction::CLI => self.cli(),
-            Instruction::CLV => self.clv(),
-            Instruction::SEC => self.sec(),
-            Instruction::SEI => self.sei(),
-            Instruction::NOP => (),
-            Instruction::BRK => self.brk(&read, &write),
-            Instruction::JSR => self.jsr(opeland, &write),
-            Instruction::JMP => self.jmp(opeland),
-            Instruction::RTI => self.rti(&read),
-            Instruction::RTS => self.rts(&read),
-            Instruction::BPL => self.bpl(opeland),
-            Instruction::BMI => self.bmi(opeland),
-            Instruction::BVC => self.bvc(opeland),
-            Instruction::BVS => self.bvs(opeland),
-            Instruction::BCC => self.bcc(opeland),
-            Instruction::BCS => self.bcs(opeland),
-            Instruction::BNE => self.bne(opeland),
-            Instruction::BEQ => self.beq(opeland),
-            Instruction::SED => self.sed(),
-            Instruction::CLD => self.cld(),
-            Instruction::LAX => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::SAX => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::DCP => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::ISB => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::SLO => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::RLA => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::SRE => println!("{}", "TODO:Undocumented instruction"),
-            Instruction::RRA => println!("{}", "TODO:Undocumented instruction"),
-        }
-        code.cycle
-    }
-
-    fn fetch<R>(&self, read: R) -> Data
-        where R: Fn(Addr) -> Data
-    {
-        let code = read(self.registers.borrow().get_pc());
-        self.registers.borrow_mut().update_pc();
-        code
-    }
-
-    fn fetch_word<R>(&self, read: R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let lower = read(self.registers.borrow().get_pc()) as Word;
-        self.registers.borrow_mut().update_pc();
-        let upper = read(self.registers.borrow().get_pc()) as Word;
-        self.registers.borrow_mut().update_pc();
-        (upper << 8 | lower) as Word
-    }
-
-    fn read_word<R>(&self, read: R, addr: Addr) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let lower = read(addr) as Word;
-        let upper = read(addr + 1) as Word;
-        (upper << 8 | lower) as Word
-    }
-
-    fn fetch_relative<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let base = self.fetch(read) as Word;
-        if base < 0x80 {
-            base + self.registers.borrow().get_pc()
-        } else {
-            base + self.registers.borrow().get_pc() - 256
-        }
-    }
-
-    fn fetch_zeropage_x<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch(read) as Word;
-        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFF as Word
-    }
-
-    fn fetch_zeropage_y<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch(read) as Word;
-        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFF as Word
-    }
-
-    fn fetch_absolute_x<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch_word(read);
-        (addr + self.registers.borrow().get(ByteRegister::X) as Word) & 0xFFFF
-    }
-
-    fn fetch_absolute_y<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch_word(read);
-        (addr + self.registers.borrow().get(ByteRegister::Y) as Word) & 0xFFFF
-    }
-
-    fn fetch_pre_indexed_indirect<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = ((self.fetch(read) + self.registers.borrow().get(ByteRegister::X)) & 0xFF) as
-                   Addr;
-        let addr = (read(addr) as Addr) + ((read((addr + 1) as Addr & 0xFF) as Addr) << 8);
-        addr & 0xFFFF
-    }
-
-    fn fetch_post_indexed_indirect<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch(read) as Addr;
-        let addr = (read(addr) as Addr) + ((read((addr + 1) & 0xFF) as Addr) << 8);
-        addr + (self.registers.borrow().get(ByteRegister::Y) as Addr) & 0xFFFF
-    }
-
-    fn fetch_indirect_absolute<R>(&self, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        let addr = self.fetch_word(read);
-        let upper = read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as Addr) as Addr;
-        let addr = (read(addr) as Addr) + (upper << 8) as Addr;
-        addr & 0xFFFF
-    }
-
-    fn fetch_opeland<R>(&self, code: &Opecode, ref read: &R) -> Word
-        where R: Fn(Addr) -> Data
-    {
-        match code.mode {
-            Addressing::Accumulator => 0x0000,
-            Addressing::Implied => 0x0000,
-            Addressing::Immediate => self.fetch(read) as Word,
-            Addressing::Relative => self.fetch_relative(read),
-            Addressing::ZeroPage => self.fetch(read) as Word,
-            Addressing::ZeroPageX => self.fetch_zeropage_x(read),
-            Addressing::ZeroPageY => self.fetch_zeropage_y(read),
-            Addressing::Absolute => self.fetch_word(read),     
-            Addressing::AbsoluteX => self.fetch_absolute_x(read),
-            Addressing::AbsoluteY => self.fetch_absolute_y(read),
-            Addressing::PreIndexedIndirect => self.fetch_pre_indexed_indirect(read),
-            Addressing::PostIndexedIndirect => self.fetch_post_indexed_indirect(read),
-            Addressing::IndirectAbsolute => self.fetch_indirect_absolute(read),
-        }
-    }
-
+/*
     fn branch(&self, addr: Addr) {
         self.registers.borrow_mut().set_pc(addr);
     }
@@ -303,12 +183,6 @@ impl Cpu {
             .set_y(computed)
             .update_negative(computed)
             .update_zero(computed);
-    }
-
-    fn sta<W>(&self, opeland: Word, write: W)
-        where W: Fn(Addr, Data)
-    {
-        write(opeland, self.registers.borrow().get(ByteRegister::A));
     }
 
     fn stx<W>(&self, opeland: Word, write: W)
@@ -854,7 +728,9 @@ impl Cpu {
     fn sed(&self) {
         self.registers.borrow_mut().set_decimal(true);
     }
-}
+    */
+
+
 
 
 #[test]
