@@ -6,16 +6,16 @@ use self::opecode::*;
 use self::fetch::*;
 use self::instructions::*;
 
-use super::cpu_registers::{CpuRegisters, Register};
+use super::cpu_registers::{CpuRegisters};
 use super::bus::cpu_bus::CpuBus;
 use super::types::Data;
 
-pub fn reset<T: Register>(registers: &mut T, bus: &CpuBus) {
+pub fn reset<T: CpuRegisters>(registers: &mut T, bus: &CpuBus) {
     let pc = bus.read_word(0xFFFC);
     registers.set_PC(pc);
 }
 
-pub fn run<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Data {
+pub fn run<T: CpuRegisters>(registers: &mut T, bus: &mut CpuBus) -> Data {
     // println!("[registers] {:?}", registers);
     let code = fetch(registers, bus);
     let ref map = opecode::MAP;

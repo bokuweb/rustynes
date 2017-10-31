@@ -15,7 +15,7 @@ struct Status {
 
 #[derive(Debug)]
 #[allow(non_snake_case)]
-pub struct CpuRegisters {
+pub struct Registers {
     A: u8,
     X: u8,
     Y: u8,
@@ -24,7 +24,7 @@ pub struct CpuRegisters {
     P: Status,
 }
 
-pub trait Register {
+pub trait CpuRegisters {
     fn get_PC(&self) -> u16;
 
     fn get_A(&self) -> u8;
@@ -100,9 +100,9 @@ pub trait Register {
 //     zero,
 //     carry,
 // }
-impl CpuRegisters {
+impl Registers {
     pub fn new() -> Self {
-        CpuRegisters {
+        Registers {
             A: 0,
             X: 0,
             Y: 0,
@@ -121,7 +121,7 @@ impl CpuRegisters {
         }
     }
 }
-impl Register for CpuRegisters {
+impl CpuRegisters for Registers {
     #[allow(non_snake_case)]
     fn get_PC(&self) -> u16 {
         self.PC

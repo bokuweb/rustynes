@@ -10,7 +10,6 @@ mod cpu_registers;
 mod types;
 mod helper;
 
-use self::cpu_registers::CpuRegisters;
 // use self::ppu::Ppu;
 use self::rom::Rom;
 use self::ram::Ram;
@@ -30,7 +29,7 @@ pub struct Context {
     // ppu: Ppu,
     program_rom: Rom,
     work_ram: Ram,
-    cpu_registers: CpuRegisters,
+    cpu_registers: cpu_registers::Registers,
 }
 
 // fn read(program_rom: &Rom, work_ram: &mut Ram, addr: Addr) -> Data {
@@ -69,7 +68,7 @@ impl Context {
     pub fn new(buf: &mut [Data]) -> Self {
         let cassette = parser::parse(buf);
         Context {
-            cpu_registers: CpuRegisters::new(),
+            cpu_registers: cpu_registers::Registers::new(),
             program_rom: Rom::new(cassette.program_rom),
             // ppu: Ppu::new(cassette.character_ram),
             work_ram: Ram::new(vec![0; 0x0800]),
