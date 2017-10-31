@@ -2,7 +2,7 @@ use super::super::cpu_registers::{CpuRegisters};
 use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 
-pub fn sta<T: CpuRegisters>(opeland: Word, registers: &mut T, ref mut bus: &mut CpuBus) {
+pub fn sta<T: CpuRegisters>(opeland: Word, registers: &mut T, bus: &mut CpuBus) {
     bus.write(opeland, registers.get_A());
 }
 

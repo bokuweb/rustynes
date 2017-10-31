@@ -27,8 +27,8 @@ pub struct Nes {
 #[derive(Debug)]
 pub struct Context {
     // ppu: Ppu,
-    program_rom: Rom,
-    work_ram: Ram,
+    program_rom: Box<Rom>,
+    work_ram: Box<Ram>,
     cpu_registers: cpu_registers::Registers,
 }
 
@@ -69,9 +69,9 @@ impl Context {
         let cassette = parser::parse(buf);
         Context {
             cpu_registers: cpu_registers::Registers::new(),
-            program_rom: Rom::new(cassette.program_rom),
+            program_rom: Box::new(Rom::new(cassette.program_rom)),
             // ppu: Ppu::new(cassette.character_ram),
-            work_ram: Ram::new(vec![0; 0x0800]),
+            work_ram: Box::new(Ram::new(vec![0; 0x0800])),
         }
     }
 }

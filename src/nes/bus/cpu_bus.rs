@@ -5,13 +5,13 @@ use nes::ram::Ram;
 // use nes::ppu::Ppu;
 
 pub struct CpuBus<'a> {
-    program_rom: &'a Rom,
+    program_rom: &'a Box<Rom>,
     work_ram: &'a Ram,
     // ppu: &'a Ppu,
 }
 
 impl<'a> CpuBus<'a> {
-    pub fn new(program_rom: &'a Rom, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> CpuBus<'a> {
+    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> CpuBus<'a> {
         CpuBus {
             program_rom,
             work_ram,

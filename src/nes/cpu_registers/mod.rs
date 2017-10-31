@@ -24,6 +24,7 @@ pub struct Registers {
     P: Status,
 }
 
+#[allow(non_snake_case)]
 pub trait CpuRegisters {
     fn get_PC(&self) -> u16;
 
@@ -121,33 +122,29 @@ impl Registers {
         }
     }
 }
+
+#[allow(non_snake_case)]
 impl CpuRegisters for Registers {
-    #[allow(non_snake_case)]
     fn get_PC(&self) -> u16 {
         self.PC
     }
 
-    #[allow(non_snake_case)]
     fn get_A(&self) -> u8 {
         self.A
     }
 
-    #[allow(non_snake_case)]
     fn get_X(&self) -> u8 {
         self.X
     }
 
-    #[allow(non_snake_case)]
     fn get_Y(&self) -> u8 {
         self.X
     }
 
-    #[allow(non_snake_case)]
     fn get_SP(&self) -> u8 {
         self.SP
     }
 
-    #[allow(non_snake_case)]
     fn get_P(&self) -> u8 {
         bool_to_u8(self.P.negative) << 7 | bool_to_u8(self.P.overflow) << 6 |
         bool_to_u8(self.P.reserved) << 5 | bool_to_u8(self.P.break_mode) << 4 |
