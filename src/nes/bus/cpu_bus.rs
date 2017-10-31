@@ -1,31 +1,39 @@
-use std::cell::RefCell;
-
 use nes::rom::Rom;
 use nes::ram::Ram;
 // use nes::ppu::Ppu;
 
-pub struct CpuBus<'a> {
+pub struct Bus<'a> {
     program_rom: &'a Box<Rom>,
     work_ram: &'a Ram,
     // ppu: &'a Ppu,
 }
 
-impl<'a> CpuBus<'a> {
-    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> CpuBus<'a> {
-        CpuBus {
+pub trait CpuBus {
+    fn read_word(&self, addr: u16) -> u16;
+
+    fn read(&self, addr: u16) -> u8;
+
+    fn write(&self, addr: u16, data: u8);
+}
+
+impl<'a> Bus<'a> {
+    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> Bus<'a> {
+        Self {
             program_rom,
             work_ram,
             // ppu,
         }
     }
+}
 
-    pub fn read_word(&self, addr: u16) -> u16 {
+impl<'a> CpuBus for Bus<'a> {
+    fn read_word(&self, addr: u16) -> u16 {
         let lower = self.read(addr) as u16;
         let upper = self.read(addr + 1) as u16;
         (upper << 8 | lower) as u16
     }
 
-    pub fn read(&self, addr: u16) -> u8 {
+    fn read(&self, addr: u16) -> u8 {
         match addr {
             0x0000...0x07FF => self.work_ram.read(addr),
             0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
@@ -40,7 +48,7 @@ impl<'a> CpuBus<'a> {
         }
     }
 
-    pub fn write(&self, addr: u16, data: u8) {
+    fn write(&self, addr: u16, data: u8) {
         match addr {
             0x0000...0x07FF => self.work_ram.write(addr, data),
             0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),

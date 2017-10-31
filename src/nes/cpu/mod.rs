@@ -10,12 +10,12 @@ use super::cpu_registers::{CpuRegisters};
 use super::bus::cpu_bus::CpuBus;
 use super::types::Data;
 
-pub fn reset<T: CpuRegisters>(registers: &mut T, bus: &CpuBus) {
+pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &U) {
     let pc = bus.read_word(0xFFFC);
     registers.set_PC(pc);
 }
 
-pub fn run<T: CpuRegisters>(registers: &mut T, bus: &mut CpuBus) -> Data {
+pub fn run<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
     // println!("[registers] {:?}", registers);
     let code = fetch(registers, bus);
     let ref map = opecode::MAP;

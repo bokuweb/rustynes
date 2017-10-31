@@ -66,6 +66,22 @@ pub trait CpuRegisters {
 
     fn set_carry(&mut self, v: bool) -> &mut Self;
 
+    fn get_negative(&self) -> bool;
+
+    fn get_overflow(&self) -> bool;
+
+    fn get_reserved(&self) -> bool;
+
+    fn get_break(&self) -> bool;
+
+    fn get_interrupt(&self) -> bool;
+
+    fn get_zero(&self) -> bool;
+
+    fn get_decimal(&self) -> bool;
+
+    fn get_carry(&self) -> bool;
+
     fn update_negative_by(&mut self, v: u8) -> &mut Self;
 
     fn update_overflow_by(&mut self, fetched: u8, computed: u8) -> &mut Self;
@@ -227,6 +243,38 @@ impl CpuRegisters for Registers {
     fn set_carry(&mut self, v: bool) -> &mut Self {
         self.P.carry = v;
         self
+    }
+
+    fn get_negative(&self) -> bool {
+        self.P.negative
+    }
+
+    fn get_overflow(&self) -> bool {
+        self.P.overflow
+    }
+
+    fn get_reserved(&self) -> bool {
+        self.P.reserved
+    }
+
+    fn get_break(&self) -> bool {
+        self.P.break_mode
+    }
+
+    fn get_interrupt(&self) -> bool {
+        self.P.interrupt
+    }
+
+    fn get_zero(&self) -> bool {
+        self.P.zero
+    }
+
+    fn get_decimal(&self) -> bool {
+        self.P.decimal_mode
+    }
+
+    fn get_carry(&self) -> bool {
+        self.P.carry
     }
 
     fn update_negative_by(&mut self, v: u8) -> &mut Self {

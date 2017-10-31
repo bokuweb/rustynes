@@ -13,7 +13,7 @@ mod helper;
 // use self::ppu::Ppu;
 use self::rom::Rom;
 use self::ram::Ram;
-use self::bus::cpu_bus::CpuBus;
+use self::bus::cpu_bus;
 // use std::rc::Rc;
 // use std::cell::RefCell;
 use nes::types::{Data, Addr};
@@ -41,7 +41,7 @@ pub struct Context {
 // }
 
 pub fn reset(ctx: &mut Context) {
-    let cpu_bus = CpuBus::new(&ctx.program_rom,
+    let cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
                                   &ctx.work_ram,
                                   //&ctx.ppu
                                   );
@@ -51,7 +51,7 @@ pub fn reset(ctx: &mut Context) {
 
 pub fn run(ctx: &mut Context) {
     let mut cycle = 0;
-    let mut cpu_bus = CpuBus::new(&ctx.program_rom,
+    let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
                                   &ctx.work_ram,
                                   //&ctx.ppu
                                   );
