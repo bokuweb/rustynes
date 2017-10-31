@@ -46,6 +46,7 @@ pub fn reset(mut ctx: &mut Context) {
                                   &ctx.work_ram,
                                   //&ctx.ppu
                                   );
+    // let mut register = ctx.cpu_registers;
     cpu::reset(&mut ctx.cpu_registers, &cpu_bus);
 }
 
@@ -56,10 +57,10 @@ pub fn run(ref mut ctx: &mut Context) {
                                   //&ctx.ppu
                                   );
     loop {
-        cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
-        if cycle > 20 {
-            break;
-        }
+        // cycle += cpu::run(ctx.cpu_registers, &mut cpu_bus);
+        // if cycle > 20 {
+        //     break;
+        // }
     }
 }
 
