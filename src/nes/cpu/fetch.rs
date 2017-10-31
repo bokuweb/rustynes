@@ -3,15 +3,15 @@ use super::super::cpu_registers::{CpuRegisters, Register};
 use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 
-pub fn fetch<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Data {
+pub fn fetch<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Data {
     let code = bus.read(registers.get_PC());
     registers.inc_PC();
     code
 }
 
 pub fn fetch_opeland<T: Register>(code: &Opecode,
-                                  ref mut registers: T,
-                                  ref mut bus: &mut CpuBus)
+                                  registers: &mut T,
+                                  bus: &mut CpuBus)
                                   -> Word {
     match code.mode {
         Addressing::Accumulator => 0x0000,
@@ -30,7 +30,7 @@ pub fn fetch_opeland<T: Register>(code: &Opecode,
     }
 }
 
-pub fn fetch_word<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
+pub fn fetch_word<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
     let lower = bus.read(registers.get_PC()) as Word;
     registers.inc_PC();
     let upper = bus.read(registers.get_PC()) as Word;
@@ -38,8 +38,8 @@ pub fn fetch_word<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuB
     (upper << 8 | lower) as Word
 }
 
-pub fn fetch_relative<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
-    let base = fetch(*registers, bus) as Word;
+pub fn fetch_relative<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
+    let base = fetch(registers, bus) as Word;
     if base < 0x80 {
         base + registers.get_PC()
     } else {
@@ -47,46 +47,46 @@ pub fn fetch_relative<T: Register>(ref mut registers: &mut T, ref mut bus: &mut 
     }
 }
 
-pub fn fetch_zeropage_x<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
-    let addr = fetch(*registers, bus) as Word;
+pub fn fetch_zeropage_x<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
+    let addr = fetch(registers, bus) as Word;
     (addr + registers.get_X() as Word) & 0xFF as Word
 }
 
-pub fn fetch_zeropage_y<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
-    let addr = fetch(*registers, bus) as Word;
+pub fn fetch_zeropage_y<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
+    let addr = fetch(registers, bus) as Word;
     (addr + registers.get_Y() as Word) & 0xFF as Word
 }
 
-pub fn fetch_absolute_x<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
-    let addr = fetch_word(*registers, bus);
+pub fn fetch_absolute_x<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
+    let addr = fetch_word(registers, bus);
     (addr + registers.get_X() as Word) & 0xFFFF
 }
 
-pub fn fetch_absolute_y<T: Register>(ref mut registers: &mut T, ref mut bus: &mut CpuBus) -> Word {
-    let addr = fetch_word(*registers, bus);
+pub fn fetch_absolute_y<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Word {
+    let addr = fetch_word(registers, bus);
     (addr + registers.get_Y() as Word) & 0xFFFF
 }
 
-pub fn fetch_pre_indexed_indirect<T: Register>(ref mut registers: &mut T,
-                                               ref mut bus: &mut CpuBus)
+pub fn fetch_pre_indexed_indirect<T: Register>(registers: &mut T,
+                                               bus: &mut CpuBus)
                                                -> Word {
-    let addr = ((fetch(*registers, bus) + registers.get_X()) & 0xFF) as Addr;
+    let addr = ((fetch(registers, bus) + registers.get_X()) & 0xFF) as Addr;
     let addr = (bus.read(addr) as Addr) + ((bus.read((addr + 1) as Addr & 0xFF) as Addr) << 8);
     addr & 0xFFFF
 }
 
-pub fn fetch_post_indexed_indirect<T: Register>(ref mut registers: &mut T,
-                                                ref mut bus: &mut CpuBus)
+pub fn fetch_post_indexed_indirect<T: Register>(registers: &mut T,
+                                                bus: &mut CpuBus)
                                                 -> Word {
-    let addr = fetch(*registers, bus) as Addr;
+    let addr = fetch(registers, bus) as Addr;
     let addr = (bus.read(addr) as Addr) + ((bus.read((addr + 1) & 0xFF) as Addr) << 8);
     addr + (registers.get_Y() as Addr) & 0xFFFF
 }
 
-pub fn fetch_indirect_absolute<T: Register>(ref mut registers: &mut T,
-                                            ref mut bus: &mut CpuBus)
+pub fn fetch_indirect_absolute<T: Register>(registers: &mut T,
+                                            bus: &mut CpuBus)
                                             -> Word {
-    let addr = fetch_word(*registers, bus);
+    let addr = fetch_word(registers, bus);
     let upper = bus.read((addr & 0xFF00) | ((((addr & 0xFF) + 1) & 0xFF)) as Addr) as Addr;
     let addr = (bus.read(addr) as Addr) + (upper << 8) as Addr;
     addr & 0xFFFF

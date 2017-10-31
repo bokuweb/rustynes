@@ -8,24 +8,24 @@ use self::instructions::*;
 
 use super::cpu_registers::{CpuRegisters, Register};
 use super::bus::cpu_bus::CpuBus;
-use super::types::{Data};
+use super::types::Data;
 
 pub fn reset<T: Register>(registers: &mut T, bus: &CpuBus) {
     let pc = bus.read_word(0xFFFC);
     registers.set_PC(pc);
 }
 
-// pub fn run<T: Register>(&mut registers: T, ref mut bus: &mut CpuBus) -> Data {
-//     // println!("[registers] {:?}", registers);
-//     let code = fetch(registers, bus);
-//     let ref map = opecode::MAP;
-//     let code = &*map.get(&code).unwrap();
-//     let opeland = fetch_opeland(&code, *registers, bus);
-//     match code.name {
+pub fn run<T: Register>(registers: &mut T, bus: &mut CpuBus) -> Data {
+    // println!("[registers] {:?}", registers);
+    let code = fetch(registers, bus);
+    let ref map = opecode::MAP;
+    let code = &*map.get(&code).unwrap();
+    let opeland = fetch_opeland(&code, registers, bus);
+    match code.name {
         // Instruction::LDA => self.lda(&code, opeland, &read),
         // Instruction::LDX => self.ldx(&code, opeland, &read),
         // Instruction::LDY => self.ldy(&code, opeland, &read),
-        // Instruction::STA => sta(opeland, registers, bus),
+        Instruction::STA => sta(opeland, registers, bus),
         // Instruction::STX => self.stx(opeland, &write),
         // Instruction::STY => self.sty(opeland, &write),
         // Instruction::TXA => self.txa(),
@@ -86,7 +86,7 @@ pub fn reset<T: Register>(registers: &mut T, bus: &CpuBus) {
         // Instruction::RLA => println!("{}", "TODO:Undocumented instruction"),
         // Instruction::SRE => println!("{}", "TODO:Undocumented instruction"),
         // Instruction::RRA => println!("{}", "TODO:Undocumented instruction"),
-//         _ => println!("{}", "TODO:Undocumented instruction"),
-//     }
-//     code.cycle
-// }
+        _ => println!("{}", "TODO:Undocumented instruction"),
+    }
+    code.cycle
+}

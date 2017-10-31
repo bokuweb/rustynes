@@ -33,15 +33,15 @@ pub struct Context {
     cpu_registers: CpuRegisters,
 }
 
-fn read(ref mut program_rom: &mut Rom, ref mut work_ram: &mut Ram, addr: Addr) -> Data {
-    let cpu_bus = CpuBus::new(&program_rom,
-                                  &work_ram,
-                                  //&ctx.ppu
-                                  );
-    cpu_bus.read(addr)
-}
+// fn read(program_rom: &Rom, work_ram: &mut Ram, addr: Addr) -> Data {
+//     let cpu_bus = CpuBus::new(&program_rom,
+//                                   &work_ram,
+//                                   //&ctx.ppu
+//                                   );
+//     cpu_bus.read(addr)
+// }
 
-pub fn reset(mut ctx: &mut Context) {
+pub fn reset(ctx: &mut Context) {
     let cpu_bus = CpuBus::new(&ctx.program_rom,
                                   &ctx.work_ram,
                                   //&ctx.ppu
@@ -50,17 +50,17 @@ pub fn reset(mut ctx: &mut Context) {
     cpu::reset(&mut ctx.cpu_registers, &cpu_bus);
 }
 
-pub fn run(ref mut ctx: &mut Context) {
+pub fn run(ctx: &mut Context) {
     let mut cycle = 0;
     let mut cpu_bus = CpuBus::new(&ctx.program_rom,
                                   &ctx.work_ram,
                                   //&ctx.ppu
                                   );
     loop {
-        // cycle += cpu::run(ctx.cpu_registers, &mut cpu_bus);
-        // if cycle > 20 {
-        //     break;
-        // }
+        cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
+        if cycle > 20 {
+            break;
+        }
     }
 }
 
