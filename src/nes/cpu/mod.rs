@@ -6,7 +6,7 @@ use self::opecode::*;
 use self::fetch::*;
 use self::instructions::*;
 
-use super::cpu_registers::{CpuRegisters};
+use super::cpu_registers::CpuRegisters;
 use super::bus::cpu_bus::CpuBus;
 use super::types::Data;
 
@@ -22,18 +22,21 @@ pub fn run<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
     let code = &*map.get(&code).unwrap();
     let opeland = fetch_opeland(&code, registers, bus);
     match code.name {
-        // Instruction::LDA => self.lda(&code, opeland, &read),
-        // Instruction::LDX => self.ldx(&code, opeland, &read),
-        // Instruction::LDY => self.ldy(&code, opeland, &read),
+        Instruction::LDA if code.mode == Addressing::Immediate => lda_imm(opeland, registers),
+        Instruction::LDA => lda(opeland, registers, bus),
+        Instruction::LDX if code.mode == Addressing::Immediate => ldx_imm(opeland, registers),
+        Instruction::LDX => ldx(opeland, registers, bus),
+        Instruction::LDY if code.mode == Addressing::Immediate => ldy_imm(opeland, registers),
+        Instruction::LDY => ldy(opeland, registers, bus),
         Instruction::STA => sta(opeland, registers, bus),
         Instruction::STX => stx(opeland, registers, bus),
         Instruction::STY => sty(opeland, registers, bus),
-        // Instruction::TXA => self.txa(),
-        // Instruction::TYA => self.tya(),
-        // Instruction::TXS => self.txs(),
-        // Instruction::TAY => self.tay(),
-        // Instruction::TAX => self.tax(),
-        // Instruction::TSX => self.tsx(),
+        Instruction::TXA => txa(registers),
+        Instruction::TYA => tya(registers),
+        Instruction::TXS => txs(registers),
+        Instruction::TAY => tay(registers),
+        Instruction::TAX => tax(registers),
+        Instruction::TSX => tsx(registers),
         // Instruction::PHP => self.php(bus),
         // Instruction::PLP => self.plp(&read),
         // Instruction::PHA => self.pha(&write),

@@ -2,6 +2,51 @@ use super::super::cpu_registers::CpuRegisters;
 use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 
+pub fn lda<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(opeland);
+    registers
+        .set_A(computed)
+        .update_negative_by(computed)
+        .update_zero_by(computed);
+}
+
+pub fn lda_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    registers
+        .set_A(opeland as Data)
+        .update_negative_by(opeland as Data)
+        .update_zero_by(opeland as Data);
+}
+
+pub fn ldx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(opeland);
+    registers
+        .set_X(computed)
+        .update_negative_by(computed)
+        .update_zero_by(computed);
+}
+
+pub fn ldx_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    registers
+        .set_X(opeland as Data)
+        .update_negative_by(opeland as Data)
+        .update_zero_by(opeland as Data);
+}
+
+pub fn ldy<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(opeland);
+    registers
+        .set_Y(computed)
+        .update_negative_by(computed)
+        .update_zero_by(computed);
+}
+
+pub fn ldy_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    registers
+        .set_Y(opeland as Data)
+        .update_negative_by(opeland as Data)
+        .update_zero_by(opeland as Data);
+}
+
 pub fn sta<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     bus.write(opeland, registers.get_A());
 }
@@ -13,6 +58,52 @@ pub fn stx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
 pub fn sty<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     bus.write(opeland, registers.get_Y());
 }
+
+pub fn txa<T: CpuRegisters>(registers: &mut T) {
+    let x = registers.get_X();
+    registers
+        .set_A(x)
+        .update_negative_by(x)
+        .update_zero_by(x);
+}
+
+pub fn tya<T: CpuRegisters>(registers: &mut T) {
+    let y = registers.get_Y();
+    registers
+        .set_A(y)
+        .update_negative_by(y)
+        .update_zero_by(y);
+}
+
+pub fn txs<T: CpuRegisters>(registers: &mut T) {
+    let x = registers.get_X();
+    registers.set_SP(x);
+}
+
+pub fn tay<T: CpuRegisters>(registers: &mut T) {
+    let acc = registers.get_A();
+    registers
+        .set_Y(acc)
+        .update_negative_by(acc)
+        .update_zero_by(acc);
+}
+
+pub fn tax<T: CpuRegisters>(registers: &mut T) {
+    let acc = registers.get_A();
+    registers
+        .set_X(acc)
+        .update_negative_by(acc)
+        .update_zero_by(acc);
+}
+
+pub fn tsx<T: CpuRegisters>(registers: &mut T) {
+    let sp = registers.get_SP();
+    registers
+        .set_X(sp)
+        .update_negative_by(sp)
+        .update_zero_by(sp);
+}
+
 
 /*
     fn branch(&self, addr: Addr) {
@@ -79,83 +170,8 @@ pub fn sty<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
             .update_zero(computed);
     }
 
-    fn ldx<R>(&self, code: &Opecode, opeland: Word, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        let computed = match code.mode {
-            Addressing::Immediate => opeland as Data,
-            _ => read(opeland),
-        };
-        self.registers
-            .borrow_mut()
-            .set_x(computed)
-            .update_negative(computed)
-            .update_zero(computed);
-    }
 
-    fn ldy<R>(&self, code: &Opecode, opeland: Word, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        let computed = match code.mode {
-            Addressing::Immediate => opeland as Data,
-            _ => read(opeland),
-        };
-        self.registers
-            .borrow_mut()
-            .set_y(computed)
-            .update_negative(computed)
-            .update_zero(computed);
-    }
 
-    fn txa(&self) {
-        let x = self.registers.borrow().get(ByteRegister::X);
-        self.registers
-            .borrow_mut()
-            .set_acc(x)
-            .update_negative(x)
-            .update_zero(x);
-    }
-
-    fn tya(&self) {
-        let y = self.registers.borrow().get(ByteRegister::Y);
-        self.registers
-            .borrow_mut()
-            .set_acc(y)
-            .update_negative(y)
-            .update_zero(y);
-    }
-
-    fn txs(&self) {
-        let x = self.registers.borrow().get(ByteRegister::X);
-        self.registers.borrow_mut().set_sp(x);
-    }
-
-    fn tay(&self) {
-        let acc = self.registers.borrow().get(ByteRegister::A);
-        self.registers
-            .borrow_mut()
-            .set_y(acc)
-            .update_negative(acc)
-            .update_zero(acc);
-    }
-
-    fn tax(&self) {
-        let acc = self.registers.borrow().get(ByteRegister::A);
-        self.registers
-            .borrow_mut()
-            .set_x(acc)
-            .update_negative(acc)
-            .update_zero(acc);
-    }
-
-    fn tsx(&self) {
-        let sp = self.registers.borrow().get(ByteRegister::SP);
-        self.registers
-            .borrow_mut()
-            .set_x(sp)
-            .update_negative(sp)
-            .update_zero(sp);
-    }
 
     fn php<W>(&self, ref write: W)
         where W: Fn(Addr, Data)
@@ -671,6 +687,54 @@ mod test {
     }
 
     #[test]
+    fn test_lda_immidiate() {
+        let mut reg = Registers::new();
+        lda_imm(0xA5, &mut reg);
+        assert_eq!(reg.get_A(), 0xA5);
+    }
+
+    #[test]
+    fn test_lda() {
+        let mut reg = Registers::new();
+        let mut bus = MockBus::new();
+        bus.mem[0xAA] = 0xA5;
+        lda(0xAA, &mut reg, &mut bus);
+        assert_eq!(reg.get_A(), 0xA5);
+    }
+
+    #[test]
+    fn test_ldx_immidiate() {
+        let mut reg = Registers::new();
+        ldx_imm(0xA5, &mut reg);
+        assert_eq!(reg.get_X(), 0xA5);
+    }
+
+    #[test]
+    fn test_ldx() {
+        let mut reg = Registers::new();
+        let mut bus = MockBus::new();
+        bus.mem[0xAA] = 0xA5;
+        ldx(0xAA, &mut reg, &mut bus);
+        assert_eq!(reg.get_X(), 0xA5);
+    }
+
+    #[test]
+    fn test_ldy_immidiate() {
+        let mut reg = Registers::new();
+        ldy_imm(0xA5, &mut reg);
+        assert_eq!(reg.get_Y(), 0xA5);
+    }
+
+    #[test]
+    fn test_ldy() {
+        let mut reg = Registers::new();
+        let mut bus = MockBus::new();
+        bus.mem[0xAA] = 0xA5;
+        ldy(0xAA, &mut reg, &mut bus);
+        assert_eq!(reg.get_Y(), 0xA5);
+    }
+
+    #[test]
     fn test_sta() {
         let mut reg = Registers::new();
         reg.set_A(0xA5);
@@ -697,86 +761,58 @@ mod test {
         assert_eq!(bus.mem[0xAA], 0xA5);
     }
 
+    #[test]
+    fn test_txa() {
+        let mut reg = Registers::new();
+        reg.set_X(0xA5);
+        txa(&mut reg);
+        assert_eq!(reg.get_A(), 0xA5);
+    }
+
+    #[test]
+    fn test_tax() {
+        let mut reg = Registers::new();
+        reg.set_A(0xA5);
+        tax(&mut reg);
+        assert_eq!(reg.get_X(), 0xA5);
+    }
+
+    #[test]
+    fn test_tay() {
+        let mut reg = Registers::new();
+        reg.set_A(0xA5);
+        tay(&mut reg);
+        assert_eq!(reg.get_Y(), 0xA5);
+    }
+
+
+    #[test]
+    fn test_tya() {
+        let mut reg = Registers::new();
+        reg.set_Y(0xA5);
+        tya(&mut reg);
+        assert_eq!(reg.get_A(), 0xA5);
+    }
+
+    #[test]
+    fn test_txs() {
+        let mut reg = Registers::new();
+        reg.set_X(0xA5);
+        txs(&mut reg);
+        assert_eq!(reg.get_SP(), 0xA5);
+    }
+
+    #[test]
+    fn test_tsx() {
+        let mut reg = Registers::new();
+        reg.set_SP(0xA5);        
+        tsx(&mut reg);
+        assert_eq!(reg.get_X(), 0xA5);
+    }
 }
+
 /*
 
-*/
-/*
-#[test]
-fn lda_immidiate() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_pc(0x0000);
-    let rom = vec![0x00];
-    let code = Opecode {
-        name: Instruction::LDA,
-        mode: Addressing::Immediate,
-        cycle: 1, // mock
-    };
-    cpu.lda(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.borrow().get(ByteRegister::A) == 255);
-}
-
-#[test]
-fn ldx_immidiate() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_pc(0x0000);
-    let rom = vec![0x00];
-    let code = Opecode {
-        name: Instruction::LDX,
-        mode: Addressing::Immediate,
-        cycle: 1, // mock
-    };
-    cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
-    assert!(cpu.registers.borrow().get(ByteRegister::X) == 255);
-}
-
-#[test]
-fn tax() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_acc(0xA5);
-    cpu.tax();
-    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
-}
-
-#[test]
-fn tay() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_acc(0xA5);
-    cpu.tay();
-    assert!(cpu.registers.borrow().get(ByteRegister::Y) == 0xA5);
-}
-
-#[test]
-fn txa() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_x(0xA5);
-    cpu.txa();
-    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
-}
-
-#[test]
-fn tya() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_y(0xA5);
-    cpu.tya();
-    assert!(cpu.registers.borrow().get(ByteRegister::A) == 0xA5);
-}
-
-#[test]
-fn txs() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_x(0xA5);
-    cpu.txs();
-    assert!(cpu.registers.borrow().get(ByteRegister::SP) == 0xA5);
-}
-
-#[test]
-fn tsx() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_sp(0xA5);
-    cpu.tsx();
-    assert!(cpu.registers.borrow().get(ByteRegister::X) == 0xA5);
-}
 
 #[test]
 fn php() {
