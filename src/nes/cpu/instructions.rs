@@ -1,9 +1,17 @@
-use super::super::cpu_registers::{CpuRegisters};
+use super::super::cpu_registers::CpuRegisters;
 use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 
 pub fn sta<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     bus.write(opeland, registers.get_A());
+}
+
+pub fn stx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    bus.write(opeland, registers.get_X());
+}
+
+pub fn sty<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    bus.write(opeland, registers.get_Y());
 }
 
 /*
@@ -97,18 +105,6 @@ pub fn sta<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
             .set_y(computed)
             .update_negative(computed)
             .update_zero(computed);
-    }
-
-    fn stx<W>(&self, opeland: Word, write: W)
-        where W: Fn(Addr, Data)
-    {
-        write(opeland, self.registers.borrow().get(ByteRegister::X));
-    }
-
-    fn sty<W>(&self, opeland: Word, write: W)
-        where W: Fn(Addr, Data)
-    {
-        write(opeland, self.registers.borrow().get(ByteRegister::Y));
     }
 
     fn txa(&self) {
@@ -645,8 +641,67 @@ pub fn sta<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
     */
 
 
+#[cfg(test)]
+mod test {
+    use super::super::super::cpu_registers::Registers;
+    use super::*;
 
+    struct MockBus {
+        pub mem: Vec<Data>,
+    }
 
+    impl MockBus {
+        pub fn new() -> Self {
+            MockBus { mem: vec!(0; 1024) }
+        }
+    }
+
+    impl CpuBus for MockBus {
+        fn read(&self, addr: Addr) -> Data {
+            self.mem[addr as usize]
+        }
+        fn read_word(&self, addr: Addr) -> Word {
+            let lower = self.read(addr) as u16;
+            let upper = self.read(addr + 1) as u16;
+            (upper << 8 | lower) as u16
+        }
+        fn write(&mut self, addr: Addr, data: Data) {
+            self.mem[addr as usize] = data;
+        }
+    }
+
+    #[test]
+    fn test_sta() {
+        let mut reg = Registers::new();
+        reg.set_A(0xA5);
+        let mut bus = MockBus::new();
+        sta(0xAA, &mut reg, &mut bus);
+        assert_eq!(bus.mem[0xAA], 0xA5);
+    }
+
+    #[test]
+    fn test_stx() {
+        let mut reg = Registers::new();
+        reg.set_X(0xA5);
+        let mut bus = MockBus::new();
+        stx(0xAA, &mut reg, &mut bus);
+        assert_eq!(bus.mem[0xAA], 0xA5);
+    }
+
+    #[test]
+    fn test_sty() {
+        let mut reg = Registers::new();
+        reg.set_Y(0xA5);
+        let mut bus = MockBus::new();
+        sty(0xAA, &mut reg, &mut bus);
+        assert_eq!(bus.mem[0xAA], 0xA5);
+    }
+
+}
+/*
+
+*/
+/*
 #[test]
 fn lda_immidiate() {
     let mut cpu = Cpu::new();
@@ -673,45 +728,6 @@ fn ldx_immidiate() {
     };
     cpu.ldx(&code, 255, |addr: Addr| rom[addr as usize]);
     assert!(cpu.registers.borrow().get(ByteRegister::X) == 255);
-}
-
-#[test]
-fn sta() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_pc(0x0000);
-    cpu.registers.borrow_mut().set_acc(0xA5);
-    let mut mem = 0;
-    let write = |addr: Addr, data: Data| {
-        assert!(data == 0xA5);
-        assert!(addr == 0xFF);
-    };
-    cpu.sta(0xFF, &write);
-}
-
-#[test]
-fn stx() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_pc(0x0000);
-    cpu.registers.borrow_mut().set_x(0xA5);
-    let mut mem = 0;
-    let write = |addr: Addr, data: Data| {
-        assert!(data == 0xA5);
-        assert!(addr == 0xFF);
-    };
-    cpu.stx(0xFF, &write);
-}
-
-#[test]
-fn sty() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_pc(0x0000);
-    cpu.registers.borrow_mut().set_y(0xA5);
-    let mut mem = 0;
-    let write = |addr: Addr, data: Data| {
-        assert!(data == 0xA5);
-        assert!(addr == 0xFF);
-    };
-    cpu.sty(0xFF, &write);
 }
 
 #[test]
@@ -1081,3 +1097,5 @@ fn dec() {
         assert_eq!(data, 0xA4);
     });
 }
+
+*/

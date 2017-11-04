@@ -13,7 +13,7 @@ pub trait CpuBus {
 
     fn read(&self, addr: u16) -> u8;
 
-    fn write(&self, addr: u16, data: u8);
+    fn write(&mut self, addr: u16, data: u8);
 }
 
 impl<'a> Bus<'a> {
@@ -48,7 +48,7 @@ impl<'a> CpuBus for Bus<'a> {
         }
     }
 
-    fn write(&self, addr: u16, data: u8) {
+    fn write(&mut self, addr: u16, data: u8) {
         match addr {
             0x0000...0x07FF => self.work_ram.write(addr, data),
             0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),

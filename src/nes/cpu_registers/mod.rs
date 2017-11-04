@@ -154,7 +154,7 @@ impl CpuRegisters for Registers {
     }
 
     fn get_Y(&self) -> u8 {
-        self.X
+        self.Y
     }
 
     fn get_SP(&self) -> u8 {
@@ -316,23 +316,23 @@ impl CpuRegisters for Registers {
 
 #[test]
 fn get_p() {
-    let mut reg = Registers::new();
-    let p = reg.get(ByteRegister::P);
+    let reg = Registers::new();
+    let p = reg.get_P();
     assert_eq!(p, 0x34);
 }
 
 #[test]
 fn update_zero() {
     let mut reg = Registers::new();
-    reg.update_zero(0);
-    let p = reg.get(ByteRegister::P);
+    reg.update_zero_by(0);
+    let p = reg.get_P();
     assert_eq!(p, 0x36);
 }
 
 #[test]
 fn update_negative() {
     let mut reg = Registers::new();
-    reg.update_negative(0x80);
-    let p = reg.get(ByteRegister::P);
+    reg.update_negative_by(0x80);
+    let p = reg.get_P();
     assert_eq!(p, 0xB4);
 }
