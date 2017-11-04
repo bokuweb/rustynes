@@ -104,17 +104,43 @@ pub fn tsx<T: CpuRegisters>(registers: &mut T) {
         .update_zero_by(sp);
 }
 
+pub fn php<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    registers.set_break(true);
+    push_status(registers, bus);
+}
+
+pub fn plp<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    registers.set_reserved(true);
+    let status = pop(registers, bus);
+    registers.set_P(status);
+}
+
+pub fn pha<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    let acc = registers.get_A();
+    push(acc, registers, bus);
+}
+
+fn push<T: CpuRegisters, U: CpuBus>(data: Data, registers: &mut T, bus: &mut U) {
+    let addr = registers.get_SP() as Addr;
+    bus.write((addr | 0x0100), data);
+    registers.dec_SP();
+}
+
+fn push_status<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    let status = registers.get_P();
+    push(status, registers, bus);
+}
+
+fn pop<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
+    registers.inc_SP();
+    let addr = 0x0100 | registers.get_SP() as Addr;
+    bus.read(addr)
+}
+
 
 /*
     fn branch(&self, addr: Addr) {
         self.registers.borrow_mut().set_pc(addr);
-    }
-
-    fn push_status<W>(&self, write: W)
-        where W: Fn(Addr, Data)
-    {
-        let status = self.registers.borrow().get(ByteRegister::P);
-        self.push(status, &write);
     }
 
     fn push_pc<W>(&self, write: W)
@@ -125,21 +151,6 @@ pub fn tsx<T: CpuRegisters>(registers: &mut T) {
         self.push(pc as u8, &write);
     }
 
-    fn push<W>(&self, data: Data, write: W)
-        where W: Fn(Addr, Data)
-    {
-        let addr = self.registers.borrow().get(ByteRegister::SP) as Addr;
-        write((addr | 0x0100), data);
-        self.registers.borrow_mut().dec_sp();
-    }
-
-    fn pop<R>(&self, read: R) -> Data
-        where R: Fn(Addr) -> Data
-    {
-        self.registers.borrow_mut().inc_sp();
-        let addr = 0x0100 | self.registers.borrow().get(ByteRegister::SP) as Addr;
-        read(addr)
-    }
 
     fn pop_pc<R>(&self, read: R)
         where R: Fn(Addr) -> Data
@@ -156,46 +167,7 @@ pub fn tsx<T: CpuRegisters>(registers: &mut T) {
         self.registers.borrow_mut().set_p(status);
     }
 
-    fn lda<R>(&self, code: &Opecode, opeland: Word, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        let computed = match code.mode {
-            Addressing::Immediate => opeland as Data,
-            _ => read(opeland),
-        };
-        self.registers
-            .borrow_mut()
-            .set_acc(computed)
-            .update_negative(computed)
-            .update_zero(computed);
-    }
-
-
-
-
-    fn php<W>(&self, ref write: W)
-        where W: Fn(Addr, Data)
-    {
-        self.registers.borrow_mut().set_break(true);
-        self.push_status(&write);
-    }
-
-    fn plp<R>(&self, ref read: R)
-        where R: Fn(Addr) -> Data
-    {
-        self.registers.borrow_mut().set_reserved(true);
-        let status = self.pop(&read);
-        self.registers.borrow_mut().set_p(status);
-    }
-
-    fn pha<W>(&self, ref write: W)
-        where W: Fn(Addr, Data)
-    {
-        let acc = self.registers.borrow().get(ByteRegister::A);
-        self.push(acc, &write);
-    }
-
-    fn pla<R>(&self, ref read: R)
+   fn pla<R>(&self, ref read: R)
         where R: Fn(Addr) -> Data
     {
         let v = self.pop(&read);
@@ -805,51 +777,46 @@ mod test {
     #[test]
     fn test_tsx() {
         let mut reg = Registers::new();
-        reg.set_SP(0xA5);        
+        reg.set_SP(0xA5);
         tsx(&mut reg);
         assert_eq!(reg.get_X(), 0xA5);
     }
+
+    #[test]
+    fn test_php() {
+        let mut reg = Registers::new();
+        reg.set_SP(0xA5);
+        let mut bus = MockBus::new();
+        php(&mut reg, &mut bus);
+        assert_eq!(bus.mem[0x01A5], 0x34);
+    }
+
+    #[test]
+    fn test_plp() {
+        let mut reg = Registers::new();
+        reg.set_SP(0xA5);
+        let mut bus = MockBus::new();
+        bus.mem[0x1A6] = 0xA5;
+        plp(&mut reg, &mut bus);
+        assert_eq!(reg.get_P(), 0xA5);
+    }
+
+    #[test]
+    fn test_pha() {
+        let mut reg = Registers::new();
+        reg.set_SP(0xA5).set_A(0x5A);
+        let mut bus = MockBus::new();
+        pha(&mut reg, &mut bus);
+        assert_eq!(bus.mem[0x01A5], 0x5A);
+    }
+
 }
 
 /*
 
 
-#[test]
-fn php() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_sp(0xA5);
-    let mut mem = 0;
-    let write = |addr: Addr, data: Data| {
-        assert!(data == 0x34);
-        assert!(addr == 0x01A5);
-    };
-    cpu.php(&write);
-}
 
-#[test]
-fn plp() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_sp(0xA5);
-    let read = |addr: Addr| {
-        assert_eq!(addr, 0x01A6);
-        0xA5 as u8
-    };
-    cpu.plp(&read);
-    assert_eq!(cpu.registers.borrow().get(ByteRegister::P), 0xA5);
-}
 
-#[test]
-fn pha() {
-    let mut cpu = Cpu::new();
-    cpu.registers.borrow_mut().set_sp(0xA5);
-    cpu.registers.borrow_mut().set_acc(0x5A);
-    let mut mem = 0;
-    let write = |addr: Addr, data: Data| {
-        assert!(data == 0x5A);
-        assert!(addr == 0x01A5);
-    };
-    cpu.pha(&write);
-}
 
 #[test]
 fn adc_immediate() {
