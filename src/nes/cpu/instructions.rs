@@ -426,7 +426,7 @@ pub fn sei<T: CpuRegisters>(registers: &mut T) {
     registers.set_interrupt(true);
 }
 
-pub fn brk<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+pub fn brk<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     let interrupt = registers.get_interrupt();
     registers.inc_PC();
     push_pc(registers, bus);
@@ -439,6 +439,84 @@ pub fn brk<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         registers.set_PC(fetched);
     }
     registers.dec_PC();
+}
+
+pub fn jsr<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+    let pc = registers.get_PC() - 1;
+    push((pc >> 8) as u8, registers, bus);
+    push(pc as u8, registers, bus);
+    registers.set_PC(opeland);
+}
+
+pub fn jmp<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    registers.set_PC(opeland);
+}
+
+pub fn rti<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    pop_status(registers, bus);
+    pop_pc(registers, bus);
+    registers.set_reserved(true);
+}
+
+pub fn rts<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    pop_pc(registers, bus);
+    registers.inc_PC();
+}
+
+pub fn bcc<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if !registers.get_carry() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bcs<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if registers.get_carry() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn beq<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if registers.get_zero() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bmi<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if registers.get_negative() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bne<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if !registers.get_zero() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bpl<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if !registers.get_negative() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bvs<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if registers.get_overflow() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn bvc<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+    if !registers.get_overflow() {
+        branch(registers, opeland);
+    }
+}
+
+pub fn cld<T: CpuRegisters>(registers: &mut T)  {
+    registers.set_decimal(true);
+}
+
+pub fn sed<T: CpuRegisters>(registers: &mut T)  {
+    registers.set_decimal(true);
 }
 
 fn rotate_to_right<T: CpuRegisters>(registers: &mut T, v: Data) -> Data {
@@ -466,113 +544,26 @@ fn pop<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
     bus.read(addr)
 }
 
+fn pop_pc<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    let lower = pop(registers, bus) as u16;
+    let upper = pop(registers, bus) as u16;
+    registers.set_PC(upper << 8 | lower);
+}
+
+fn pop_status<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    let status = pop(registers, bus);
+    registers.set_P(status);
+}
+
 fn push_pc<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     let pc = registers.get_PC();
     push((pc >> 8) as u8, registers, bus);
     push(pc as u8, registers, bus);
 }
 
-/*
-    fn branch(&self, addr: Addr) {
-        self.registers.borrow_mut().set_pc(addr);
-    }
-
-
-    fn pop_pc<R>(&self, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        let lower = self.pop(&read) as u16;
-        let upper = self.pop(&read) as u16;
-        self.registers.borrow_mut().set_pc(upper << 8 | lower);
-    }
-
-
-
-    fn jsr<W>(&self, opeland: Word, write: W)
-        where W: Fn(Addr, Data)
-    {
-        let pc = self.registers.borrow().get_pc() - 1;
-        self.push((pc >> 8) as u8, &write);
-        self.push(pc as u8, &write);
-        self.registers.borrow_mut().set_pc(opeland);
-    }
-
-    fn jmp(&self, opeland: Word) {
-        self.registers.borrow_mut().set_pc(opeland);
-    }
-
-    fn rti<R>(&self, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        self.pop_status(&read);
-        self.pop_pc(&read);
-        self.registers.borrow_mut().set_reserved(true);
-    }
-
-    fn rts<R>(&self, read: R)
-        where R: Fn(Addr) -> Data
-    {
-        self.pop_pc(&read);
-        self.registers.borrow_mut().inc_pc();
-    }
-
-    fn bcc(&self, opeland: Word) {
-        if !self.registers.borrow().get_status(StatusName::carry) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bcs(&self, opeland: Word) {
-        if self.registers.borrow().get_status(StatusName::carry) {
-            self.branch(opeland)
-        }
-    }
-
-    fn beq(&self, opeland: Word) {
-        if self.registers.borrow().get_status(StatusName::zero) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bmi(&self, opeland: Word) {
-        if self.registers.borrow().get_status(StatusName::negative) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bne(&self, opeland: Word) {
-        if !self.registers.borrow().get_status(StatusName::zero) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bpl(&self, opeland: Word) {
-        if !self.registers.borrow().get_status(StatusName::negative) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bvs(&self, opeland: Word) {
-        if self.registers.borrow().get_status(StatusName::overflow) {
-            self.branch(opeland)
-        }
-    }
-
-    fn bvc(&self, opeland: Word) {
-        if !self.registers.borrow().get_status(StatusName::overflow) {
-            self.branch(opeland)
-        }
-    }
-
-    fn cld(&self) {
-        self.registers.borrow_mut().set_decimal(true);
-    }
-
-    fn sed(&self) {
-        self.registers.borrow_mut().set_decimal(true);
-    }
-    */
-
+fn branch<T: CpuRegisters>(registers: &mut T, addr: Addr) {
+    registers.set_PC(addr);
+}
 
 #[cfg(test)]
 mod test {
@@ -1014,5 +1005,20 @@ mod test {
         bus.mem[0x10] = 0xAA;
         dec(0x10, &mut reg, &mut bus);
         assert_eq!(bus.mem[0x10], 0xA9);
+    }
+
+    #[test]
+    fn test_jsr() {
+        let mut reg = Registers::new();
+        let mut bus = MockBus::new();
+        jsr(0x10, &mut reg, &mut bus);
+        assert_eq!(reg.get_PC(), 0x10);
+    }
+
+    #[test]
+    fn test_jmp() {
+        let mut reg = Registers::new();
+        jmp(0x10, &mut reg);
+        assert_eq!(reg.get_PC(), 0x10);
     }
 }

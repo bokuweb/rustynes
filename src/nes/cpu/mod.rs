@@ -2,6 +2,7 @@ mod opecode;
 mod fetch;
 mod instructions;
 
+use std::fmt::Debug;
 use self::opecode::*;
 use self::fetch::*;
 use self::instructions::*;
@@ -15,8 +16,8 @@ pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &U) {
     registers.set_PC(pc);
 }
 
-pub fn run<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
-    // println!("[registers] {:?}", registers);
+pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
+    println!("[registers] {:?}", registers);
     let code = fetch(registers, bus);
     let ref map = opecode::MAP;
     let code = &*map.get(&code).unwrap();
@@ -78,21 +79,21 @@ pub fn run<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
         Instruction::SEC => sec(registers),
         Instruction::SEI => sei(registers),
         Instruction::NOP => (),
-        // Instruction::BRK => self.brk(&read, &write),
-        // Instruction::JSR => self.jsr(opeland, &write),
-        // Instruction::JMP => self.jmp(opeland),
-        // Instruction::RTI => self.rti(&read),
-        // Instruction::RTS => self.rts(&read),
-        // Instruction::BPL => self.bpl(opeland),
-        // Instruction::BMI => self.bmi(opeland),
-        // Instruction::BVC => self.bvc(opeland),
-        // Instruction::BVS => self.bvs(opeland),
-        // Instruction::BCC => self.bcc(opeland),
-        // Instruction::BCS => self.bcs(opeland),
-        // Instruction::BNE => self.bne(opeland),
-        // Instruction::BEQ => self.beq(opeland),
-        // Instruction::SED => self.sed(),
-        // Instruction::CLD => self.cld(),
+        Instruction::BRK => brk(registers, bus),
+        Instruction::JSR => jsr(opeland, registers, bus),
+        Instruction::JMP => jmp(opeland, registers),
+        Instruction::RTI => rti(registers, bus),
+        Instruction::RTS => rts(registers, bus),
+        Instruction::BCC => bcc(opeland, registers),
+        Instruction::BPL => bpl(opeland, registers),
+        Instruction::BMI => bmi(opeland, registers),
+        Instruction::BVC => bvc(opeland, registers),
+        Instruction::BVS => bvs(opeland, registers),
+        Instruction::BCS => bcs(opeland, registers),
+        Instruction::BNE => bne(opeland, registers),
+        Instruction::BEQ => beq(opeland, registers),
+        Instruction::SED => sed(registers),
+        Instruction::CLD => cld(registers),
         Instruction::LAX => println!("{}", "TODO:Undocumented instruction"),
         Instruction::SAX => println!("{}", "TODO:Undocumented instruction"),
         Instruction::DCP => println!("{}", "TODO:Undocumented instruction"),

@@ -13,8 +13,8 @@ struct Status {
     carry: bool,
 }
 
-#[derive(Debug)]
 #[allow(non_snake_case)]
+#[derive(Debug)]
 pub struct Registers {
     A: u8,
     X: u8,
@@ -117,6 +117,7 @@ pub trait CpuRegisters {
 //     zero,
 //     carry,
 // }
+
 impl Registers {
     pub fn new() -> Self {
         Registers {
