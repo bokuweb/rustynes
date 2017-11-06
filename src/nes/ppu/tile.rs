@@ -1,12 +1,13 @@
 use self::super::Ram;
 use self::super::sprite_helper::{Sprite, SpritePosition, SpriteConfig, build, get_attribute,
                                  get_block_id, get_sprite_id};
-
+#[derive(Debug)]
 pub struct Tile {
     sprite: Sprite,
     palette_id: u8,
 }
 
+#[derive(Debug)]
 pub struct TileParams {
     position: SpritePosition,
     config: SpriteConfig,

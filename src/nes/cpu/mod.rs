@@ -21,6 +21,7 @@ pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T, bus: &mut U) -
     let code = fetch(registers, bus);
     let ref map = opecode::MAP;
     let code = &*map.get(&code).unwrap();
+    println!("[code] {:?}", &code);
     let opeland = fetch_opeland(&code, registers, bus);
     match code.name {
         Instruction::LDA if code.mode == Addressing::Immediate => lda_imm(opeland, registers),

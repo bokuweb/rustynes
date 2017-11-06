@@ -5,6 +5,7 @@ pub type Sprite = Vec<Vec<u8>>;
 
 pub type SpritePosition = (u8, u8);
 
+#[derive(Debug)]
 pub struct SpriteConfig {
     name_table_offset: u16,
     background_table_offset: u16,
