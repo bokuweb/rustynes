@@ -13,13 +13,15 @@ pub struct TileParams {
 }
 
 impl Tile {
-    fn new(vram: &Ram, cram: &Ram, params: TileParams) -> Self {
+    fn new(vram: &Ram, cram: &Ram, params: &TileParams) -> Self {
         // INFO see. http://hp.vector.co.jp/authors/VA042397/nes/ppu.html
-        let block_id = get_block_id(params.position);
-        let sprite_id = get_sprite_id(&vram, params.position, params.config);
-        let attr = get_attribute(&vram, params.position, params.config);
+        let position = &params.position;
+        let config = &params.config;
+        let block_id = get_block_id(position);
+        let sprite_id = get_sprite_id(&vram, position, config);
+        let attr = get_attribute(&vram, position, config);
         let palette_id = (attr >> (block_id * 2)) & 0x03;
-        let sprite = build(&cram, sprite_id, params.config);
+        let sprite = build(&cram, sprite_id, config);
         Tile { sprite, palette_id }
     }
 }

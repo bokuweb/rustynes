@@ -1,11 +1,11 @@
 use nes::rom::Rom;
 use nes::ram::Ram;
-// use nes::ppu::Ppu;
+use nes::ppu::Ppu;
 
 pub struct Bus<'a> {
     program_rom: &'a Box<Rom>,
-    work_ram: &'a Ram,
-    // ppu: &'a Ppu,
+    work_ram: &'a Box<Ram>,
+    ppu: &'a Box<Ppu>,
 }
 
 pub trait CpuBus {
@@ -17,11 +17,11 @@ pub trait CpuBus {
 }
 
 impl<'a> Bus<'a> {
-    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Ram /* ppu: &'a Ppu) */) -> Bus<'a> {
+    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Box<Ram>, ppu: &'a Box<Ppu>) -> Bus<'a> {
         Self {
             program_rom,
             work_ram,
-            // ppu,
+            ppu,
         }
     }
 }

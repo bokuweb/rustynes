@@ -3,14 +3,14 @@ mod sprite_helper;
 
 use self::super::ram::Ram;
 use std::cell::Cell;
-use sprite_helper::*;
+use self::sprite_helper::*;
 
 const CYCLES_PER_LINE: usize = 341;
 
 #[derive(Debug)]
 pub struct Ppu {
-    cycle: Cell<usize>,
-    line: Cell<usize>,
+    cycle: usize,
+    line: usize,
     vram: Ram,
     cram: Ram,
     // background: Vec<Tile>,
@@ -21,8 +21,8 @@ pub struct RenderingContext {}
 impl Ppu {
     pub fn new(character_ram: Vec<u8>) -> Ppu {
         Ppu {
-            cycle: Cell::new(0),
-            line: Cell::new(0),
+            cycle: 0,
+            line: 0,
             vram: Ram::new(vec![0; 0x2000]),
             cram: Ram::new(character_ram),
         }
@@ -32,19 +32,19 @@ impl Ppu {
     // While drawing the BG and sprite at the first 256 clocks,
     // it searches for sprites to be drawn on the next scan line.
     // Get the pattern of the sprite searched with the remaining clock.
-    pub fn run(&self, cycle: usize) -> Option<RenderingContext> {
-        let mut cycle = self.cycle.get() + cycle;
-        let line = self.line.get();
+    pub fn run(&mut self, cycle: usize) -> Option<RenderingContext> {
+        let mut cycle = self.cycle + cycle;
+        let line = self.line;
         if line == 0 {
             // this.background.length = 0;
             // this.buildSprites();
         }
         if cycle < CYCLES_PER_LINE {
-            self.cycle.set(cycle);
+            self.cycle = cycle;
             return None;
         }
-        self.cycle.set(cycle - CYCLES_PER_LINE);
-        self.line.set(line + 1);
+        self.cycle = cycle - CYCLES_PER_LINE;
+        self.line = line + 1;
 
         // if self.hasSpriteHit() {
         //     self.setSpriteHit();
@@ -78,13 +78,13 @@ impl Ppu {
     }
 
     fn get_scroll_tile_y(&self) -> u8 {
-      // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
+        // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
+        10
     }
 
     fn get_tile_y(&self) -> u8 {
-      self.line / 8 + self.get_scroll_tile_y();
+        (self.line / 8) as u8 + self.get_scroll_tile_y()
     }
 
-    fn build_background(&mut self) {
-    } 
+    fn build_background(&mut self) {}
 }

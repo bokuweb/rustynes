@@ -6,18 +6,15 @@ mod ram;
 mod bus;
 mod cpu;
 mod cpu_registers;
-// mod ppu;
+mod ppu;
 mod types;
 mod helper;
 
-// use self::ppu::Ppu;
+use self::ppu::Ppu;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
-// use std::rc::Rc;
-// use std::cell::RefCell;
 use nes::types::{Data, Addr};
-// use nes::helper::*;
 
 #[derive(Debug)]
 pub struct Nes {
@@ -26,26 +23,17 @@ pub struct Nes {
 
 #[derive(Debug)]
 pub struct Context {
-    // ppu: Ppu,
+    ppu: Box<Ppu>,
     program_rom: Box<Rom>,
     work_ram: Box<Ram>,
     cpu_registers: cpu_registers::Registers,
 }
 
-// fn read(program_rom: &Rom, work_ram: &mut Ram, addr: Addr) -> Data {
-//     let cpu_bus = CpuBus::new(&program_rom,
-//                                   &work_ram,
-//                                   //&ctx.ppu
-//                                   );
-//     cpu_bus.read(addr)
-// }
-
 pub fn reset(ctx: &mut Context) {
     let cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
                                   &ctx.work_ram,
-                                  //&ctx.ppu
+                                  &ctx.ppu
                                   );
-    // let mut register = ctx.cpu_registers;
     cpu::reset(&mut ctx.cpu_registers, &cpu_bus);
 }
 
@@ -53,7 +41,7 @@ pub fn run(ctx: &mut Context) {
     let mut cycle = 0;
     let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
                                   &ctx.work_ram,
-                                  //&ctx.ppu
+                                  &ctx.ppu
                                   );
     loop {
         cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
@@ -70,20 +58,8 @@ impl Context {
         Context {
             cpu_registers: cpu_registers::Registers::new(),
             program_rom: Box::new(Rom::new(cassette.program_rom)),
-            // ppu: Ppu::new(cassette.character_ram),
+            ppu: Box::new(Ppu::new(cassette.character_ram)),
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
         }
     }
 }
-
-// pub fn reset(&mut self) {
-//     cpu::reset(&mut self.context.cpu_registers, |addr: Addr| read(&mut self.context.program_rom, &mut self.context.work_ram, addr));
-// }
-
-// fn write(&mut self, addr: Addr, data: Data) {
-//     let cpu_bus = CpuBus::new(&self.context.program_rom,
-//                               // &self.context.character_ram,
-//                               &self.context.work_ram,
-//     );
-//     cpu_bus.write(addr, data);
-// }
