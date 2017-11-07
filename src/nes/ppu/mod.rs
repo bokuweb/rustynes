@@ -1,10 +1,12 @@
 mod tile;
 mod sprite_helper;
+mod background;
 
 use self::super::ram::Ram;
 use std::cell::Cell;
 use self::sprite_helper::*;
 use self::tile::Tile;
+use self::background::*;
 
 const CYCLES_PER_LINE: usize = 341;
 
@@ -14,7 +16,7 @@ pub struct Ppu {
     line: usize,
     vram: Ram,
     cram: Ram,
-    background: Vec<Tile>,
+    background: Background,
 }
 
 pub struct RenderingContext {}
@@ -26,7 +28,7 @@ impl Ppu {
             line: 0,
             vram: Ram::new(vec![0; 0x2000]),
             cram: Ram::new(character_ram),
-            background: vec![],
+            background: Background::new(),
         }
     }
 
@@ -38,7 +40,7 @@ impl Ppu {
         let mut cycle = self.cycle + cycle;
         let line = self.line;
         if line == 0 {
-            self.background = vec![];
+            self.background.clear();
             // buildSprites();
         }
         if cycle < CYCLES_PER_LINE {
@@ -55,7 +57,7 @@ impl Ppu {
         if line <= 240 && line % 8 == 0
         /* && self.scrollY <= 240 */
         {
-            // this.buildBackground();
+            self.background.build();
         }
 
         if line == 241 {
