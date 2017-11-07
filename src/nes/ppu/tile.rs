@@ -7,17 +7,9 @@ pub struct Tile {
     palette_id: u8,
 }
 
-#[derive(Debug)]
-pub struct TileParams {
-    position: SpritePosition,
-    config: SpriteConfig,
-}
-
 impl Tile {
-    fn new(vram: &Ram, cram: &Ram, params: &TileParams) -> Self {
+    fn new(vram: &Ram, cram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> Self {
         // INFO see. http://hp.vector.co.jp/authors/VA042397/nes/ppu.html
-        let position = &params.position;
-        let config = &params.config;
         let block_id = get_block_id(position);
         let sprite_id = get_sprite_id(&vram, position, config);
         let attr = get_attribute(&vram, position, config);

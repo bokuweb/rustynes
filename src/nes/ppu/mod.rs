@@ -7,6 +7,12 @@ use std::cell::Cell;
 use self::sprite_helper::*;
 use self::tile::Tile;
 use self::background::*;
+// use self::tile::{Tile, TileParams};
+
+#[derive(Debug)]
+pub struct NesConfig {
+    pub is_horizontal_mirror: bool,
+}
 
 const CYCLES_PER_LINE: usize = 341;
 
@@ -14,21 +20,23 @@ const CYCLES_PER_LINE: usize = 341;
 pub struct Ppu {
     cycle: usize,
     line: usize,
-    vram: Ram,
-    cram: Ram,
+    vram: Box<Ram>,
+    cram: Box<Ram>,
     background: Background,
+    config: NesConfig,
 }
 
 pub struct RenderingContext {}
 
 impl Ppu {
-    pub fn new(character_ram: Vec<u8>) -> Ppu {
+    pub fn new(character_ram: Vec<u8>, config: NesConfig) -> Ppu {
         Ppu {
             cycle: 0,
             line: 0,
-            vram: Ram::new(vec![0; 0x2000]),
-            cram: Ram::new(character_ram),
+            vram: Box::new(Ram::new(vec![0; 0x2000])),
+            cram: Box::new(Ram::new(character_ram)),
             background: Background::new(),
+            config,
         }
     }
 
@@ -57,7 +65,14 @@ impl Ppu {
         if line <= 240 && line % 8 == 0
         /* && self.scrollY <= 240 */
         {
-            self.background.build();
+            let config = SpriteConfig {
+                name_table_offset: 0, //TODO:
+                background_table_offset: 0, // TODO:
+                is_horizontal_mirror: self.config.is_horizontal_mirror,
+            };
+            let position: SpritePosition = (0, 0);
+            self.background
+                .build(&self.vram, &self.cram, &position, &config);
         }
 
         if line == 241 {

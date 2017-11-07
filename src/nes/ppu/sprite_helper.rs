@@ -7,9 +7,9 @@ pub type SpritePosition = (u8, u8);
 
 #[derive(Debug)]
 pub struct SpriteConfig {
-    name_table_offset: u16,
-    background_table_offset: u16,
-    is_horizontal_mirror: bool,
+    pub name_table_offset: u16,
+    pub background_table_offset: u16,
+    pub is_horizontal_mirror: bool,
 }
 
 pub fn mirror_down_sprite_addr(addr: Addr, is_horizontal_mirror: bool) -> Addr {

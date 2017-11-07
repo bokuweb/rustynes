@@ -1,7 +1,9 @@
 use std::cell::Cell;
 
 use super::super::types::Addr;
+use super::super::ram::Ram;
 use super::tile::Tile;
+use super::sprite_helper::*;
 
 #[derive(Debug)]
 pub struct Background {
@@ -17,5 +19,5 @@ impl Background {
         self.field = vec![];
     }
 
-    pub fn build(&self) {}
+    pub fn build(&self, vram: &Ram, cram: &Ram, position: &SpritePosition, config: &SpriteConfig) {}
 }

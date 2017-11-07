@@ -10,7 +10,7 @@ mod ppu;
 mod types;
 mod helper;
 
-use self::ppu::Ppu;
+use self::ppu::{Ppu, NesConfig};
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
@@ -30,19 +30,13 @@ pub struct Context {
 }
 
 pub fn reset(ctx: &mut Context) {
-    let cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
-                                  &ctx.work_ram,
-                                  &ctx.ppu
-                                  );
+    let cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &ctx.ppu);
     cpu::reset(&mut ctx.cpu_registers, &cpu_bus);
 }
 
 pub fn run(ctx: &mut Context) {
     let mut cycle = 0;
-    let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
-                                  &ctx.work_ram,
-                                  &ctx.ppu
-                                  );
+    let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &ctx.ppu);
     loop {
         cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
         if cycle > 20 {
@@ -58,7 +52,10 @@ impl Context {
         Context {
             cpu_registers: cpu_registers::Registers::new(),
             program_rom: Box::new(Rom::new(cassette.program_rom)),
-            ppu: Box::new(Ppu::new(cassette.character_ram)),
+            ppu: Box::new(Ppu::new(cassette.character_ram,
+                                   NesConfig {
+                                       is_horizontal_mirror: cassette.is_horizontal_mirror,
+                                   })),
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
         }
     }
