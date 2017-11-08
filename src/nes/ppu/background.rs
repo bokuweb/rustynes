@@ -3,7 +3,7 @@ use std::cell::Cell;
 use super::super::types::Addr;
 use super::super::ram::Ram;
 use super::tile::Tile;
-use super::sprite_helper::*;
+use super::sprite::*;
 
 #[derive(Debug)]
 pub struct Background {

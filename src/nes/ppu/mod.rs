@@ -1,10 +1,10 @@
 mod tile;
-mod sprite_helper;
+mod sprite;
 mod background;
 
 use self::super::ram::Ram;
 // use std::cell::Cell;
-use self::sprite_helper::*;
+use self::sprite::*;
 // use self::tile::Tile;
 use self::background::*;
 // use self::tile::{Tile, TileParams};
@@ -102,14 +102,12 @@ impl Ppu {
         None
     }
 
-    fn get_scroll_tile_y(&self) -> u8 {
-        // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
-        0
-    }
-
-    fn get_tile_y(&self) -> u8 {
-        (self.line / 8) as u8 + self.get_scroll_tile_y()
-    }
-
-    fn build_background(&mut self) {}
+    // fn get_scroll_tile_y(&self) -> u8 {
+    //     // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
+    //     0
+    // }
+    // 
+    // fn get_tile_y(&self) -> u8 {
+    //     (self.line / 8) as u8 + self.get_scroll_tile_y()
+    // }
 }
