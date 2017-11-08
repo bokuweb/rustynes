@@ -3,14 +3,19 @@ mod sprite_helper;
 mod background;
 
 use self::super::ram::Ram;
-use std::cell::Cell;
+// use std::cell::Cell;
 use self::sprite_helper::*;
-use self::tile::Tile;
+// use self::tile::Tile;
 use self::background::*;
 // use self::tile::{Tile, TileParams};
 
+// #[derive(Debug)]
+// pub struct Context {
+// 
+// }
+
 #[derive(Debug)]
-pub struct NesConfig {
+pub struct PpuConfig {
     pub is_horizontal_mirror: bool,
 }
 
@@ -23,13 +28,13 @@ pub struct Ppu {
     vram: Box<Ram>,
     cram: Box<Ram>,
     background: Background,
-    config: NesConfig,
+    config: PpuConfig,
 }
 
 pub struct RenderingContext {}
 
 impl Ppu {
-    pub fn new(character_ram: Vec<u8>, config: NesConfig) -> Ppu {
+    pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
         Ppu {
             cycle: 0,
             line: 0,
@@ -70,9 +75,10 @@ impl Ppu {
                 background_table_offset: 0, // TODO:
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
-            let position: SpritePosition = (0, 0);
+            let tile_y = 0;
+            let scroll_x = 0;
             self.background
-                .build(&self.vram, &self.cram, &position, &config);
+                .build_line(&self.vram, &self.cram, tile_y, scroll_x, &config);
         }
 
         if line == 241 {

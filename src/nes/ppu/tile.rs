@@ -8,7 +8,7 @@ pub struct Tile {
 }
 
 impl Tile {
-    fn new(vram: &Ram, cram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> Self {
+    pub fn new(vram: &Ram, cram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> Self {
         // INFO see. http://hp.vector.co.jp/authors/VA042397/nes/ppu.html
         let block_id = get_block_id(position);
         let sprite_id = get_sprite_id(&vram, position, config);

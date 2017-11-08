@@ -10,16 +10,16 @@ mod ppu;
 mod types;
 mod helper;
 
-use self::ppu::{Ppu, NesConfig};
+use self::ppu::{Ppu, PpuConfig};
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
 use nes::types::{Data, Addr};
 
-#[derive(Debug)]
-pub struct Nes {
-    context: Context,
-}
+// #[derive(Debug)]
+// pub struct Nes {
+//     context: Context,
+// }
 
 #[derive(Debug)]
 pub struct Context {
@@ -36,15 +36,17 @@ pub fn reset(ctx: &mut Context) {
 
 pub fn run(ctx: &mut Context) {
     let mut cycle = 0;
-    let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &ctx.ppu);
     loop {
-        cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
+        {
+            let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &ctx.ppu);
+            cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
+        }
+        ctx.ppu.run(cycle as usize);
         if cycle > 20 {
             break;
         }
     }
 }
-
 
 impl Context {
     pub fn new(buf: &mut [Data]) -> Self {
@@ -53,7 +55,7 @@ impl Context {
             cpu_registers: cpu_registers::Registers::new(),
             program_rom: Box::new(Rom::new(cassette.program_rom)),
             ppu: Box::new(Ppu::new(cassette.character_ram,
-                                   NesConfig {
+                                   PpuConfig {
                                        is_horizontal_mirror: cassette.is_horizontal_mirror,
                                    })),
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
