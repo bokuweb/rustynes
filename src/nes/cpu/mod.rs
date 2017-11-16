@@ -17,7 +17,7 @@ pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &U) {
 }
 
 pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
-    println!("[registers] {:?}", registers);
+    // println!("[registers] {:?}", registers);
     let code = fetch(registers, bus);
     let ref map = opecode::MAP;
     let code = &*map.get(&code).unwrap();

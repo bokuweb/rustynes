@@ -41,8 +41,8 @@ pub fn run(ctx: &mut Context) {
             let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &ctx.ppu);
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
         }
-        ctx.ppu.run(cycle as usize);
-        if cycle > 20 {
+        ctx.ppu.run((cycle * 3) as usize);
+        if cycle > 10000000 {
             break;
         }
     }

@@ -26,10 +26,11 @@ impl Background {
                       cram: &Ram,
                       tile_y: u8,
                       scroll_x: u8,
-                      config: &SpriteConfig) {
+                      config: &mut SpriteConfig) {
         // INFO: Horizontal offsets range from 0 to 255. "Normal" vertical offsets range from 0 to 239,
         // while values of 240 to 255 are treated as -16 through -1 in a way, but tile data is incorrectly
         // fetched from the attribute table.
+        println!("tile_y = {}", tile_y);
         let clamped_tile_y = tile_y % 30;
         let table_id_offset = ((tile_y / 30) % 2) * 2;
         let scroll_tile_x = scroll_x / 8;
@@ -39,10 +40,9 @@ impl Background {
             let tile_x = x + scroll_tile_x;
             let clamped_tile_x = tile_x % TILE_PER_LINE;
             let name_table_id = ((tile_x / TILE_PER_LINE) % 2) + table_id_offset;
-            let offset_add_by_name_table = name_table_id * 0x400;
-            //   const tile = this.buildTile(clampedTileX, clampedTileY, offsetAddrByNameTable);
+            config.offset_addr_by_name_table = (name_table_id as Addr) * 0x400;
             let position: SpritePosition = (clamped_tile_x as u8, clamped_tile_y as u8);
-            self.field.push(Tile::new(vram, cram, &position, config));
+            self.field.push(Tile::new(vram, cram, &position, &config));
         }
     }
 }

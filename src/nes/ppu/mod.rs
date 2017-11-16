@@ -35,6 +35,7 @@ pub struct RenderingContext {}
 
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
+        println!("{:?}", character_ram);
         Ppu {
             cycle: 0,
             line: 0,
@@ -70,15 +71,15 @@ impl Ppu {
         if line <= 240 && line % 8 == 0
         /* && self.scrollY <= 240 */
         {
-            let config = SpriteConfig {
-                name_table_offset: 0, //TODO:
-                background_table_offset: 0, // TODO:
+            let mut config = SpriteConfig {
+                offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
+                offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
-            let tile_y = 0;
+            let tile_y = (line / 8) as u8; // TODO: + scroll_y;
             let scroll_x = 0;
             self.background
-                .build_line(&self.vram, &self.cram, tile_y, scroll_x, &config);
+                .build_line(&self.vram, &self.cram, tile_y, scroll_x, &mut config);
         }
 
         if line == 241 {
@@ -93,6 +94,7 @@ impl Ppu {
             // this.clearSpriteHit();
             // this.line = 0;
             // this.interrupts.deassertNmi();
+            println!("{:?}", self.background.field);
             return Some(RenderingContext {});
             //   background: this.isBackgroundEnable ? this.background : null,
             //   sprites: this.isSpriteEnable ? this.sprites : null,
