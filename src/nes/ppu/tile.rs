@@ -19,8 +19,3 @@ impl Tile {
     }
 }
 
-#[test]
-fn get_block_id() {
-    let id = Tile::get_block_id(2, 3);
-    assert_eq!(id, 3);
-}

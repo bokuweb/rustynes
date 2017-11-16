@@ -52,3 +52,10 @@ pub fn build(cram: &Ram, sprite_id: u8, config: &SpriteConfig) -> Sprite {
     }
     sprite
 }
+
+#[test]
+fn test_get_block_id() {
+    let position = (2, 3);
+    let id = get_block_id(&position);
+    assert_eq!(id, 3);
+}
