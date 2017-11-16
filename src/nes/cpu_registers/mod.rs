@@ -97,27 +97,6 @@ pub trait CpuRegisters {
     fn dec_PC(&mut self) -> &mut Self;
 }
 
-// #[derive(Debug)]
-//  enum ByteRegister {
-//     A,
-//     X,
-//     Y,
-//     SP,
-//     P,
-// }
-
-// #[derive(Debug)]
-//  enum StatusName {
-//     negative,
-//     overflow,
-//     reserved,
-//     break_mode,
-//     decimal_mode,
-//     interrupt,
-//     zero,
-//     carry,
-// }
-
 impl Registers {
     pub fn new() -> Self {
         Registers {

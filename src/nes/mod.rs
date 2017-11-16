@@ -7,6 +7,7 @@ mod bus;
 mod cpu;
 mod cpu_registers;
 mod ppu;
+mod ppu_registers;
 mod types;
 mod helper;
 
@@ -27,6 +28,7 @@ pub struct Context {
     program_rom: Box<Rom>,
     work_ram: Box<Ram>,
     cpu_registers: cpu_registers::Registers,
+    ppu_registers: ppu_registers::Registers,
 }
 
 pub fn reset(ctx: &mut Context) {
@@ -58,6 +60,7 @@ impl Context {
                                    PpuConfig {
                                        is_horizontal_mirror: cassette.is_horizontal_mirror,
                                    })),
+            ppu_registers: ppu_registers::Registers::new(),
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
         }
     }
