@@ -581,10 +581,10 @@ mod test {
     }
 
     impl CpuBus for MockBus {
-        fn read(&self, addr: Addr) -> Data {
+        fn read(&mut self, addr: Addr) -> Data {
             self.mem[addr as usize]
         }
-        fn read_word(&self, addr: Addr) -> Word {
+        fn read_word(&mut self, addr: Addr) -> Word {
             let lower = self.read(addr) as u16;
             let upper = self.read(addr + 1) as u16;
             (upper << 8 | lower) as u16

@@ -1,17 +1,20 @@
 mod tile;
 mod sprite;
 mod background;
+mod registers;
 
 use self::super::ram::Ram;
 // use std::cell::Cell;
 use self::sprite::*;
 // use self::tile::Tile;
 use self::background::*;
+use self::registers::*;
+use super::types::{Data, Addr, Word};
 // use self::tile::{Tile, TileParams};
 
 // #[derive(Debug)]
 // pub struct Context {
-// 
+//
 // }
 
 #[derive(Debug)]
@@ -25,6 +28,7 @@ const CYCLES_PER_LINE: usize = 341;
 pub struct Ppu {
     cycle: usize,
     line: usize,
+    registers: Registers,
     vram: Box<Ram>,
     cram: Box<Ram>,
     background: Background,
@@ -39,12 +43,19 @@ impl Ppu {
         Ppu {
             cycle: 0,
             line: 0,
+            registers: Registers::new(),
             vram: Box::new(Ram::new(vec![0; 0x2000])),
             cram: Box::new(Ram::new(character_ram)),
             background: Background::new(),
             config,
         }
     }
+
+    pub fn read(&mut self, addr: Addr) -> Data {
+        10
+    }
+
+    pub fn write(&mut self, addr: Addr, data: Data) {}
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
     // While drawing the BG and sprite at the first 256 clocks,
@@ -108,7 +119,7 @@ impl Ppu {
     //     // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
     //     0
     // }
-    // 
+    //
     // fn get_tile_y(&self) -> u8 {
     //     (self.line / 8) as u8 + self.get_scroll_tile_y()
     // }

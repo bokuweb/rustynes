@@ -1,12 +1,17 @@
 mod ppu_addr;
+mod ppu_data;
 
-use super::types::{Data, Addr, Word};
-use super::helper::*;
+use super::super::types::{Data, Addr, Word};
+use super::super::Ram;
+use super::super::helper::*;
 use self::ppu_addr::PpuAddr;
+use self::ppu_data::PpuData;
+
 
 #[derive(Debug)]
 pub struct Registers {
     ppu_addr: PpuAddr,
+    ppu_data: PpuData,
 }
 
 // PPU power up state
@@ -31,6 +36,14 @@ pub struct Registers {
   | 0x3F10-0x3F1F  |  sprite Palette            |
   | 0x3F20-0x3FFF  |  mirror of 0x3F00-0x3F1F   |
   */
+
+
+
+
+
+
+
+
 
 /*
     Control Register1 0x2000
@@ -65,17 +78,63 @@ pub struct Registers {
 
 
 pub trait PpuRegisters {
+    fn read(&mut self, addr: Addr, vram: &Ram, cram: &Ram) -> Data;
+
+    fn write(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram);
+
     fn write_ppu_addr(&mut self, data: Data);
+
+    fn read_ppu_data(&mut self, vram: &Ram, cram: &Ram) -> Data;
+
+    fn write_ppu_data(&mut self);
 }
 
 impl Registers {
     pub fn new() -> Self {
-        Registers { ppu_addr: PpuAddr::new() }
+        Registers {
+            ppu_addr: PpuAddr::new(),
+            ppu_data: PpuData::new(),
+        }
     }
 }
 
 impl PpuRegisters for Registers {
+    fn read(&mut self, addr: Addr, vram: &Ram, cram: &Ram) -> Data {
+        if addr == 0x0002 {
+            //this.isHorizontalScroll = true;
+            //const data = this.registers[0x02];
+            // this.clearVblank();
+            // this.clearSpriteHit();
+            // return data;
+            return 0
+        }
+        // Write OAM data here. Writes will increment OAMADDR after the write
+        // reads during vertical or forced blanking return the value from OAM at that address but do not increment.
+        if addr == 0x0004 {
+            // return this.spriteRam.read(this.spriteRamAddr);
+            return 0
+        }
+        if (addr == 0x0007) {
+            return self.read_ppu_data(vram, cram);
+        }
+        0
+    }
+
+    fn write(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram) {}
+
+
     fn write_ppu_addr(&mut self, data: Data) {
         self.ppu_addr.write(data);
+    }
+
+    fn read_ppu_data(&mut self, vram: &Ram, cram: &Ram) -> Data {
+        let addr = self.ppu_addr.get();
+        let data = self.ppu_data.read(vram, cram, addr);
+        self.ppu_addr.update(0x01); // TODO: update 1 or 32
+        data
+    }
+
+    fn write_ppu_data(&mut self) {
+        self.ppu_addr.update(0x01); // TODO: update 1 or 32
     }
 }

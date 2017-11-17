@@ -1,4 +1,4 @@
-use super::super::types::{Data, Addr, Word};
+use super::super::super::types::{Data, Addr, Word};
 
 #[derive(Debug)]
 pub struct PpuAddr {
@@ -25,6 +25,10 @@ impl PpuAddr {
         self.addr
     }
 
+    pub fn update(&mut self, offset: Addr) {
+        self.addr += offset;
+    }    
+
     pub fn write(&mut self, data: Data) {
         if self.is_lower_addr {
             self.addr += data as Addr;
@@ -43,7 +47,16 @@ impl PpuAddr {
 #[test]
 fn set_addr() {
     let mut reg = PpuAddr::new();
-    &mut reg.write(0xaa);
-    &mut reg.write(0x55);
+    reg.write(0xaa);
+    reg.write(0x55);
     assert_eq!(reg.get(), 0xaa55);
+}
+
+#[test]
+fn update_addr() {
+    let mut reg = PpuAddr::new();
+    reg.write(0xaa);
+    reg.write(0x55);
+    reg.update(32);
+    assert_eq!(reg.get(), 0xaa75);
 }
