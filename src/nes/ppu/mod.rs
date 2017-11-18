@@ -35,11 +35,14 @@ pub struct Ppu {
     config: PpuConfig,
 }
 
-pub struct RenderingContext {}
+pub struct RenderingContext {
+    background: BackgroundField,
+    // background_: Vec<u8>,
+}
 
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
-        println!("{:?}", character_ram);
+        // println!("{:?}", character_ram);
         Ppu {
             cycle: 0,
             line: 0,
@@ -52,17 +55,28 @@ impl Ppu {
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        10
+        self.registers.read(addr, &mut self.vram, &mut self.cram)
     }
 
-    pub fn write(&mut self, addr: Addr, data: Data) {}
+    pub fn write(&mut self, addr: Addr, data: Data) {
+        println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
+        self.registers
+            .write(addr, data, &mut self.vram, &mut self.cram);
+    }
+
+    pub fn get_rendering_ctx(self) -> RenderingContext {
+        RenderingContext {
+            background: self.background.field,
+            // background_: self.background.test,
+        }
+    }
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
     // While drawing the BG and sprite at the first 256 clocks,
     // it searches for sprites to be drawn on the next scan line.
     // Get the pattern of the sprite searched with the remaining clock.
-    pub fn run(&mut self, cycle: usize) -> Option<RenderingContext> {
-        let mut cycle = self.cycle + cycle;
+    pub fn run(&mut self, cycle: usize) -> bool {
+        let cycle = self.cycle + cycle;
         let line = self.line;
         if line == 0 {
             self.background.clear();
@@ -70,7 +84,7 @@ impl Ppu {
         }
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
-            return None;
+            return false;
         }
         self.cycle = cycle - CYCLES_PER_LINE;
         self.line = line + 1;
@@ -105,14 +119,16 @@ impl Ppu {
             // this.clearSpriteHit();
             // this.line = 0;
             // this.interrupts.deassertNmi();
-            println!("{:?}", self.background.field);
-            return Some(RenderingContext {});
+            // println!("{:?}", self.vram);
+            //return Some(RenderingContext { background: self.background });
             //   background: this.isBackgroundEnable ? this.background : null,
             //   sprites: this.isSpriteEnable ? this.sprites : null,
             //   palette: this.getPalette(),
             // };
+            self.line = 0;
+            return true;
         }
-        None
+        false
     }
 
     // fn get_scroll_tile_y(&self) -> u8 {

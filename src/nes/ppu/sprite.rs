@@ -30,7 +30,9 @@ pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
     let tile_number = position.1 as Addr * 32 + position.0 as Addr;
     let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table,
                                        config.is_horizontal_mirror);
-    vram.read(addr)
+    let data = vram.read(addr);
+    println!("vram read {:X} {:X}", addr, data);
+    data
 }
 
 pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {

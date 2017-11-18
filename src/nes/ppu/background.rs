@@ -1,13 +1,16 @@
-use std::cell::Cell;
+// use std::cell::Cell;
 
 use super::super::types::Addr;
 use super::super::ram::Ram;
 use super::tile::Tile;
 use super::sprite::*;
 
-#[derive(Debug)]
+pub type BackgroundField = Vec<Tile>;
+
+#[derive(Debug,)]
 pub struct Background {
-    pub field: Vec<Tile>,
+    pub field: BackgroundField,
+    // pub test: Vec<u8>,
 }
 
 const TILE_PER_LINE: u8 = 32;

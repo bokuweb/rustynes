@@ -31,6 +31,15 @@ pub struct Context {
     // ppu_registers: ppu_registers::Registers,
 }
 
+#[derive(Debug)]
+pub struct RenderingContext {
+    ppu: Ppu,
+    program_rom: Box<Rom>,
+    work_ram: Box<Ram>,
+    cpu_registers: cpu_registers::Registers,
+    // ppu_registers: ppu_registers::Registers,
+}
+
 pub fn reset(ctx: &mut Context) {
     let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &mut ctx.ppu);
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
@@ -43,8 +52,8 @@ pub fn run(ctx: &mut Context) {
             let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &mut ctx.ppu);
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
         }
-        ctx.ppu.run((cycle * 3) as usize);
-        if cycle > 10000000 {
+        let is_ready = ctx.ppu.run((cycle * 3) as usize);
+        if is_ready {
             break;
         }
     }
@@ -53,6 +62,7 @@ pub fn run(ctx: &mut Context) {
 impl Context {
     pub fn new(buf: &mut [Data]) -> Self {
         let cassette = parser::parse(buf);
+        // println!("{:?}", cassette.program_rom);
         Context {
             cpu_registers: cpu_registers::Registers::new(),
             program_rom: Box::new(Rom::new(cassette.program_rom)),
