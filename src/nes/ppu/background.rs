@@ -8,20 +8,17 @@ use super::sprite::*;
 pub type BackgroundField = Vec<Tile>;
 
 #[derive(Debug,)]
-pub struct Background {
-    pub field: BackgroundField,
-    // pub test: Vec<u8>,
-}
+pub struct Background(pub BackgroundField);
 
 const TILE_PER_LINE: u8 = 32;
 
 impl Background {
     pub fn new() -> Self {
-        Background { field: Vec::new() }
+        Background(Vec::new())
     }
 
     pub fn clear(&mut self) {
-        self.field = Vec::new();
+        self.0 = Vec::new();
     }
 
     pub fn build_line(&mut self,
@@ -45,7 +42,7 @@ impl Background {
             let name_table_id = ((tile_x / TILE_PER_LINE) % 2) + table_id_offset;
             config.offset_addr_by_name_table = (name_table_id as Addr) * 0x400;
             let position: SpritePosition = (clamped_tile_x as u8, clamped_tile_y as u8);
-            self.field.push(Tile::new(vram, cram, &position, &config));
+            self.0.push(Tile::new(vram, cram, &position, &config));
         }
     }
 }

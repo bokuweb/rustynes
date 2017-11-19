@@ -5,13 +5,18 @@ mod rom;
 mod ram;
 mod bus;
 mod cpu;
-mod cpu_registers;
 mod ppu;
+mod cpu_registers;
+mod renderer;
 // mod ppu_registers;
 mod types;
 mod helper;
 
-use self::ppu::{Ppu, PpuConfig};
+pub use self::ppu::background;
+pub use self::ppu::Tile;
+
+use self::ppu::*;
+use self::renderer::*;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
@@ -31,14 +36,14 @@ pub struct Context {
     // ppu_registers: ppu_registers::Registers,
 }
 
-#[derive(Debug)]
-pub struct RenderingContext {
-    ppu: Ppu,
-    program_rom: Box<Rom>,
-    work_ram: Box<Ram>,
-    cpu_registers: cpu_registers::Registers,
-    // ppu_registers: ppu_registers::Registers,
-}
+// #[derive(Debug)]
+// pub struct RenderingContext {
+//     ppu: Ppu,
+//     program_rom: Box<Rom>,
+//     work_ram: Box<Ram>,
+//     cpu_registers: cpu_registers::Registers,
+//     // ppu_registers: ppu_registers::Registers,
+// }
 
 pub fn reset(ctx: &mut Context) {
     let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &mut ctx.ppu);
@@ -54,6 +59,8 @@ pub fn run(ctx: &mut Context) {
         }
         let is_ready = ctx.ppu.run((cycle * 3) as usize);
         if is_ready {
+            let rendering_ctx = &ctx.ppu.background.0;
+            render(rendering_ctx);
             break;
         }
     }

@@ -3,8 +3,8 @@ use self::super::sprite::{Sprite, SpritePosition, SpriteConfig, build, get_attri
                                  get_block_id, get_sprite_id};
 #[derive(Debug)]
 pub struct Tile {
-    sprite: Sprite,
-    palette_id: u8,
+    pub sprite: Sprite,
+    pub palette_id: u8,
 }
 
 impl Tile {

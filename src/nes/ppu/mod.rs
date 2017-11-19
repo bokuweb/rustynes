@@ -1,15 +1,17 @@
-mod tile;
+
+pub mod background;
+pub mod tile;
 mod sprite;
-mod background;
 mod registers;
 
 use self::super::ram::Ram;
 // use std::cell::Cell;
 use self::sprite::*;
 // use self::tile::Tile;
-use self::background::*;
 use self::registers::*;
 use super::types::{Data, Addr, Word};
+pub use self::background::*;
+pub use self::tile::*;
 // use self::tile::{Tile, TileParams};
 
 // #[derive(Debug)]
@@ -26,19 +28,19 @@ const CYCLES_PER_LINE: usize = 341;
 
 #[derive(Debug)]
 pub struct Ppu {
-    cycle: usize,
-    line: usize,
-    registers: Registers,
-    vram: Box<Ram>,
-    cram: Box<Ram>,
-    background: Background,
-    config: PpuConfig,
+    pub cycle: usize,
+    pub line: usize,
+    pub registers: Registers,
+    pub vram: Box<Ram>,
+    pub cram: Box<Ram>,
+    pub background: Background,
+    pub config: PpuConfig,
 }
 
-pub struct RenderingContext {
-    background: BackgroundField,
-    // background_: Vec<u8>,
-}
+// pub struct RenderingContext {
+//     background: BackgroundField,
+//     // background_: Vec<u8>,
+// }
 
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
@@ -64,12 +66,12 @@ impl Ppu {
             .write(addr, data, &mut self.vram, &mut self.cram);
     }
 
-    pub fn get_rendering_ctx(self) -> RenderingContext {
-        RenderingContext {
-            background: self.background.field,
-            // background_: self.background.test,
-        }
-    }
+    // pub fn get_rendering_ctx(&self) -> RenderingContext {
+    //     RenderingContext {
+    //         background: self.background,
+    //         // background_: self.background.test,
+    //     }
+    // }
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
     // While drawing the BG and sprite at the first 256 clocks,
