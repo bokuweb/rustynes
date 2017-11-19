@@ -31,7 +31,7 @@ pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
     let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table,
                                        config.is_horizontal_mirror);
     let data = vram.read(addr);
-    println!("vram read {:X} {:X}", addr, data);
+    // println!("vram read {:X} {:X}", addr, data);
     data
 }
 
