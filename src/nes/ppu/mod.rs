@@ -3,12 +3,14 @@ pub mod background;
 pub mod tile;
 mod sprite;
 mod registers;
+mod palette;
 
 use self::super::ram::Ram;
 // use std::cell::Cell;
 use self::sprite::*;
 // use self::tile::Tile;
 use self::registers::*;
+use self::palette::*;
 use super::types::{Data, Addr, Word};
 pub use self::background::*;
 pub use self::tile::*;
@@ -31,6 +33,7 @@ pub struct Ppu {
     pub cycle: usize,
     pub line: usize,
     pub registers: Registers,
+    pub palette: Palette,
     pub vram: Box<Ram>,
     pub cram: Box<Ram>,
     pub background: Background,
@@ -49,6 +52,7 @@ impl Ppu {
             cycle: 0,
             line: 0,
             registers: Registers::new(),
+            palette: Palette::new(),
             vram: Box::new(Ram::new(vec![0; 0x2000])),
             cram: Box::new(Ram::new(character_ram)),
             background: Background::new(),

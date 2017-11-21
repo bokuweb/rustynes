@@ -21,8 +21,13 @@ impl PpuData {
         let buf = self.buf;
         if addr >= 0x2000 {
             let addr = self.calc_addr(addr);
+            // Reading palette data from $3F00-$3FFF works differently.
+            // The palette data is placed immediately on the data bus, and hence no dummy read is required.
+            // Reading the palettes still updates the internal buffer though, but the data placed in it is the mirrored nametable data
+            // that would appear "underneath" the palette. (Checking the PPU memory map should make this clearer.)
             if addr >= 0x3F00 {
-                return vram.read(addr);
+                self.buf = vram.read(addr);
+                return 0 // TODO: redad from pallette
             }
             self.buf = vram.read(addr);
         } else {
