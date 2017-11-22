@@ -1,9 +1,17 @@
 use super::super::types::{Addr, Data};
 
 #[derive(Debug)]
+pub enum PaletteType {
+    Sprite,
+    Background,
+}
+
+#[derive(Debug)]
 pub struct Palette(Vec<u8>);
 
 pub trait PaletteRam {
+    fn get(&self, palette_id: u8, palette_type: PaletteType) -> Vec<u8>;
+
     fn read(&self, addr: Addr) -> Data;
 
     fn write(&mut self, addr: Addr, data: Data);
@@ -11,7 +19,7 @@ pub trait PaletteRam {
 
 impl Palette {
     pub fn new() -> Self {
-        Palette(Vec::new())
+        Palette(vec!(0; 0x20))
     }
 
     fn is_sprite_mirror(&self, addr: Addr) -> bool {
@@ -34,13 +42,24 @@ impl Palette {
 }
 
 impl PaletteRam for Palette {
+    fn get(&self, palette_id: u8, palette_type: PaletteType) -> Vec<u8> {
+        let offset = match palette_type {
+            PaletteType::Sprite => 0x10,
+            _ => 0x00,
+        };
+        let start = (palette_id * 4 + offset) as usize;
+        let end = start + 4;
+        (start..end).map(|p| self.0[p]).collect()
+    }
+
     fn read(&self, addr: Addr) -> Data {
-        //      return this.ram.map((v: Byte, i: number): Byte => {
-        //   if (this.isSpriteMirror(i)) return this.ram[i - 0x10];
-        //   if (this.isBackgroundMirror(i)) return this.ram[0x00];
-        //   return v;
-        // });
-        10
+        if self.is_sprite_mirror(addr) {
+            return self.0[(addr - 0x10) as usize];
+        }
+        if self.is_background_mirror(addr) {
+            return self.0[0x00];
+        }
+        self.0[addr as usize]
     }
 
     fn write(&mut self, addr: Addr, data: Data) {
@@ -50,4 +69,32 @@ impl PaletteRam for Palette {
         }
         self.0[index] = data;
     }
+}
+
+#[test]
+fn test_get_baclground_palette() {
+    let mut p = Palette::new();
+    for x in 0..4 {
+        p.write(x, x as Data);
+    }
+    let palette = p.get(0x00, PaletteType::Background);
+    assert_eq!(palette.len(), 0x4);
+    assert_eq!(palette[0], 0x0);
+    assert_eq!(palette[1], 0x1);
+    assert_eq!(palette[2], 0x2);
+    assert_eq!(palette[3], 0x3);
+}
+
+#[test]
+fn test_get_sprite_palette() {
+    let mut p = Palette::new();
+    for x in 0x10..0x14 {
+        p.write(x, x as Data);
+    }
+    let palette = p.get(0x00, PaletteType::Sprite);
+    assert_eq!(palette.len(), 0x4);
+    assert_eq!(palette[0], 0x0);
+    assert_eq!(palette[1], 0x11);
+    assert_eq!(palette[2], 0x12);
+    assert_eq!(palette[3], 0x13);
 }

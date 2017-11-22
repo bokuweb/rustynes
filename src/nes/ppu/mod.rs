@@ -10,10 +10,10 @@ use self::super::ram::Ram;
 use self::sprite::*;
 // use self::tile::Tile;
 use self::registers::*;
-use self::palette::*;
 use super::types::{Data, Addr, Word};
 pub use self::background::*;
 pub use self::tile::*;
+pub use self::palette::*;
 // use self::tile::{Tile, TileParams};
 
 // #[derive(Debug)]
@@ -61,13 +61,13 @@ impl Ppu {
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        self.registers.read(addr, &mut self.vram, &mut self.cram)
+        self.registers.read(addr, &mut self.vram, &mut self.cram, &self.palette)
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
         println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
         self.registers
-            .write(addr, data, &mut self.vram, &mut self.cram);
+            .write(addr, data, &mut self.vram, &mut self.cram, &mut self.palette);
     }
 
     // pub fn get_rendering_ctx(&self) -> RenderingContext {

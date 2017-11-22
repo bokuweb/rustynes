@@ -3,7 +3,8 @@ mod ppu_data;
 
 use super::super::types::{Data, Addr, Word};
 use super::super::Ram;
-use super::super::helper::*;
+use super::palette::*;
+// use super::super::helper::*;
 use self::ppu_addr::PpuAddr;
 use self::ppu_data::PpuData;
 
@@ -76,15 +77,15 @@ pub struct Registers {
 
 
 pub trait PpuRegisters {
-    fn read(&mut self, addr: Addr, vram: &Ram, cram: &Ram) -> Data;
+    fn read<P: PaletteRam>(&mut self, addr: Addr, vram: &Ram, cram: &Ram, palette: &P) -> Data;
 
-    fn write(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram);
+    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram, palette: &mut P);
 
     fn write_ppu_addr(&mut self, data: Data);
 
-    fn read_ppu_data(&mut self, vram: &Ram, cram: &Ram) -> Data;
+    fn read_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, palette: &P) -> Data;
 
-    fn write_ppu_data(&mut self, vram: &Ram, cram: &Ram, data: Data);
+    fn write_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, data: Data, palette: &mut P);
 }
 
 impl Registers {
@@ -97,7 +98,7 @@ impl Registers {
 }
 
 impl PpuRegisters for Registers {
-    fn read(&mut self, addr: Addr, vram: &Ram, cram: &Ram) -> Data {
+    fn read<P: PaletteRam>(&mut self, addr: Addr, vram: &Ram, cram: &Ram, palette: &P) -> Data {
         match addr {
             0x0002 => {
                 //this.isHorizontalScroll = true;
@@ -111,15 +112,15 @@ impl PpuRegisters for Registers {
                 // return this.spriteRam.read(this.spriteRamAddr);
                 return 0;
             }
-            0x0007 => self.read_ppu_data(vram, cram),
+            0x0007 => self.read_ppu_data(vram, cram, palette),
             _ => 0,
         }
     }
 
-    fn write(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram) {
+    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram, palette: &mut P) {
         match addr {
             0x0006 => self.write_ppu_addr(data),
-            0x0007 => self.write_ppu_data(vram, cram, data),
+            0x0007 => self.write_ppu_data(vram, cram, data, palette),
             _ => (),
         }
     }
@@ -128,16 +129,16 @@ impl PpuRegisters for Registers {
         self.ppu_addr.write(data);
     }
 
-    fn read_ppu_data(&mut self, vram: &Ram, cram: &Ram) -> Data {
+    fn read_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, palette: &P) -> Data {
         let addr = self.ppu_addr.get();
-        let data = self.ppu_data.read(vram, cram, addr);
+        let data = self.ppu_data.read(vram, cram, addr, palette);
         self.ppu_addr.update(0x01); // TODO: update 1 or 32
         data
     }
 
-    fn write_ppu_data(&mut self, vram: &Ram, cram: &Ram, data: Data) {
+    fn write_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, data: Data, palette: &mut P) {
         let addr = self.ppu_addr.get();
-        self.ppu_data.write(vram, cram, addr, data);
+        self.ppu_data.write(vram, cram, addr, data, palette);
         self.ppu_addr.update(0x01); // TODO: update 1 or 32
     }
 }
