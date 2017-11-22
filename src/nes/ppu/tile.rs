@@ -15,7 +15,6 @@ impl Tile {
         let block_id = get_block_id(position);
         let sprite_id = get_sprite_id(&vram, position, config);
         let attr = get_attribute(&vram, position, config);
-                        println!("attr {:?}", attr);
         let palette_id = (attr >> (block_id * 2)) & 0x03;
         let sprite = build(&cram, sprite_id, config);
         Tile { sprite, palette: palette.get(palette_id, PaletteType::Background) }

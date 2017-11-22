@@ -35,12 +35,7 @@ impl<'a> CpuBus for Bus<'a> {
 
     fn read(&mut self, addr: u16) -> u8 {
         match addr {
-            0x0000...0x07FF => {
-                if addr == 0x08 {
-                    println!("workram 0x08 reading {:?}", self.work_ram.field.borrow());
-                }
-                self.work_ram.read(addr)
-            },
+            0x0000...0x07FF => self.work_ram.read(addr),
             0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
             0x2000...0x3FFF => self.ppu.read(addr - 0x2000),
             0x4016 => 0, // TODO: keypad
