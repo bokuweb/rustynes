@@ -45,7 +45,6 @@ impl Palette {
 
 impl PaletteRam for Palette {
     fn get(&self, palette_id: u8, palette_type: PaletteType) -> PalleteList {
-         println!("palette_id = {} {:?}", palette_id, self.0);
         let offset = match palette_type {
             PaletteType::Sprite => 0x10,
             _ => 0x00,

@@ -6,20 +6,13 @@ mod registers;
 mod palette;
 
 use self::super::ram::Ram;
-// use std::cell::Cell;
 use self::sprite::*;
-// use self::tile::Tile;
 use self::registers::*;
-use super::types::{Data, Addr, Word};
+use super::types::{Data, Addr};
 pub use self::background::*;
 pub use self::tile::*;
 pub use self::palette::*;
-// use self::tile::{Tile, TileParams};
 
-// #[derive(Debug)]
-// pub struct Context {
-//
-// }
 
 #[derive(Debug)]
 pub struct PpuConfig {
@@ -40,14 +33,8 @@ pub struct Ppu {
     pub config: PpuConfig,
 }
 
-// pub struct RenderingContext {
-//     background: BackgroundField,
-//     // background_: Vec<u8>,
-// }
-
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
-        // println!("{:?}", character_ram);
         Ppu {
             cycle: 0,
             line: 0,
@@ -74,13 +61,6 @@ impl Ppu {
                    &mut self.cram,
                    &mut self.palette);
     }
-
-    // pub fn get_rendering_ctx(&self) -> RenderingContext {
-    //     RenderingContext {
-    //         background: self.background,
-    //         // background_: self.background.test,
-    //     }
-    // }
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
     // While drawing the BG and sprite at the first 256 clocks,
