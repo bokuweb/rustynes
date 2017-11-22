@@ -74,13 +74,26 @@ pub fn fetch_pre_indexed_indirect<T: CpuRegisters, U: CpuBus>(registers: &mut T,
     let addr = (bus.read(addr) as Addr) + ((bus.read((addr + 1) as Addr & 0xFF) as Addr) << 8);
     addr & 0xFFFF
 }
+/*
+const addrOrData = this.fetch(this.registers.PC);
+        const baseAddr = this.read(addrOrData) + (this.read((addrOrData + 1) & 0xFF) << 8);
+        const addr = baseAddr + this.registers.Y;
+        return {
+          addrOrData: addr & 0xFFFF,
+          additionalCycle: (addr & 0xFF00) !== (baseAddr & 0xFF00) ? 1 : 0,
+        }
+        */
 
+// TODO: 0x3ff 0x1ffになったり
 pub fn fetch_post_indexed_indirect<T: CpuRegisters, U: CpuBus>(registers: &mut T,
                                                                bus: &mut U)
                                                                -> Word {
     let addr = fetch(registers, bus) as Addr;
-    let addr = (bus.read(addr) as Addr) + ((bus.read((addr + 1) & 0xFF) as Addr) << 8);
-    addr + (registers.get_Y() as Addr) & 0xFFFF
+    let a = bus.read(addr);
+    let b = (bus.read((addr + 1) & 0x00FF));
+    let base_addr = (bus.read(addr) as usize) + ((bus.read((addr + 1) & 0x00FF) as usize) * 0x100);
+    println!("aabb {:X} {:X} {:X}, {:X} {:X} {:X}", &addr, &(addr + 1) & 0x00FF, &a, &b, &base_addr, ((base_addr + (registers.get_Y() as usize)) & 0xFFFF));
+    ((base_addr + (registers.get_Y() as usize)) & 0xFFFF) as u16
 }
 
 pub fn fetch_indirect_absolute<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Word {

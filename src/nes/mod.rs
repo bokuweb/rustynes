@@ -69,7 +69,7 @@ pub fn run(ctx: &mut Context) {
 impl Context {
     pub fn new(buf: &mut [Data]) -> Self {
         let cassette = parser::parse(buf);
-        // println!("{:?}", cassette.program_rom);
+        println!("{:?}", cassette.program_rom);
         Context {
             cpu_registers: cpu_registers::Registers::new(),
             program_rom: Box::new(Rom::new(cassette.program_rom)),

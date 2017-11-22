@@ -61,13 +61,18 @@ impl Ppu {
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        self.registers.read(addr, &mut self.vram, &mut self.cram, &self.palette)
+        self.registers
+            .read(addr, &mut self.vram, &mut self.cram, &self.palette)
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
         println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
         self.registers
-            .write(addr, data, &mut self.vram, &mut self.cram, &mut self.palette);
+            .write(addr,
+                   data,
+                   &mut self.vram,
+                   &mut self.cram,
+                   &mut self.palette);
     }
 
     // pub fn get_rendering_ctx(&self) -> RenderingContext {
@@ -110,7 +115,12 @@ impl Ppu {
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;
             let scroll_x = 0;
             self.background
-                .build_line(&self.vram, &self.cram, tile_y, scroll_x, &mut config);
+                .build_line(&self.vram,
+                            &self.cram,
+                            &self.palette,
+                            tile_y,
+                            scroll_x,
+                            &mut config);
         }
 
         if line == 241 {
