@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Ram {
-    field: RefCell<Vec<u8>>
+    pub field: RefCell<Vec<u8>>
 }
 
 impl Ram {

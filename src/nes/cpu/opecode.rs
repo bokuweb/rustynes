@@ -78,7 +78,7 @@ pub enum Instruction {
     RRA,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Addressing {
     Immediate,
     ZeroPage,

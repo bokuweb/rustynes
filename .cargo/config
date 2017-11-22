@@ -1,0 +1,5 @@
+[target.wasm32-unknown-emscripten]
+rustflags = [
+    "-C", "link-arg=--js-library",
+    "-C", "link-arg=src/externs/lib.js",
+]

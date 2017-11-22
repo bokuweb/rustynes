@@ -6,69 +6,77 @@ mod ram;
 mod bus;
 mod cpu;
 mod ppu;
+mod cpu_registers;
+mod renderer;
+// mod ppu_registers;
 mod types;
 mod helper;
 
-use self::cpu::Cpu;
-use self::ppu::Ppu;
+pub use self::ppu::background;
+pub use self::ppu::Tile;
+
+use self::ppu::*;
+use self::renderer::*;
 use self::rom::Rom;
 use self::ram::Ram;
-use self::bus::cpu_bus::CpuBus;
-// use std::rc::Rc;
-// use std::cell::RefCell;
+use self::bus::cpu_bus;
 use nes::types::{Data, Addr};
-// use nes::helper::*;
+
+// #[derive(Debug)]
+// pub struct Nes {
+//     context: Context,
+// }
 
 #[derive(Debug)]
-pub struct Nes {
-    cpu: Cpu,
+pub struct Context {
     ppu: Ppu,
-    work_ram: Ram,
-    character_ram: Ram,
-    program_rom: Rom,
+    program_rom: Box<Rom>,
+    work_ram: Box<Ram>,
+    cpu_registers: cpu_registers::Registers,
+    // ppu_registers: ppu_registers::Registers,
 }
 
-impl Nes {
-    pub fn new(buf: &mut [Data]) -> Nes {
+// #[derive(Debug)]
+// pub struct RenderingContext {
+//     ppu: Ppu,
+//     program_rom: Box<Rom>,
+//     work_ram: Box<Ram>,
+//     cpu_registers: cpu_registers::Registers,
+//     // ppu_registers: ppu_registers::Registers,
+// }
+
+pub fn reset(ctx: &mut Context) {
+    let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &mut ctx.ppu);
+    cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
+}
+
+pub fn run(ctx: &mut Context) {
+    let mut cycle = 0;
+    loop {
+        {
+            let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom, &ctx.work_ram, &mut ctx.ppu);
+            cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus);
+        }
+        let is_ready = ctx.ppu.run((cycle * 3) as usize);
+        if is_ready {
+            let rendering_ctx = &ctx.ppu.background.0;
+            render(rendering_ctx);
+            break;
+        }
+    }
+}
+
+impl Context {
+    pub fn new(buf: &mut [Data]) -> Self {
         let cassette = parser::parse(buf);
-        // let character_ram = parser::parse(buf).character_ram;
-        Nes {
-            cpu: Cpu::new(),
-            ppu: Ppu::new(),
-            program_rom: Rom::new(cassette.program_rom),
-            work_ram: Ram::new(vec![0; 0x0800]),
-            character_ram: Ram::new(vec![0; 0x0800]),
+        println!("{:?}", cassette.program_rom);
+        Context {
+            cpu_registers: cpu_registers::Registers::new(),
+            program_rom: Box::new(Rom::new(cassette.program_rom)),
+            ppu: Ppu::new(cassette.character_ram,
+                          PpuConfig { is_horizontal_mirror: cassette.is_horizontal_mirror }),
+            // ppu_registers: ppu_registers::egisters::new(),
+            work_ram: Box::new(Ram::new(vec![0; 0x0800])),
         }
-    }
-
-    pub fn reset(&self) {
-        self.cpu.reset(|addr: Addr| self.read(addr));
-    }
-
-    pub fn run(&self) {
-        let mut cycle = 0;
-        loop {
-            cycle += self.cpu
-                .run(|addr: Addr| self.read(addr),
-                     |addr: Addr, data: Data| self.write(addr, data));
-            if cycle > 20 {
-                break;
-            }
-        }
-    }
-    fn read(&self, addr: Addr) -> Data {
-        let cpu_bus = CpuBus::new(&self.program_rom,
-                                  &self.character_ram,
-                                  &self.work_ram,
-                                  &self.ppu);
-        cpu_bus.read(addr)
-    }
-
-    fn write(&self, addr: Addr, data: Data) {
-        let cpu_bus = CpuBus::new(&self.program_rom,
-                                  &self.character_ram,
-                                  &self.work_ram,
-                                  &self.ppu);
-        cpu_bus.write(addr, data);
     }
 }
