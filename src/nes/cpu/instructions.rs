@@ -130,24 +130,24 @@ pub fn pla<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
 }
 
 pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = (opeland as Data) + registers.get_A() + bool_to_u8(registers.get_carry());
+    let computed = (opeland as u16) + registers.get_A() as u16 + bool_to_u8(registers.get_carry()) as u16;
     registers
-        .update_overflow_by((opeland as Data), computed)
-        .update_negative_by(computed)
-        .update_zero_by(computed)
-        .set_carry(computed > 0xFF as Data)
-        .set_A(computed);
+        .update_overflow_by((opeland as Data), computed as Data)
+        .update_negative_by(computed as Data)
+        .update_zero_by(computed as Data)
+        .set_carry(computed > 0xFF)
+        .set_A(computed as Data);
 }
 
 pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     let fetched = bus.read(opeland);
-    let computed = fetched + registers.get_A() + bool_to_u8(registers.get_carry());
+    let computed = fetched as u16 + registers.get_A() as u16 + bool_to_u8(registers.get_carry()) as u16;
     registers
-        .update_overflow_by((opeland as Data), computed)
-        .update_negative_by(computed)
-        .update_zero_by(computed)
-        .set_carry(computed > 0xFF as Data)
-        .set_A(computed);
+        .update_overflow_by((opeland as Data), computed as Data)
+        .update_negative_by(computed as Data)
+        .update_zero_by(computed as Data)
+        .set_carry(computed > 0xFF)
+        .set_A(computed as Data);
 }
 
 pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
@@ -163,13 +163,13 @@ pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
 
 pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     let fetched = bus.read(opeland);
-    let computed = registers.get_A() - fetched - bool_to_u8(!registers.get_carry());
+    let computed = registers.get_A() as i16 - fetched as i16 - bool_to_u8(!registers.get_carry()) as i16;
     registers
-        .update_overflow_by(computed, fetched)
-        .update_negative_by(computed)
-        .update_zero_by(computed)
-        .set_carry(computed >= 0 as Data)
-        .set_A(computed);
+        .update_overflow_by(computed as Data, fetched)
+        .update_negative_by(computed as Data)
+        .update_zero_by(computed as Data)
+        .set_carry(computed >= 0 as i16)
+        .set_A(computed as Data);
 }
 
 pub fn cpx_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
