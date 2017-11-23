@@ -10,10 +10,7 @@ jobs:
   build:
     <<: *defaults
     steps:
-      - checkout
-      - run:
-          name: Build
-          command: make     
+      - checkout  
       - run:
           name: Test
           command: |
