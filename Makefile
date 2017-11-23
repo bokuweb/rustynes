@@ -8,3 +8,7 @@ build:
 	--verbose   
 	cp target/wasm32-unknown-emscripten/release/rustynes.js wasm/rustynes.js
 	cp target/wasm32-unknown-emscripten/release/deps/*.wasm wasm/rustynes.wasm
+
+clean:
+	rm -rf target/wasm32-unknown-emscripten/release/deps/*.wasm
+	rm -rf target/wasm32-unknown-emscripten/release/rustynes.js  
