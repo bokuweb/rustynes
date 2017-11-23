@@ -19,6 +19,14 @@ pub struct PpuConfig {
     pub is_horizontal_mirror: bool,
 }
 
+#[derive(Debug)]
+pub struct PpuCtx<P: PaletteRam> {
+    pub palette: P,
+    pub vram: Box<Ram>,
+    pub cram: Box<Ram>,
+    pub sprite_ram: Box<Ram>,
+}
+
 const CYCLES_PER_LINE: usize = 341;
 
 #[derive(Debug)]
@@ -26,9 +34,7 @@ pub struct Ppu {
     pub cycle: usize,
     pub line: usize,
     pub registers: Registers,
-    pub palette: Palette,
-    pub vram: Box<Ram>,
-    pub cram: Box<Ram>,
+    pub ctx: PpuCtx<Palette>,
     pub background: Background,
     pub config: PpuConfig,
 }
@@ -39,27 +45,24 @@ impl Ppu {
             cycle: 0,
             line: 0,
             registers: Registers::new(),
-            palette: Palette::new(),
-            vram: Box::new(Ram::new(vec![0; 0x2000])),
-            cram: Box::new(Ram::new(character_ram)),
+            ctx: PpuCtx {
+                palette: Palette::new(),
+                vram: Box::new(Ram::new(vec![0; 0x2000])),
+                cram: Box::new(Ram::new(character_ram)),
+                sprite_ram: Box::new(Ram::new(vec![0; 0x0100])),
+            },
             background: Background::new(),
             config,
         }
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        self.registers
-            .read(addr, &mut self.vram, &mut self.cram, &self.palette)
+        self.registers.read(addr, &mut self.ctx)
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
         println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
-        self.registers
-            .write(addr,
-                   data,
-                   &mut self.vram,
-                   &mut self.cram,
-                   &mut self.palette);
+        self.registers.write(addr, data, &mut self.ctx);
     }
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
@@ -95,9 +98,9 @@ impl Ppu {
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;
             let scroll_x = 0;
             self.background
-                .build_line(&self.vram,
-                            &self.cram,
-                            &self.palette,
+                .build_line(&self.ctx.vram,
+                            &self.ctx.cram,
+                            &self.ctx.palette,
                             tile_y,
                             scroll_x,
                             &mut config);

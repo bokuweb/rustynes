@@ -1,16 +1,20 @@
+mod oam;
 mod ppu_addr;
 mod ppu_data;
 
 use super::super::types::{Data, Addr, Word};
 use super::super::Ram;
+use super::PpuCtx;
 use super::palette::*;
 // use super::super::helper::*;
+use self::oam::Oam;
 use self::ppu_addr::PpuAddr;
 use self::ppu_data::PpuData;
 
 
 #[derive(Debug)]
 pub struct Registers {
+    oam: Oam,
     ppu_addr: PpuAddr,
     ppu_data: PpuData,
 }
@@ -37,6 +41,17 @@ pub struct Registers {
   | 0x3F10-0x3F1F  |  sprite Palette            |
   | 0x3F20-0x3FFF  |  mirror of 0x3F00-0x3F1F   |
   */
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -77,52 +92,30 @@ pub struct Registers {
 
 
 pub trait PpuRegisters {
-    fn read<P: PaletteRam>(&mut self, addr: Addr, vram: &Ram, cram: &Ram, palette: &P) -> Data;
+    fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data;
 
-    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram, palette: &mut P);
-
-    fn write_ppu_addr(&mut self, data: Data);
-
-    fn read_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, palette: &P) -> Data;
-
-    fn write_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, data: Data, palette: &mut P);
+    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, ctx: &mut PpuCtx<P>);
 }
 
 impl Registers {
     pub fn new() -> Self {
         Registers {
+            oam: Oam::new(),
             ppu_addr: PpuAddr::new(),
             ppu_data: PpuData::new(),
         }
     }
-}
 
-impl PpuRegisters for Registers {
-    fn read<P: PaletteRam>(&mut self, addr: Addr, vram: &Ram, cram: &Ram, palette: &P) -> Data {
-        match addr {
-            0x0002 => {
-                //this.isHorizontalScroll = true;
-                //const data = this.registers[0x02];
-                // this.clearVblank();
-                // this.clearSpriteHit();
-                // return data;
-                return 0;
-            }
-            0x0004 => {
-                // return this.spriteRam.read(this.spriteRamAddr);
-                return 0;
-            }
-            0x0007 => self.read_ppu_data(vram, cram, palette),
-            _ => 0,
-        }
+    fn write_oam_addr(&mut self, data: Data) {
+        self.oam.write_addr(data);
     }
 
-    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, vram: &Ram, cram: &Ram, palette: &mut P) {
-        match addr {
-            0x0006 => self.write_ppu_addr(data),
-            0x0007 => self.write_ppu_data(vram, cram, data, palette),
-            _ => (),
-        }
+    fn read_oam_data(&mut self, sprite_ram: &Ram) -> Data {
+        self.oam.read_data(sprite_ram)
+    }
+
+    fn write_oam_data(&mut self, data: Data, sprite_ram: &mut Ram) {
+        self.oam.write_data(sprite_ram, data);
     }
 
     fn write_ppu_addr(&mut self, data: Data) {
@@ -136,9 +129,43 @@ impl PpuRegisters for Registers {
         data
     }
 
-    fn write_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, data: Data, palette: &mut P) {
+    fn write_ppu_data<P: PaletteRam>(&mut self,
+                                     data: Data,
+                                     vram: &Ram,
+                                     cram: &Ram,
+                                     palette: &mut P) {
         let addr = self.ppu_addr.get();
         self.ppu_data.write(vram, cram, addr, data, palette);
         self.ppu_addr.update(0x01); // TODO: update 1 or 32
+    }
+}
+
+impl PpuRegisters for Registers {
+    fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
+        match addr {
+            0x0002 => {
+                //this.isHorizontalScroll = true;
+                //const data = this.registers[0x02];
+                // this.clearVblank();
+                // this.clearSpriteHit();
+                // return data;
+                return 0;
+            }
+            0x0004 => {
+                return self.oam.read_data(&ctx.sprite_ram);
+            }
+            0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
+            _ => 0,
+        }
+    }
+
+    fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, ctx: &mut PpuCtx<P>) {
+        match addr {
+            0x0003 => self.write_oam_addr(data),
+            0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
+            0x0006 => self.write_ppu_addr(data),
+            0x0007 => self.write_ppu_data(data, &ctx.vram, &ctx.cram, &mut ctx.palette),
+            _ => (),
+        }
     }
 }
