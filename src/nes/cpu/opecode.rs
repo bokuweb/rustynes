@@ -115,6 +115,7 @@ lazy_static! {
             m.insert(0xA9, Opecode { name: Instruction::LDA, mode: Addressing::Immediate, cycle: cycles[0xA9] });
             m.insert(0xA5, Opecode { name: Instruction::LDA, mode: Addressing::ZeroPage, cycle: cycles[0xA5] });
             m.insert(0xB5, Opecode { name: Instruction::LDA, mode: Addressing::ZeroPageX, cycle: cycles[0xB5] });
+            m.insert(0xAD, Opecode { name: Instruction::LDA, mode: Addressing::Absolute, cycle: cycles[0xAD] });
             m.insert(0xBD, Opecode { name: Instruction::LDA, mode: Addressing::AbsoluteX, cycle: cycles[0xBD] });
             m.insert(0xB9, Opecode { name: Instruction::LDA, mode: Addressing::AbsoluteY, cycle: cycles[0xB9] });
             m.insert(0xA1, Opecode { name: Instruction::LDA, mode: Addressing::PreIndexedIndirect, cycle: cycles[0xA1] });

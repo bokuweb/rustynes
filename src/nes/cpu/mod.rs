@@ -21,7 +21,7 @@ pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T, bus: &mut U) -
     // println!("opecode = {}, pc = {}", &code, &registers.get_PC());
     // println!("registers = {:?}", &registers);
     let ref map = opecode::MAP;
-    let code = &*map.get(&code).unwrap();   
+    let code = &*map.get(&code).unwrap();
     let opeland = fetch_opeland(&code, registers, bus);
 
     match code.name {
