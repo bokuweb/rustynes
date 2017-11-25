@@ -1,5 +1,5 @@
 use self::super::Ram;
-use self::super::sprite::{Sprite, SpritePosition, SpriteConfig, build, get_attribute,
+use self::super::sprite_utils::{Sprite, SpritePosition, SpriteConfig, build, get_attribute,
                           get_block_id, get_sprite_id};
 use self::super::palette::*;
 

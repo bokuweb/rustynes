@@ -1,8 +1,9 @@
-mod oam;
+
 mod ppu_addr;
 mod ppu_data;
+mod oam;
 
-use super::super::types::{Data, Addr, Word};
+use super::super::types::{Data, Addr};
 use super::super::Ram;
 use super::PpuCtx;
 use super::palette::*;
@@ -41,23 +42,6 @@ pub struct Registers {
   | 0x3F10-0x3F1F  |  sprite Palette            |
   | 0x3F20-0x3FFF  |  mirror of 0x3F00-0x3F1F   |
   */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
     Control Register1 0x2000
@@ -110,10 +94,6 @@ impl Registers {
         self.oam.write_addr(data);
     }
 
-    fn read_oam_data(&mut self, sprite_ram: &Ram) -> Data {
-        self.oam.read_data(sprite_ram)
-    }
-
     fn write_oam_data(&mut self, data: Data, sprite_ram: &mut Ram) {
         self.oam.write_data(sprite_ram, data);
     }
@@ -151,9 +131,7 @@ impl PpuRegisters for Registers {
                 // return data;
                 return 0;
             }
-            0x0004 => {
-                return self.oam.read_data(&ctx.sprite_ram);
-            }
+            0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,
         }

@@ -1,12 +1,12 @@
 
 pub mod background;
 pub mod tile;
-mod sprite;
+mod sprite_utils;
 mod registers;
 mod palette;
 
 use self::super::ram::Ram;
-use self::sprite::*;
+use self::sprite_utils::*;
 use self::registers::*;
 use super::types::{Data, Addr};
 pub use self::background::*;
