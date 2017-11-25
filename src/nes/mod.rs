@@ -11,6 +11,7 @@ mod helper;
 
 pub use self::ppu::background;
 pub use self::ppu::Tile;
+pub use self::ppu::SpriteWithCtx;
 
 use self::ppu::*;
 use self::renderer::*;
@@ -42,7 +43,7 @@ pub fn run(ctx: &mut Context) {
         let is_ready = ctx.ppu.run((cycle * 3) as usize);
         if is_ready {
             let rendering_ctx = &ctx.ppu.background.0;
-            render(rendering_ctx);
+            render(&ctx.ppu.background.0, &ctx.ppu.sprites);
             break;
         }
     }

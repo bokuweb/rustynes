@@ -2,6 +2,7 @@
 pub mod background;
 pub mod tile;
 mod sprite_utils;
+mod sprite;
 mod registers;
 mod palette;
 
@@ -12,7 +13,7 @@ use super::types::{Data, Addr};
 pub use self::background::*;
 pub use self::tile::*;
 pub use self::palette::*;
-
+pub use self::sprite::*;
 
 #[derive(Debug)]
 pub struct PpuConfig {
@@ -35,6 +36,7 @@ pub struct Ppu {
     pub line: usize,
     pub registers: Registers,
     pub ctx: PpuCtx<Palette>,
+    pub sprites: Vec<SpriteWithCtx>,
     pub background: Background,
     pub config: PpuConfig,
 }
@@ -51,6 +53,7 @@ impl Ppu {
                 cram: Box::new(Ram::new(character_ram)),
                 sprite_ram: Box::new(Ram::new(vec![0; 0x0100])),
             },
+            sprites: Vec::new(),
             background: Background::new(),
             config,
         }
@@ -74,7 +77,9 @@ impl Ppu {
         let line = self.line;
         if line == 0 {
             self.background.clear();
-            // buildSprites();
+            // TODO: Add offset
+            self.sprites =
+                build_sprites(&self.ctx.cram, &self.ctx.sprite_ram, &self.ctx.palette, 0);
         }
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
@@ -93,6 +98,7 @@ impl Ppu {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
                 offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
+                offset_addr_by_sprite_table: 0, // TODO: (this.registers[0] & 0x08) ? 0x1000 : 0x0000;
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;

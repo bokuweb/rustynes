@@ -9,6 +9,7 @@ pub type SpritePosition = (u8, u8);
 pub struct SpriteConfig {
     pub offset_addr_by_name_table: u16,
     pub offset_addr_by_background_table: u16,
+    pub offset_addr_by_sprite_table: u16,
     pub is_horizontal_mirror: bool,
 }
 
@@ -42,11 +43,11 @@ pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
     vram.read(mirror_down_sprite_addr(addr, config.is_horizontal_mirror))
 }
 
-pub fn build(cram: &Ram, sprite_id: u8, config: &SpriteConfig) -> Sprite {
+pub fn build(cram: &Ram, sprite_id: u8, offset: u16) -> Sprite {
     let mut sprite: Sprite = (0..8).into_iter().map(|_| vec![0; 8]).collect();
     for i in 0..16 {
         for j in 0..8 {
-            let addr = (sprite_id as u16) * 16 + i + config.offset_addr_by_background_table;
+            let addr = (sprite_id as u16) * 16 + i + offset;
             let ram = cram.read(addr);
             if ram & (0x80 >> j) as u8 != 0 {
                 sprite[(i % 8) as usize][j] += (0x01 << (i / 8)) as u8;

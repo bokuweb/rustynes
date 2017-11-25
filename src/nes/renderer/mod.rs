@@ -2,13 +2,14 @@ mod color;
 
 use super::BackgroundField;
 use super::Tile;
+use super::SpriteWithCtx;
 use self::color::COLORS;
 
 extern "C" {
     fn canvas_render(ptr: *const u8, len: usize);
 }
 
-pub fn render(background: &BackgroundField) {
+pub fn render(background: &BackgroundField, sprites: &Vec<SpriteWithCtx>) {
     render_background(background);
 }
 
