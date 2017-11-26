@@ -1,22 +1,31 @@
 
 pub mod background;
 pub mod tile;
+mod sprite_utils;
 mod sprite;
 mod registers;
 mod palette;
 
 use self::super::ram::Ram;
-use self::sprite::*;
 use self::registers::*;
 use super::types::{Data, Addr};
 pub use self::background::*;
 pub use self::tile::*;
 pub use self::palette::*;
-
+pub use self::sprite::*;
+pub use self::sprite_utils::*;
 
 #[derive(Debug)]
 pub struct PpuConfig {
     pub is_horizontal_mirror: bool,
+}
+
+#[derive(Debug)]
+pub struct PpuCtx<P: PaletteRam> {
+    pub palette: P,
+    pub vram: Box<Ram>,
+    pub cram: Box<Ram>,
+    pub sprite_ram: Box<Ram>,
 }
 
 const CYCLES_PER_LINE: usize = 341;
@@ -26,9 +35,8 @@ pub struct Ppu {
     pub cycle: usize,
     pub line: usize,
     pub registers: Registers,
-    pub palette: Palette,
-    pub vram: Box<Ram>,
-    pub cram: Box<Ram>,
+    pub ctx: PpuCtx<Palette>,
+    pub sprites: SpritesWithCtx,
     pub background: Background,
     pub config: PpuConfig,
 }
@@ -39,27 +47,25 @@ impl Ppu {
             cycle: 0,
             line: 0,
             registers: Registers::new(),
-            palette: Palette::new(),
-            vram: Box::new(Ram::new(vec![0; 0x2000])),
-            cram: Box::new(Ram::new(character_ram)),
+            ctx: PpuCtx {
+                palette: Palette::new(),
+                vram: Box::new(Ram::new(vec![0; 0x2000])),
+                cram: Box::new(Ram::new(character_ram)),
+                sprite_ram: Box::new(Ram::new(vec![0; 0x0100])),
+            },
+            sprites: Vec::new(),
             background: Background::new(),
             config,
         }
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        self.registers
-            .read(addr, &mut self.vram, &mut self.cram, &self.palette)
+        self.registers.read(addr, &mut self.ctx)
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
-        self.registers
-            .write(addr,
-                   data,
-                   &mut self.vram,
-                   &mut self.cram,
-                   &mut self.palette);
+        println!("ppu addr = {:X}, data = {:X}", addr, data);
+        self.registers.write(addr, data, &mut self.ctx);
     }
 
     // The PPU draws one line at 341 clocks and prepares for the next line.
@@ -71,7 +77,12 @@ impl Ppu {
         let line = self.line;
         if line == 0 {
             self.background.clear();
-            // buildSprites();
+            self.sprites = Vec::new();
+            build_sprites(&mut self.sprites,
+                          &self.ctx.cram,
+                          &self.ctx.sprite_ram,
+                          &self.ctx.palette,
+                          self.registers.get_sprite_table_offset());
         }
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
@@ -90,37 +101,32 @@ impl Ppu {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
                 offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
+                offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(), // TODO: (this.registers[0] & 0x08) ? 0x1000 : 0x0000;
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;
             let scroll_x = 0;
             self.background
-                .build_line(&self.vram,
-                            &self.cram,
-                            &self.palette,
+                .build_line(&self.ctx.vram,
+                            &self.ctx.cram,
+                            &self.ctx.palette,
                             tile_y,
                             scroll_x,
                             &mut config);
         }
 
         if line == 241 {
-            // self.setVblank();
+            self.registers.set_vblank();
             // if (this.hasVblankIrqEnabled) {
             //   this.interrupts.assertNmi();
             // }
         }
 
         if line == 262 {
-            // this.clearVblank();
-            // this.clearSpriteHit();
-            // this.line = 0;
+            self.registers.clear_vblank();
+            self.registers.clear_sprite_hit();
             // this.interrupts.deassertNmi();
             // println!("{:?}", self.vram);
-            //return Some(RenderingContext { background: self.background });
-            //   background: this.isBackgroundEnable ? this.background : null,
-            //   sprites: this.isSpriteEnable ? this.sprites : null,
-            //   palette: this.getPalette(),
-            // };
             self.line = 0;
             return true;
         }

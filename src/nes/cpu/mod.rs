@@ -17,13 +17,12 @@ pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
 }
 
 pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data {
-    let code = fetch(registers, bus);
-    // println!("opecode = {}, pc = {}", &code, &registers.get_PC());
+    let _code = fetch(registers, bus);
     // println!("registers = {:?}", &registers);
     let ref map = opecode::MAP;
-    let code = &*map.get(&code).unwrap();   
+    let code = &*map.get(&_code).unwrap();
     let opeland = fetch_opeland(&code, registers, bus);
-
+    // println!("opecode = {}, pc = {}, opeland = {}", &_code, &registers.get_PC(), opeland);
     match code.name {
         Instruction::LDA if code.mode == Addressing::Immediate => lda_imm(opeland, registers),
         Instruction::LDA => lda(opeland, registers, bus),

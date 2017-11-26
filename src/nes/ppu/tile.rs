@@ -1,12 +1,11 @@
 use self::super::Ram;
-use self::super::sprite::{Sprite, SpritePosition, SpriteConfig, build, get_attribute,
-                          get_block_id, get_sprite_id};
+use self::super::sprite_utils::*;
 use self::super::palette::*;
 
 #[derive(Debug)]
 pub struct Tile {
     pub sprite: Sprite,
-    pub palette: PalleteList,
+    pub palette: PaletteList,
 }
 
 impl Tile {
@@ -16,7 +15,7 @@ impl Tile {
         let sprite_id = get_sprite_id(&vram, position, config);
         let attr = get_attribute(&vram, position, config);
         let palette_id = (attr >> (block_id * 2)) & 0x03;
-        let sprite = build(&cram, sprite_id, config);
+        let sprite = build(&cram, sprite_id, config.offset_addr_by_background_table);
         Tile { sprite, palette: palette.get(palette_id, PaletteType::Background) }
     }
 }

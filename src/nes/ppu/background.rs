@@ -3,7 +3,7 @@
 use super::super::types::Addr;
 use super::super::ram::Ram;
 use super::tile::Tile;
-use super::sprite::*;
+use super::sprite_utils::*;
 use super::palette::*;
 
 pub type BackgroundField = Vec<Tile>;

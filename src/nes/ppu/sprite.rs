@@ -1,64 +1,43 @@
-use super::super::types::Addr;
-use super::super::Ram;
+use self::super::sprite_utils::*;
+use self::super::Ram;
+use self::super::palette::*;
 
-pub type Sprite = Vec<Vec<u8>>;
+const SPRITES_NUMBER: u16 = 0x100;
 
-pub type SpritePosition = (u8, u8);
+pub type SpritesWithCtx = Vec<SpriteWithCtx>;
 
 #[derive(Debug)]
-pub struct SpriteConfig {
-    pub offset_addr_by_name_table: u16,
-    pub offset_addr_by_background_table: u16,
-    pub is_horizontal_mirror: bool,
+pub struct SpriteWithCtx {
+    pub sprite: Sprite,
+    pub position: SpritePosition,
+    pub attr: u8,
+    pub palette: PaletteList,
 }
 
-pub fn mirror_down_sprite_addr(addr: Addr, is_horizontal_mirror: bool) -> Addr {
-    if is_horizontal_mirror {
-        return addr;
-    }
-    if addr >= 0x0400 && addr < 0x0800 || addr >= 0x0C00 {
-        return addr - 0x400 as Addr;
-    }
-    addr
-}
-
-pub fn get_block_id(position: &SpritePosition) -> u8 {
-    ((position.0 % 4) / 2) + (((position.1 % 4) / 2) * 2)
-}
-
-pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
-    let tile_number = position.1 as Addr * 32 + position.0 as Addr;
-    let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table,
-                                       config.is_horizontal_mirror);
-    let data = vram.read(addr);
-    // println!("vram read {:X} {:X}", addr, data);
-    data
-}
-
-pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
-    let addr = 0x03C0 + ((position.0 / 4) + ((position.1 / 4) * 8)) as u16 +
-               config.offset_addr_by_name_table;
-    println!("attr addr {:X}", addr);
-    vram.read(mirror_down_sprite_addr(addr, config.is_horizontal_mirror))
-}
-
-pub fn build(cram: &Ram, sprite_id: u8, config: &SpriteConfig) -> Sprite {
-    let mut sprite: Sprite = (0..8).into_iter().map(|_| vec![0; 8]).collect();
-    for i in 0..16 {
-        for j in 0..8 {
-            let addr = (sprite_id as u16) * 16 + i + config.offset_addr_by_background_table;
-            let ram = cram.read(addr);
-            if ram & (0x80 >> j) as u8 != 0 {
-                sprite[(i % 8) as usize][j] += (0x01 << (i / 8)) as u8;
-            }
+pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
+                                    cram: &Ram,
+                                    sprite_ram: &Ram,
+                                    palette: &P,
+                                    offset: u16) {
+    // let mut sprites = Vec::new();
+    for i in 0..(SPRITES_NUMBER / 4) {
+        // INFO: Offset sprite Y position, because First and last 8line is not rendered.
+        let base = i * 4;
+        let y = sprite_ram.read(base) as i8 - 8;
+        // println!("y = {}", y);
+        if y >= 0 as i8 {
+            let sprite_id = sprite_ram.read(base + 1);
+            let attr = sprite_ram.read(base + 2);
+            let x = sprite_ram.read(base + 3);
+            let sprite = build(&cram, sprite_id, offset);
+            let position: SpritePosition = (x, y as u8);
+            let palette_id = attr & 0x03;
+            buf.push(SpriteWithCtx {
+                             sprite,
+                             position,
+                             attr,
+                             palette: palette.get(palette_id, PaletteType::Sprite),
+                         });
         }
     }
-    sprite
-}
-
-#[test]
-fn test_get_block_id() {
-    let position = (2, 3);
-    let id = get_block_id(&position);
-    assert_eq!(id, 3);
 }
