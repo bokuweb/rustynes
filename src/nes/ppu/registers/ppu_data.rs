@@ -42,7 +42,6 @@ impl PpuData {
                                 addr: Addr,
                                 data: Data,
                                 palette: &mut P) {
-                                    println!("ppu write addr {:X} data {:X}", addr, data);
         if addr >= 0x2000 {
             if addr >= 0x3f00 && addr < 0x4000 {
                 palette.write(addr - 0x3f00, data);

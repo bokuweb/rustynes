@@ -15,6 +15,8 @@ use self::ppu_data::PpuData;
 
 #[derive(Debug)]
 pub struct Registers {
+    ppu_ctrl: Data,
+    ppu_status: Data,
     oam: Oam,
     ppu_addr: PpuAddr,
     ppu_data: PpuData,
@@ -44,22 +46,6 @@ pub struct Registers {
   */
 
 /*
-    Control Register1 0x2000
-  | bit  | description                                 |
-  +------+---------------------------------------------+
-  |  7   | Assert NMI when VBlank 0: disable, 1:enable |
-  |  6   | PPU master/slave, always 1                  |
-  |  5   | Sprite size 0: 8x8, 1: 8x16                 |
-  |  4   | Bg pattern table 0:0x0000, 1:0x1000         |
-  |  3   | sprite pattern table 0:0x0000, 1:0x1000     |
-  |  2   | PPU memory increment 0: +=1, 1:+=32         |
-  |  1-0 | Name table 0x00: 0x2000                     |
-  |      |            0x01: 0x2400                     |
-  |      |            0x02: 0x2800                     |
-  |      |            0x03: 0x2C00                     |
-  */
-
-/*
     Control Register2 0x2001
   | bit  | description                                 |
   +------+---------------------------------------------+
@@ -79,15 +65,43 @@ pub trait PpuRegisters {
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data;
 
     fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, ctx: &mut PpuCtx<P>);
+
+    fn clear_vblank(&mut self);
+
+    fn set_vblank(&mut self);
+
+    fn clear_sprite_hit(&mut self);
+
+    fn get_sprite_table_offset(&self) -> Addr;
 }
 
 impl Registers {
     pub fn new() -> Self {
         Registers {
+            ppu_ctrl: 0,
+            ppu_status: 0,
             oam: Oam::new(),
             ppu_addr: PpuAddr::new(),
             ppu_data: PpuData::new(),
         }
+    }
+
+    /*
+    |  status register 0x2002
+    | bit  | description                                 |
+    +------+---------------------------------------------+
+    | 7    | 1: VBlank clear by reading this register    |
+    | 6    | 1: sprite hit                               |
+    | 5    | 0: less than 8, 1: 9 or more                |
+    | 4-0  | invalid                                     |                                 
+    |      | bit4 VRAM write flag [0: success, 1: fail]  |
+    */
+    fn read_status(&mut self) -> Data {
+        let data = self.ppu_status;
+        // TODO: this.isHorizontalScroll = true;
+        self.clear_vblank();
+        self.clear_sprite_hit();
+        data
     }
 
     fn write_oam_addr(&mut self, data: Data) {
@@ -95,6 +109,7 @@ impl Registers {
     }
 
     fn write_oam_data(&mut self, data: Data, sprite_ram: &mut Ram) {
+        println!("oam data {}", data);
         self.oam.write_data(sprite_ram, data);
     }
 
@@ -121,16 +136,29 @@ impl Registers {
 }
 
 impl PpuRegisters for Registers {
+    fn clear_vblank(&mut self) {
+        self.ppu_status &= 0x7F;
+    }
+
+    fn set_vblank(&mut self) {
+        self.ppu_status |= 0x80;
+    }    
+
+    fn clear_sprite_hit(&mut self) {
+        self.ppu_status &= 0xbF;
+    }
+    
+    fn get_sprite_table_offset(&self) -> Addr {
+        if self.ppu_ctrl & 0x08 == 0x08 {
+            0x1000
+        } else {
+            0x0000
+        }
+    }
+    
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
         match addr {
-            0x0002 => {
-                //this.isHorizontalScroll = true;
-                //const data = this.registers[0x02];
-                // this.clearVblank();
-                // this.clearSpriteHit();
-                // return data;
-                return 0;
-            }
+            0x0002 => self.ppu_status,
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,
@@ -139,6 +167,22 @@ impl PpuRegisters for Registers {
 
     fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, ctx: &mut PpuCtx<P>) {
         match addr {
+            /*
+                Control Register1 0x2000
+              | bit  | description                                 |
+              +------+---------------------------------------------+
+              |  7   | Assert NMI when VBlank 0: disable, 1:enable |
+              |  6   | PPU master/slave, always 1                  |
+              |  5   | Sprite size 0: 8x8, 1: 8x16                 |
+              |  4   | Bg pattern table 0:0x0000, 1:0x1000         |
+              |  3   | sprite pattern table 0:0x0000, 1:0x1000     |
+              |  2   | PPU memory increment 0: +=1, 1:+=32         |
+              |  1-0 | Name table 0x00: 0x2000                     |
+              |      |            0x01: 0x2400                     |
+              |      |            0x02: 0x2800                     |
+              |      |            0x03: 0x2C00                     |
+              */            
+            0x0000 => self.ppu_ctrl = data,
             0x0003 => self.write_oam_addr(data),
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
             0x0006 => self.write_ppu_addr(data),

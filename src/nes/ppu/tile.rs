@@ -5,7 +5,7 @@ use self::super::palette::*;
 #[derive(Debug)]
 pub struct Tile {
     pub sprite: Sprite,
-    pub palette: PalleteList,
+    pub palette: PaletteList,
 }
 
 impl Tile {

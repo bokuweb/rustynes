@@ -7,13 +7,13 @@ mod registers;
 mod palette;
 
 use self::super::ram::Ram;
-use self::sprite_utils::*;
 use self::registers::*;
 use super::types::{Data, Addr};
 pub use self::background::*;
 pub use self::tile::*;
 pub use self::palette::*;
 pub use self::sprite::*;
+pub use self::sprite_utils::*;
 
 #[derive(Debug)]
 pub struct PpuConfig {
@@ -36,7 +36,7 @@ pub struct Ppu {
     pub line: usize,
     pub registers: Registers,
     pub ctx: PpuCtx<Palette>,
-    pub sprites: Vec<SpriteWithCtx>,
+    pub sprites: SpritesWithCtx,
     pub background: Background,
     pub config: PpuConfig,
 }
@@ -64,7 +64,7 @@ impl Ppu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("[ppu write] addr = {:X}, data = {:X}", addr, data);
+        println!("ppu addr = {:X}, data = {:X}", addr, data);
         self.registers.write(addr, data, &mut self.ctx);
     }
 
@@ -77,9 +77,12 @@ impl Ppu {
         let line = self.line;
         if line == 0 {
             self.background.clear();
-            // TODO: Add offset
-            self.sprites =
-                build_sprites(&self.ctx.cram, &self.ctx.sprite_ram, &self.ctx.palette, 0);
+            self.sprites = Vec::new();
+            build_sprites(&mut self.sprites,
+                          &self.ctx.cram,
+                          &self.ctx.sprite_ram,
+                          &self.ctx.palette,
+                          self.registers.get_sprite_table_offset());
         }
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
@@ -98,7 +101,7 @@ impl Ppu {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
                 offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
-                offset_addr_by_sprite_table: 0, // TODO: (this.registers[0] & 0x08) ? 0x1000 : 0x0000;
+                offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(), // TODO: (this.registers[0] & 0x08) ? 0x1000 : 0x0000;
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;
@@ -113,23 +116,17 @@ impl Ppu {
         }
 
         if line == 241 {
-            // self.setVblank();
+            self.registers.set_vblank();
             // if (this.hasVblankIrqEnabled) {
             //   this.interrupts.assertNmi();
             // }
         }
 
         if line == 262 {
-            // this.clearVblank();
-            // this.clearSpriteHit();
-            // this.line = 0;
+            self.registers.clear_vblank();
+            self.registers.clear_sprite_hit();
             // this.interrupts.deassertNmi();
             // println!("{:?}", self.vram);
-            //return Some(RenderingContext { background: self.background });
-            //   background: this.isBackgroundEnable ? this.background : null,
-            //   sprites: this.isSpriteEnable ? this.sprites : null,
-            //   palette: this.getPalette(),
-            // };
             self.line = 0;
             return true;
         }

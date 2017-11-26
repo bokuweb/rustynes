@@ -11,14 +11,14 @@ mod helper;
 
 pub use self::ppu::background;
 pub use self::ppu::Tile;
-pub use self::ppu::SpriteWithCtx;
+pub use self::ppu::{SpriteWithCtx, Sprite, SpritePosition};
 
 use self::ppu::*;
 use self::renderer::*;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
-use nes::types::{Data};
+use nes::types::Data;
 
 #[derive(Debug)]
 pub struct Context {
@@ -42,7 +42,6 @@ pub fn run(ctx: &mut Context) {
         }
         let is_ready = ctx.ppu.run((cycle * 3) as usize);
         if is_ready {
-            let rendering_ctx = &ctx.ppu.background.0;
             render(&ctx.ppu.background.0, &ctx.ppu.sprites);
             break;
         }

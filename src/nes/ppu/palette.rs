@@ -6,13 +6,13 @@ pub enum PaletteType {
     Background,
 }
 
-pub type PalleteList = Vec<u8>;
+pub type PaletteList = Vec<u8>;
 
 #[derive(Debug)]
-pub struct Palette(PalleteList);
+pub struct Palette(PaletteList);
 
 pub trait PaletteRam {
-    fn get(&self, palette_id: u8, palette_type: PaletteType) -> PalleteList;
+    fn get(&self, palette_id: u8, palette_type: PaletteType) -> PaletteList;
 
     fn read(&self, addr: Addr) -> Data;
 
@@ -44,7 +44,7 @@ impl Palette {
 }
 
 impl PaletteRam for Palette {
-    fn get(&self, palette_id: u8, palette_type: PaletteType) -> PalleteList {
+    fn get(&self, palette_id: u8, palette_type: PaletteType) -> PaletteList {
         let offset = match palette_type {
             PaletteType::Sprite => 0x10,
             _ => 0x00,
