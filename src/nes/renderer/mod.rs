@@ -28,7 +28,6 @@ fn render_background(buf: &mut Vec<u8>, background: &BackgroundField) {
 }
 
 fn render_sprites(buf: &mut Vec<u8>, sprites: &SpritesWithCtx) {
-    println!("{:?}", sprites);
     for sprite in sprites {
         render_sprite(buf, &sprite.sprite, &sprite.position, &sprite.palette);
     }
@@ -45,10 +44,6 @@ fn render_sprite(data: &mut Vec<u8>,
                 let color = COLORS[color_id as usize];
                 let x = position.0 as usize + j;
                 let y = position.1 as usize + i;
-                if (y > 224) { 
-                    println!("y = {}", y);
-                    continue;
-                };
                 let index = (x + (y * 0x100)) * 4;
                 data[index] = color.0;
                 data[index + 1] = color.1;
