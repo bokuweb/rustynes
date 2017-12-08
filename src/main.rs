@@ -16,8 +16,8 @@ pub fn run(len: usize, ptr: *mut u8) {
     let mut ctx = Context::new(buf);
     nes::reset(&mut ctx);
     let main_loop = || {
-        println!("key code = {}", buf[len - 1]);
-        nes::run(&mut ctx);
+        let key_state = buf[len - 1];
+        nes::run(&mut ctx, key_state);
     };
     externs::set_main_loop_callback(main_loop);
 }

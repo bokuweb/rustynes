@@ -28,7 +28,6 @@ impl Oam {
     }
 
     pub fn write_addr(&mut self, data: Data) {
-        println!("wa{}", &data);
         self.addr = data as Addr;
     }
 
@@ -39,7 +38,6 @@ impl Oam {
     // Write OAM data here. Writes will increment OAMADDR after the write;
     // reads during vertical or forced blanking return the value from OAM at that address but do not increment.
     pub fn write_data(&mut self, ram: &mut Ram, data: Data) {
-        println!("write oam data {} addr {}", data, &self.addr);
         ram.write(self.addr, data);
         self.addr += 1;
     }

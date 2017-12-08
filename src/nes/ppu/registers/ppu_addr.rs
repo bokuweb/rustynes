@@ -38,7 +38,7 @@ impl PpuAddr {
             self.addr = (data as Addr) << 8;
             self.is_lower_addr = true;
             self.is_valid_addr = false;
-            println!("[PPUADDR] = {}", &self.addr);
+            // println!("[PPUADDR] = {}", &self.addr);
         }
     }
 }
