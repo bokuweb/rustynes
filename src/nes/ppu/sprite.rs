@@ -23,7 +23,7 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
         // INFO: Offset sprite Y position, because First and last 8line is not rendered.
         let base = i * 4;
         let y = sprite_ram.read(base);
-        if y >= 8 {
+        if y >= 8 && y < 224 {
             let sprite_id = sprite_ram.read(base + 1);
             let attr = sprite_ram.read(base + 2);
             let x = sprite_ram.read(base + 3);

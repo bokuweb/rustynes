@@ -4,7 +4,7 @@
   const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
-  window.__nes = {
+  Module.NES = {
     ctx,
     canvas,
     image: ctx.createImageData(256, 240),
