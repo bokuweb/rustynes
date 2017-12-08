@@ -22,12 +22,13 @@ pub fn render(background: &BackgroundField, sprites: &SpritesWithCtx) {
 fn render_background(buf: &mut Vec<u8>, background: &BackgroundField) {
     for (i, bg) in background.into_iter().enumerate() {
         let x = (i % 33) * 8;
-        let y = (i / 33) * 8;
+        let y  = (i / 33) * 8;
         render_tile(buf, bg, x, y);
     }
 }
 
 fn render_sprites(buf: &mut Vec<u8>, sprites: &SpritesWithCtx) {
+    println!("{:?}", sprites);
     for sprite in sprites {
         render_sprite(buf, &sprite.sprite, &sprite.position, &sprite.palette);
     }
