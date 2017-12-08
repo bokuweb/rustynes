@@ -109,7 +109,6 @@ impl Registers {
     }
 
     fn write_oam_data(&mut self, data: Data, sprite_ram: &mut Ram) {
-        println!("oam data {}", data);
         self.oam.write_data(sprite_ram, data);
     }
 

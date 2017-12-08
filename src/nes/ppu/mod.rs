@@ -64,7 +64,7 @@ impl Ppu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("ppu addr = {:X}, data = {:X}", addr, data);
+        // println!("ppu addr = {:X}, data = {:X}", addr, data);
         self.registers.write(addr, data, &mut self.ctx);
     }
 
