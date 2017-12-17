@@ -15,11 +15,11 @@ use self::ppu_data::PpuData;
 
 #[derive(Debug)]
 pub struct Registers {
-    ppu_ctrl: Data,
-    ppu_status: Data,
-    oam: Oam,
-    ppu_addr: PpuAddr,
-    ppu_data: PpuData,
+    pub ppu_ctrl: Data,
+    pub ppu_status: Data,
+    pub oam: Oam,
+    pub ppu_addr: PpuAddr,
+    pub ppu_data: PpuData,
 }
 
 // PPU power up state
