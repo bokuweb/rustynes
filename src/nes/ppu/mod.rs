@@ -133,6 +133,11 @@ impl Ppu {
         false
     }
 
+    pub fn transfer_sprite(&mut self, addr: Addr, data: Data) {
+        let addr = addr + self.registers.oam.get_addr();
+        self.ctx.sprite_ram.write(addr % 0x100, data);
+    }
+
     // fn get_scroll_tile_y(&self) -> u8 {
     //     // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
     //     0
