@@ -3,6 +3,16 @@ use super::super::bus::cpu_bus::CpuBus;
 use super::super::types::{Data, Addr, Word};
 use super::super::helper::*;
 
+pub fn process_nmi<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
+    registers.set_break(false);
+    push((registers.get_PC() >> 8) as u8, registers, bus);
+    push(registers.get_PC() as u8, registers, bus);
+    push_status(registers, bus);
+    registers.set_interrupt(true);
+    let next = bus.read_word(0xFFFA);
+    registers.set_PC(next);
+}
+
 pub fn lda<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     let computed = bus.read(opeland);
     registers
@@ -130,7 +140,8 @@ pub fn pla<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
 }
 
 pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = (opeland as u16) + registers.get_A() as u16 + bool_to_u8(registers.get_carry()) as u16;
+    let computed = (opeland as u16) + registers.get_A() as u16 +
+                   bool_to_u8(registers.get_carry()) as u16;
     registers
         .update_overflow_by((opeland as Data), computed as Data)
         .update_negative_by(computed as Data)
@@ -141,7 +152,8 @@ pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
 
 pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     let fetched = bus.read(opeland);
-    let computed = fetched as u16 + registers.get_A() as u16 + bool_to_u8(registers.get_carry()) as u16;
+    let computed = fetched as u16 + registers.get_A() as u16 +
+                   bool_to_u8(registers.get_carry()) as u16;
     registers
         .update_overflow_by((opeland as Data), computed as Data)
         .update_negative_by(computed as Data)
@@ -163,7 +175,8 @@ pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
 
 pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
     let fetched = bus.read(opeland);
-    let computed = registers.get_A() as i16 - fetched as i16 - bool_to_u8(!registers.get_carry()) as i16;
+    let computed = registers.get_A() as i16 - fetched as i16 -
+                   bool_to_u8(!registers.get_carry()) as i16;
     registers
         .update_overflow_by(computed as Data, fetched)
         .update_negative_by(computed as Data)

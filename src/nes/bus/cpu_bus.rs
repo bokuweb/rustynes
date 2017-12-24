@@ -54,6 +54,7 @@ impl<'a> CpuBus for Bus<'a> {
     }
 
     fn write(&mut self, addr: u16, data: u8) {
+        // println!("{} {}", addr, data);
         match addr {
             0x0000...0x07FF => self.work_ram.write(addr, data),
             0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),

@@ -72,7 +72,7 @@ impl Ppu {
     // While drawing the BG and sprite at the first 256 clocks,
     // it searches for sprites to be drawn on the next scan line.
     // Get the pattern of the sprite searched with the remaining clock.
-    pub fn run(&mut self, cycle: usize) -> bool {
+    pub fn run(&mut self, cycle: usize, nmi: &mut bool) -> bool {
         let cycle = self.cycle + cycle;
         let line = self.line;
         if line == 0 {
@@ -117,16 +117,15 @@ impl Ppu {
 
         if line == 241 {
             self.registers.set_vblank();
-            // if (this.hasVblankIrqEnabled) {
-            //   this.interrupts.assertNmi();
-            // }
+            if self.registers.is_irq_enable() {
+                *nmi = true;
+            }
         }
 
         if line == 262 {
             self.registers.clear_vblank();
             self.registers.clear_sprite_hit();
-            // this.interrupts.deassertNmi();
-            // println!("{:?}", self.vram);
+            *nmi = false;
             self.line = 0;
             return true;
         }

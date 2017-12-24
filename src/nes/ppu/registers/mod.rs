@@ -73,6 +73,8 @@ pub trait PpuRegisters {
     fn clear_sprite_hit(&mut self);
 
     fn get_sprite_table_offset(&self) -> Addr;
+  
+    fn is_irq_enable(&self) -> bool;
 }
 
 impl Registers {
@@ -146,6 +148,10 @@ impl PpuRegisters for Registers {
     fn clear_sprite_hit(&mut self) {
         self.ppu_status &= 0xbF;
     }
+
+    fn is_irq_enable(&self) -> bool {
+        self.ppu_ctrl & 0x80 == 0x80
+    }    
     
     fn get_sprite_table_offset(&self) -> Addr {
         if self.ppu_ctrl & 0x08 == 0x08 {
