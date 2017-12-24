@@ -32,6 +32,7 @@ pub struct Context {
     cpu_registers: cpu_registers::Registers,
     keypad: Keypad,
     dma_register: u8,
+    nmi: bool,
 }
 
 pub fn reset(ctx: &mut Context) {
@@ -41,6 +42,7 @@ pub fn reset(ctx: &mut Context) {
                                         &mut ctx.keypad,
                                         &mut ctx.dma_register);
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
+    // println!("{:?}", ctx.program_rom);
 }
 
 pub fn run(ctx: &mut Context, key_state: u8) {
@@ -61,9 +63,9 @@ pub fn run(ctx: &mut Context, key_state: u8) {
                                                 &mut ctx.ppu,
                                                 &mut ctx.keypad,
                                                 &mut ctx.dma_register);
-            cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus) as u16;
+            cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
         }
-        let is_ready = ctx.ppu.run((cycle * 3) as usize);
+        let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
         if is_ready {
             render(&ctx.ppu.background.0, &ctx.ppu.sprites);
             break;
@@ -82,6 +84,7 @@ impl Context {
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
             keypad: Keypad::new(),
             dma_register: 0x00,
+            nmi: false,
         }
     }
 }
