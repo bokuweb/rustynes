@@ -348,7 +348,7 @@ pub fn rol_acc<T: CpuRegisters>(registers: &mut T) {
     let acc = registers.get_A();
     let rotated = rotate_to_left(registers, acc);
     registers
-        .set_carry(acc & 0x01 == 0x01)
+        .set_carry(acc & 0x80 == 0x80)
         .update_negative_by(rotated)
         .update_zero_by(rotated)
         .set_A(rotated);
@@ -548,7 +548,7 @@ fn rotate_to_right<T: CpuRegisters>(registers: &mut T, v: Data) -> Data {
 }
 
 fn rotate_to_left<T: CpuRegisters>(registers: &mut T, v: Data) -> Data {
-    ((v << 1) | if registers.get_carry() { 0x01 } else { 0x00 }) as Data
+    ((v << 1) as Data | if registers.get_carry() { 0x01 } else { 0x00 }) as Data
 }
 
 fn push<T: CpuRegisters, U: CpuBus>(data: Data, registers: &mut T, bus: &mut U) {
