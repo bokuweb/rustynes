@@ -158,7 +158,7 @@ pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
                    bool_to_u8(registers.get_carry()) as u16;
     let acc = registers.get_A();
     registers
-        .set_overflow(!(((acc ^ (opeland as Data)) & 0x80) != 0) &&
+        .set_overflow(!(((acc ^ (fetched as Data)) & 0x80) != 0) &&
                       (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
@@ -185,7 +185,7 @@ pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
                    bool_to_u8(!registers.get_carry()) as i16;
     let acc = registers.get_A();
     registers
-        .set_overflow((((acc ^ (opeland as Data)) & 0x80) != 0) &&
+        .set_overflow((((acc ^ (fetched as Data)) & 0x80) != 0) &&
                       (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
@@ -358,7 +358,7 @@ pub fn rol<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
     let fetched = bus.read(opeland);
     let rotated = rotate_to_left(registers, fetched);
     registers
-        .set_carry(fetched & 0x01 == 0x01)
+        .set_carry(fetched & 0x80 == 0x80)
         .update_negative_by(rotated)
         .update_zero_by(rotated);
     bus.write(opeland, rotated);
@@ -544,7 +544,7 @@ pub fn sed<T: CpuRegisters>(registers: &mut T) {
 }
 
 fn rotate_to_right<T: CpuRegisters>(registers: &mut T, v: Data) -> Data {
-    ((v >> 1) | if registers.get_carry() { 0x80 } else { 0x00 }) as Data
+    ((v >> 1) as Data | if registers.get_carry() { 0x80 } else { 0x00 }) as Data
 }
 
 fn rotate_to_left<T: CpuRegisters>(registers: &mut T, v: Data) -> Data {
