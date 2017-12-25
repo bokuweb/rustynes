@@ -142,8 +142,10 @@ pub fn pla<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
 pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
     let computed = (opeland as u16) + registers.get_A() as u16 +
                    bool_to_u8(registers.get_carry()) as u16;
+    let acc = registers.get_A();
     registers
-        .update_overflow_by((opeland as Data), computed as Data)
+        .set_overflow(!(((acc ^ (opeland as Data)) & 0x80) != 0) &&
+                      (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed > 0xFF)
@@ -154,8 +156,10 @@ pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
     let fetched = bus.read(opeland);
     let computed = fetched as u16 + registers.get_A() as u16 +
                    bool_to_u8(registers.get_carry()) as u16;
+    let acc = registers.get_A();
     registers
-        .update_overflow_by((opeland as Data), computed as Data)
+        .set_overflow(!(((acc ^ (opeland as Data)) & 0x80) != 0) &&
+                      (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed > 0xFF)
@@ -165,8 +169,10 @@ pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
 pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
     let computed = registers.get_A() as i16 - (opeland as i16) -
                    bool_to_u8(!registers.get_carry()) as i16;
+    let acc = registers.get_A();
     registers
-        .update_overflow_by(computed as Data, (opeland as Data))
+        .set_overflow((((acc ^ (opeland as Data)) & 0x80) != 0) &&
+                      (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed >= 0 as i16)
@@ -177,8 +183,10 @@ pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
     let fetched = bus.read(opeland);
     let computed = registers.get_A() as i16 - fetched as i16 -
                    bool_to_u8(!registers.get_carry()) as i16;
+    let acc = registers.get_A();
     registers
-        .update_overflow_by(computed as Data, fetched)
+        .set_overflow((((acc ^ (opeland as Data)) & 0x80) != 0) &&
+                      (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed >= 0 as i16)
