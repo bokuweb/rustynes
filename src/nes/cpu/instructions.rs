@@ -536,7 +536,7 @@ pub fn bvc<T: CpuRegisters>(opeland: Word, registers: &mut T) {
 }
 
 pub fn cld<T: CpuRegisters>(registers: &mut T) {
-    registers.set_decimal(true);
+    registers.set_decimal(false);
 }
 
 pub fn sed<T: CpuRegisters>(registers: &mut T) {
