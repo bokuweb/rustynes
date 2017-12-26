@@ -12,7 +12,7 @@
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch('./roms/giko010b.nes');
+  const res = await fetch('./roms/nestest.nes');
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.

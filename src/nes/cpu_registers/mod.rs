@@ -84,8 +84,6 @@ pub trait CpuRegisters {
 
     fn update_negative_by(&mut self, v: u8) -> &mut Self;
 
-    fn update_overflow_by(&mut self, fetched: u8, computed: u8) -> &mut Self;
-
     fn update_zero_by(&mut self, v: u8) -> &mut Self;
 
     fn inc_SP(&mut self) -> &mut Self;
@@ -259,12 +257,6 @@ impl CpuRegisters for Registers {
 
     fn update_negative_by(&mut self, v: u8) -> &mut Self {
         self.P.negative = v & 0x80 == 0x80;
-        self
-    }
-
-    fn update_overflow_by(&mut self, fetched: u8, computed: u8) -> &mut Self {
-        self.P.overflow = !(((self.A ^ fetched) & 0x80) != 0) &&
-                          (((self.A ^ computed) & 0x80)) != 0;
         self
     }
 
