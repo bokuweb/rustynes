@@ -12,6 +12,7 @@
   canvas.width = 256;
   canvas.height = 240;
 
+
   const res = await fetch('./roms/giko011.nes');
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
