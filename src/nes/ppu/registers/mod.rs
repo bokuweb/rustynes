@@ -180,7 +180,10 @@ impl PpuRegisters for Registers {
 
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
         match addr {
-            0x0002 => self.ppu_status,
+            0x0002 => {
+                &self.ppu_scroll.enable_x();
+                self.ppu_status
+            },
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,

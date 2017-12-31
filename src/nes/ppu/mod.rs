@@ -64,7 +64,6 @@ impl Ppu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        // println!("ppu addr = {:X}, data = {:X}", addr, data);
         self.registers.write(addr, data, &mut self.ctx);
     }
 
@@ -101,17 +100,19 @@ impl Ppu {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
                 offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
-                offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(), // TODO: (this.registers[0] & 0x08) ? 0x1000 : 0x0000;
+                offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(),
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
             let tile_y = (line / 8) as u8; // TODO: + scroll_y;
-            let scroll_x = 0;
+            let scroll_x = self.registers.get_scroll_x();
+            let scroll_y = self.registers.get_scroll_y();
             self.background
                 .build_line(&self.ctx.vram,
                             &self.ctx.cram,
                             &self.ctx.palette,
                             tile_y,
                             scroll_x,
+                            scroll_y,
                             &mut config);
         }
 
@@ -137,12 +138,12 @@ impl Ppu {
         self.ctx.sprite_ram.write(addr % 0x100, data);
     }
 
-    // fn get_scroll_tile_y(&self) -> u8 {
-    //     // self.registers.scroll_y + ((self.registers.name_table_id / 2) * 240)) / 8);
-    //     0
-    // }
-    //
-    // fn get_tile_y(&self) -> u8 {
-    //     (self.line / 8) as u8 + self.get_scroll_tile_y()
-    // }
+    fn get_scroll_tile_y(&self) -> Data {
+        // self.registers.get_scroll_y() + ((self.registers.name_table_id / 2) * 240)) / 8);
+        0
+    }
+
+    fn get_tile_y(&self) -> Data {
+        (self.line / 8) as Data + self.get_scroll_tile_y()
+    }
 }

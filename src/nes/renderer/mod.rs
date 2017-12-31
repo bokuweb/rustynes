@@ -1,6 +1,6 @@
 mod color;
 
-use super::BackgroundField;
+use super::{BackgroundField, BackgroundUnit};
 use super::Tile;
 use super::PaletteList;
 use super::{Sprite, SpritesWithCtx, SpritePosition};
@@ -67,12 +67,12 @@ fn render_sprite(data: &mut Vec<u8>,
 }
 
 
-fn render_tile(data: &mut Vec<u8>, bg: &Tile, x: usize, y: usize) {
-    let offset_x = 0; // TODO: scroll_x % 8;
-    let offset_y = 0; // TODO: scroll_y % 8;
+fn render_tile(data: &mut Vec<u8>, bg: &BackgroundUnit, x: usize, y: usize) {
+    let offset_x = (bg.scroll_x % 8) as usize;
+    let offset_y = (bg.scroll_y % 8) as usize;
     for i in 0..8 {
         for j in 0..8 {
-            let color_id = bg.palette[bg.sprite[i][j] as usize];
+            let color_id = bg.tile.palette[bg.tile.sprite[i][j] as usize];
             let color = COLORS[color_id as usize];
             let x = x + j - offset_x;
             let y = y + i - offset_y;
