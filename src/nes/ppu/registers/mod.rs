@@ -1,6 +1,7 @@
 
 mod ppu_addr;
 mod ppu_data;
+mod ppu_scroll;
 mod oam;
 
 use super::super::types::{Data, Addr};
@@ -11,6 +12,7 @@ use super::palette::*;
 use self::oam::Oam;
 use self::ppu_addr::PpuAddr;
 use self::ppu_data::PpuData;
+use self::ppu_scroll::PpuScroll;
 
 
 #[derive(Debug)]
@@ -20,6 +22,7 @@ pub struct Registers {
     pub oam: Oam,
     pub ppu_addr: PpuAddr,
     pub ppu_data: PpuData,
+    pub ppu_scroll: PpuScroll,
 }
 
 // PPU power up state
@@ -44,6 +47,7 @@ pub struct Registers {
   | 0x3F10-0x3F1F  |  sprite Palette            |
   | 0x3F20-0x3FFF  |  mirror of 0x3F00-0x3F1F   |
   */
+
 
 /*
     Control Register2 0x2001
@@ -73,7 +77,11 @@ pub trait PpuRegisters {
     fn clear_sprite_hit(&mut self);
 
     fn get_sprite_table_offset(&self) -> Addr;
-  
+
+    fn get_scroll_x(&self) -> Data;
+
+    fn get_scroll_y(&self) -> Data;
+
     fn is_irq_enable(&self) -> bool;
 }
 
@@ -85,6 +93,7 @@ impl Registers {
             oam: Oam::new(),
             ppu_addr: PpuAddr::new(),
             ppu_data: PpuData::new(),
+            ppu_scroll: PpuScroll::new(),
         }
     }
 
@@ -143,7 +152,7 @@ impl PpuRegisters for Registers {
 
     fn set_vblank(&mut self) {
         self.ppu_status |= 0x80;
-    }    
+    }
 
     fn clear_sprite_hit(&mut self) {
         self.ppu_status &= 0xbF;
@@ -151,8 +160,8 @@ impl PpuRegisters for Registers {
 
     fn is_irq_enable(&self) -> bool {
         self.ppu_ctrl & 0x80 == 0x80
-    }    
-    
+    }
+
     fn get_sprite_table_offset(&self) -> Addr {
         if self.ppu_ctrl & 0x08 == 0x08 {
             0x1000
@@ -160,10 +169,21 @@ impl PpuRegisters for Registers {
             0x0000
         }
     }
-    
+
+    fn get_scroll_x(&self) -> Data {
+        self.ppu_scroll.get_x()
+    }
+
+    fn get_scroll_y(&self) -> Data {
+        self.ppu_scroll.get_y()
+    }    
+
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
         match addr {
-            0x0002 => self.ppu_status,
+            0x0002 => {
+                &self.ppu_scroll.enable_x();
+                self.ppu_status
+            },
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,
@@ -186,10 +206,11 @@ impl PpuRegisters for Registers {
               |      |            0x01: 0x2400                     |
               |      |            0x02: 0x2800                     |
               |      |            0x03: 0x2C00                     |
-              */            
+              */
             0x0000 => self.ppu_ctrl = data,
             0x0003 => self.write_oam_addr(data),
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
+            0x0005 => self.ppu_scroll.write(data),
             0x0006 => self.write_ppu_addr(data),
             0x0007 => self.write_ppu_data(data, &ctx.vram, &ctx.cram, &mut ctx.palette),
             _ => (),
