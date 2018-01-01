@@ -14,7 +14,7 @@ pub struct SpriteConfig {
 }
 
 pub fn mirror_down_sprite_addr(addr: Addr, is_horizontal_mirror: bool) -> Addr {
-    if is_horizontal_mirror {
+    if !is_horizontal_mirror {
         return addr;
     }
     if addr >= 0x0400 && addr < 0x0800 || addr >= 0x0C00 {

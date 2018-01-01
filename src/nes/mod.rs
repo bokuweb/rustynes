@@ -23,6 +23,7 @@ use self::ram::Ram;
 use self::bus::cpu_bus;
 use self::dma::*;
 use nes::types::Data;
+use super::externs;
 
 #[derive(Debug)]
 pub struct Context {
@@ -63,7 +64,9 @@ pub fn run(ctx: &mut Context, key_state: u8) {
                                                 &mut ctx.ppu,
                                                 &mut ctx.keypad,
                                                 &mut ctx.dma_register);
+            // externs::eval("console.time('cpu.run')");
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
+            // externs::eval("console.timeEnd('cpu.run')");
         }
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
         if is_ready {

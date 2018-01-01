@@ -73,8 +73,14 @@ impl Ppu {
     // Get the pattern of the sprite searched with the remaining clock.
     pub fn run(&mut self, cycle: usize, nmi: &mut bool) -> bool {
         let cycle = self.cycle + cycle;
-        let line = self.line;
-        if line == 0 {
+        // let line = self.line;
+
+        if cycle < CYCLES_PER_LINE {
+            self.cycle = cycle;
+            return false;
+        }
+
+        if self.line == 0 {
             self.background.clear();
             self.sprites = Vec::new();
             build_sprites(&mut self.sprites,
@@ -83,47 +89,45 @@ impl Ppu {
                           &self.ctx.palette,
                           self.registers.get_sprite_table_offset());
         }
-        if cycle < CYCLES_PER_LINE {
-            self.cycle = cycle;
-            return false;
-        }
+
         self.cycle = cycle - CYCLES_PER_LINE;
-        self.line = line + 1;
+        self.line = self.line + 1;
 
-        // if self.hasSpriteHit() {
-        //     self.setSpriteHit();
-        // }
+        if self.has_sprite_hit() {
+            self.registers.set_sprite_hit();
+        }
 
-        if line <= 240 && line % 8 == 0
+        if self.line <= 240 && self.line % 8 == 0
         /* && self.scrollY <= 240 */
         {
             let mut config = SpriteConfig {
-                offset_addr_by_name_table: 0, //TODO: (~~(tileX / 32) % 2) + tableIdOffset;
-                offset_addr_by_background_table: 0, // TODO: (registers[0] & 0x10) ? 0x1000 : 0x0000;
+                offset_addr_by_name_table: 0,
+                offset_addr_by_background_table: self.registers.get_background_table_offset(),
                 offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(),
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
-            let tile_y = (line / 8) as u8; // TODO: + scroll_y;
+
+            let tile_x = ((self.registers.get_name_table_id() % 2) * 32);
+            let tile_y = (self.line / 8) as u8; // ((scroll_y + (self.registers.get_name_table_id() / 2) * 240)) / 8);
             let scroll_x = self.registers.get_scroll_x();
             let scroll_y = self.registers.get_scroll_y();
             self.background
                 .build_line(&self.ctx.vram,
                             &self.ctx.cram,
                             &self.ctx.palette,
-                            tile_y,
-                            scroll_x,
-                            scroll_y,
+                            (tile_x, tile_y),
+                            (scroll_x, scroll_y),
                             &mut config);
         }
 
-        if line == 241 {
+        if self.line == 241 {
             self.registers.set_vblank();
             if self.registers.is_irq_enable() {
                 *nmi = true;
             }
         }
 
-        if line == 262 {
+        if self.line == 262 {
             self.registers.clear_vblank();
             self.registers.clear_sprite_hit();
             *nmi = false;
@@ -145,5 +149,10 @@ impl Ppu {
 
     fn get_tile_y(&self) -> Data {
         (self.line / 8) as Data + self.get_scroll_tile_y()
+    }
+
+    fn has_sprite_hit(&self) -> bool {
+        let y = self.ctx.sprite_ram.read(0) as usize;
+        y == self.line + 8 // && this.isBackgroundEnable && this.isSpriteEnable
     }
 }
