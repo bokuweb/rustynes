@@ -7,7 +7,7 @@ pub type SpritePosition = (u8, u8);
 
 #[derive(Debug)]
 pub struct SpriteConfig {
-    pub offset_addr_by_name_table: u16,
+    pub offset_addr_by_name_table: Option<u16>,
     pub offset_addr_by_background_table: u16,
     pub offset_addr_by_sprite_table: u16,
     pub is_horizontal_mirror: bool,
@@ -29,7 +29,7 @@ pub fn get_block_id(position: &SpritePosition) -> u8 {
 
 pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
     let tile_number = position.1 as Addr * 32 + position.0 as Addr;
-    let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table,
+    let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table.unwrap(),
                                        config.is_horizontal_mirror);
     let data = vram.read(addr);
     // println!("vram read {:X} {:X}", addr, data);
@@ -38,7 +38,7 @@ pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
 
 pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
     let addr = 0x03C0 + ((position.0 / 4) + ((position.1 / 4) * 8)) as u16 +
-               config.offset_addr_by_name_table;
+               config.offset_addr_by_name_table.unwrap();
     // println!("attr addr {:X}", addr);
     vram.read(mirror_down_sprite_addr(addr, config.is_horizontal_mirror))
 }

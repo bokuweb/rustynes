@@ -73,8 +73,6 @@ impl Ppu {
     // Get the pattern of the sprite searched with the remaining clock.
     pub fn run(&mut self, cycle: usize, nmi: &mut bool) -> bool {
         let cycle = self.cycle + cycle;
-        // let line = self.line;
-
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
             return false;
@@ -97,20 +95,18 @@ impl Ppu {
             self.registers.set_sprite_hit();
         }
 
-        if self.line <= 240 && self.line % 8 == 0
-        /* && self.scrollY <= 240 */
-        {
+        let scroll_x = self.registers.get_scroll_x();
+        let scroll_y = self.registers.get_scroll_y();
+        if self.line <= 240 && self.line % 8 == 0 && scroll_y <= 240 {
             let mut config = SpriteConfig {
-                offset_addr_by_name_table: 0,
+                offset_addr_by_name_table: None,
                 offset_addr_by_background_table: self.registers.get_background_table_offset(),
                 offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(),
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
 
             let tile_x = ((self.registers.get_name_table_id() % 2) * 32);
-            let tile_y = (self.line / 8) as u8; // ((scroll_y + (self.registers.get_name_table_id() / 2) * 240)) / 8);
-            let scroll_x = self.registers.get_scroll_x();
-            let scroll_y = self.registers.get_scroll_y();
+            let tile_y = ((self.line / 8) as u8 + self.get_scroll_tile_y()) as u8;
             self.background
                 .build_line(&self.ctx.vram,
                             &self.ctx.cram,
@@ -143,12 +139,12 @@ impl Ppu {
     }
 
     fn get_scroll_tile_y(&self) -> Data {
-        // self.registers.get_scroll_y() + ((self.registers.name_table_id / 2) * 240)) / 8);
-        0
+        ((self.registers.get_scroll_y() as usize +
+          ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
     }
 
-    fn get_tile_y(&self) -> Data {
-        (self.line / 8) as Data + self.get_scroll_tile_y()
+    fn get_tile_y(&self) -> u8 {
+        (self.line / 8) as u8 + self.get_scroll_tile_y() as u8
     }
 
     fn has_sprite_hit(&self) -> bool {
