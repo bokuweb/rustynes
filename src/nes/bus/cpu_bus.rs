@@ -2,13 +2,14 @@ use nes::rom::Rom;
 use nes::ram::Ram;
 use nes::ppu::Ppu;
 use nes::keypad::Keypad;
+use nes::dma::Dma;
 
 pub struct Bus<'a> {
     program_rom: &'a Box<Rom>,
     work_ram: &'a Box<Ram>,
     ppu: &'a mut Ppu,
     keypad: &'a mut Keypad,
-    dma_register: &'a mut u8,
+    dma: &'a mut Dma,
 }
 
 pub trait CpuBus {
@@ -20,13 +21,18 @@ pub trait CpuBus {
 }
 
 impl<'a> Bus<'a> {
-    pub fn new(program_rom: &'a Box<Rom>, work_ram: &'a Box<Ram>, ppu: &'a mut Ppu, keypad: &'a mut Keypad, dma_register: &'a mut u8) -> Bus<'a> {
+    pub fn new(program_rom: &'a Box<Rom>,
+               work_ram: &'a Box<Ram>,
+               ppu: &'a mut Ppu,
+               keypad: &'a mut Keypad,
+               dma: &'a mut Dma)
+               -> Bus<'a> {
         Self {
             program_rom,
             work_ram,
             ppu,
             keypad,
-            dma_register,
+            dma,
         }
     }
 }
@@ -59,7 +65,7 @@ impl<'a> CpuBus for Bus<'a> {
             0x0000...0x07FF => self.work_ram.write(addr, data),
             0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),
             0x2000...0x3FFF => self.ppu.write(addr - 0x2000, data),
-            0x4014 => *self.dma_register = data,
+            0x4014 => self.dma.write(data),
             0x4016 => self.keypad.write(data),
             0x4000...0x401F => {} // TODO: APU
             _ => panic!("There is an illegal address access."),

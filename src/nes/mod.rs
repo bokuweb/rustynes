@@ -32,7 +32,7 @@ pub struct Context {
     work_ram: Box<Ram>,
     cpu_registers: cpu_registers::Registers,
     keypad: Keypad,
-    dma_register: u8,
+    dma: Dma,
     nmi: bool,
 }
 
@@ -41,21 +41,19 @@ pub fn reset(ctx: &mut Context) {
                                         &ctx.work_ram,
                                         &mut ctx.ppu,
                                         &mut ctx.keypad,
-                                        &mut ctx.dma_register);
+                                        &mut ctx.dma);
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
     // println!("{:?}", ctx.program_rom);
 }
 
 pub fn run(ctx: &mut Context, key_state: u8) {
-    let mut cycle: u16 = 0;
     loop {
+        let mut cycle: u16 = 0;
         {
             ctx.keypad.update(key_state);
         }
-        if ctx.dma_register != 0 {
-            let addr = (ctx.dma_register as u16) << 8;
-            transfer(addr, &ctx.work_ram, &mut ctx.ppu);
-            ctx.dma_register = 0;
+        if ctx.dma.should_run() {
+            ctx.dma.run(&ctx.work_ram, &mut ctx.ppu);
             cycle = 514;
         }
         {
@@ -63,7 +61,7 @@ pub fn run(ctx: &mut Context, key_state: u8) {
                                                 &ctx.work_ram,
                                                 &mut ctx.ppu,
                                                 &mut ctx.keypad,
-                                                &mut ctx.dma_register);
+                                                &mut ctx.dma);
             // externs::eval("console.time('cpu.run')");
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
             // externs::eval("console.timeEnd('cpu.run')");
@@ -86,7 +84,7 @@ impl Context {
                           PpuConfig { is_horizontal_mirror: cassette.is_horizontal_mirror }),
             work_ram: Box::new(Ram::new(vec![0; 0x0800])),
             keypad: Keypad::new(),
-            dma_register: 0x00,
+            dma: Dma::new(),
             nmi: false,
         }
     }

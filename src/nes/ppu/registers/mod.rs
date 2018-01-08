@@ -222,7 +222,10 @@ impl PpuRegisters for Registers {
         match addr {
             0x0002 => {
                 &self.ppu_scroll.enable_x();
-                self.ppu_status
+                let data = self.ppu_status;
+                &self.clear_vblank();
+                data
+                
             }
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),

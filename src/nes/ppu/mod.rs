@@ -107,11 +107,6 @@ impl Ppu {
             let tile_x = ((scroll_x as usize +
                            (self.registers.get_name_table_id() % 2) as usize * 256) /
                           8) as u8;
-            println!("tileX {} scrollX {} scrollY {} nameTableId {}",
-                     tile_x,
-                     scroll_x,
-                     scroll_y,
-                     self.registers.get_name_table_id());
             let tile_y = ((self.line / 8) as u8 + self.get_scroll_tile_y()) as u8;
             self.background
                 .build_line(&self.ctx.vram,
@@ -125,7 +120,6 @@ impl Ppu {
         if self.line == 241 {
             self.registers.set_vblank();
             if self.registers.is_irq_enable() {
-                println!("nmi assert");
                 *nmi = true;
             }
         }
