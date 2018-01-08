@@ -41,11 +41,12 @@ impl Background {
         // fetched from the attribute table.
         let clamped_tile_y = tile.1 % 30;
         let table_id_offset = if (tile.1 / 30) % 2 == 0 { 0 } else { 2 };
-        let scroll_tile_x = scroll.0 / 8 + tile.0;
+        // let scroll_tile_x = scroll.0 / 8 + tile.0;
         // background of a line.
         // Build viewport + 1 tile for background scroll.
+        
         for x in 0..(TILE_PER_LINE + 1) {
-            let tile_x = x + scroll_tile_x;
+            let tile_x = x + tile.0;
             let clamped_tile_x = tile_x % TILE_PER_LINE;
             let name_table_id = ((tile_x / TILE_PER_LINE) % 2) + table_id_offset;
             config.offset_addr_by_name_table = Some((name_table_id as Addr) * 0x400);

@@ -126,7 +126,7 @@ impl Registers {
     */
     fn read_status(&mut self) -> Data {
         let data = self.ppu_status;
-        // TODO: this.isHorizontalScroll = true;
+        self.ppu_scroll.enable_x();
         self.clear_vblank();
         self.clear_sprite_hit();
         data

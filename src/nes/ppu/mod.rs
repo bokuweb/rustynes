@@ -97,15 +97,21 @@ impl Ppu {
 
         let scroll_x = self.registers.get_scroll_x();
         let scroll_y = self.registers.get_scroll_y();
-        if self.line <= 240 && self.line % 8 == 0 && scroll_y <= 240 {
+        if self.line <= 240 && self.line % 8 == 0 {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: None,
                 offset_addr_by_background_table: self.registers.get_background_table_offset(),
                 offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(),
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
             };
-
-            let tile_x = ((self.registers.get_name_table_id() % 2) * 32);
+            let tile_x = ((scroll_x as usize +
+                           (self.registers.get_name_table_id() % 2) as usize * 256) /
+                          8) as u8;
+            println!("tileX {} scrollX {} scrollY {} nameTableId {}",
+                     tile_x,
+                     scroll_x,
+                     scroll_y,
+                     self.registers.get_name_table_id());
             let tile_y = ((self.line / 8) as u8 + self.get_scroll_tile_y()) as u8;
             self.background
                 .build_line(&self.ctx.vram,
@@ -119,6 +125,7 @@ impl Ppu {
         if self.line == 241 {
             self.registers.set_vblank();
             if self.registers.is_irq_enable() {
+                println!("nmi assert");
                 *nmi = true;
             }
         }
@@ -141,10 +148,6 @@ impl Ppu {
     fn get_scroll_tile_y(&self) -> Data {
         ((self.registers.get_scroll_y() as usize +
           ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
-    }
-
-    fn get_tile_y(&self) -> u8 {
-        (self.line / 8) as u8 + self.get_scroll_tile_y() as u8
     }
 
     fn has_sprite_hit(&self) -> bool {

@@ -19,6 +19,7 @@ impl PpuData {
 
     pub fn read<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, addr: Addr, palette: &P) -> Data {
         let buf = self.buf;
+        println!("vram cpu read0 {:X}", addr);
         if addr >= 0x2000 {
             let addr = self.calc_addr(addr);
             // Reading palette data from $3F00-$3FFF works differently.
@@ -26,6 +27,7 @@ impl PpuData {
             // Reading the palettes still updates the internal buffer though, but the data placed in it is the mirrored nametable data
             // that would appear "underneath" the palette. (Checking the PPU memory map should make this clearer.)
             if addr >= 0x3F00 {
+                println!("vram cpu read {:X}", addr);
                 self.buf = vram.read(addr);
                 return palette.read(addr - 0x3f00);
             }
@@ -47,6 +49,7 @@ impl PpuData {
                 palette.write(addr - 0x3f00, data);
             } else {
                 let addr = self.calc_addr(addr);
+                // println!("vram write {:X}", addr);
                 vram.write(addr, data);
             }
         } else {
