@@ -4,7 +4,7 @@ use super::super::super::types::{Data, Addr, Word};
 pub struct PpuAddr {
     addr: Addr,
     is_lower_addr: bool,
-    is_valid_addr: bool,
+    // is_valid_addr: bool,
 }
 
 // Address ($2006) >> write x2
@@ -17,7 +17,6 @@ impl PpuAddr {
         PpuAddr {
             addr: 0,
             is_lower_addr: false,
-            is_valid_addr: false,
         }
     }
 
@@ -30,15 +29,13 @@ impl PpuAddr {
     }    
 
     pub fn write(&mut self, data: Data) {
+        // println!("[PPUADDR] write = {:x}", data);
         if self.is_lower_addr {
             self.addr += data as Addr;
             self.is_lower_addr = false;
-            self.is_valid_addr = true;
         } else {
             self.addr = (data as Addr) << 8;
             self.is_lower_addr = true;
-            self.is_valid_addr = false;
-            // println!("[PPUADDR] = {}", &self.addr);
         }
     }
 }

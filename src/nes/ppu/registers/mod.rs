@@ -49,6 +49,15 @@ pub struct Registers {
   */
 
 
+
+
+
+
+
+
+
+
+
 /*
     Control Register2 0x2001
   | bit  | description                                 |
@@ -74,9 +83,17 @@ pub trait PpuRegisters {
 
     fn set_vblank(&mut self);
 
+    fn set_sprite_hit(&mut self);
+
     fn clear_sprite_hit(&mut self);
 
     fn get_sprite_table_offset(&self) -> Addr;
+
+    fn get_background_table_offset(&self) -> Addr;
+
+    fn get_ppu_addr_increment_value(&self) -> usize;
+
+    fn get_name_table_id(&self) -> Data;
 
     fn get_scroll_x(&self) -> Data;
 
@@ -109,7 +126,7 @@ impl Registers {
     */
     fn read_status(&mut self) -> Data {
         let data = self.ppu_status;
-        // TODO: this.isHorizontalScroll = true;
+        self.ppu_scroll.enable_x();
         self.clear_vblank();
         self.clear_sprite_hit();
         data
@@ -130,7 +147,8 @@ impl Registers {
     fn read_ppu_data<P: PaletteRam>(&mut self, vram: &Ram, cram: &Ram, palette: &P) -> Data {
         let addr = self.ppu_addr.get();
         let data = self.ppu_data.read(vram, cram, addr, palette);
-        self.ppu_addr.update(0x01); // TODO: update 1 or 32
+        let v = self.get_ppu_addr_increment_value() as u16;
+        self.ppu_addr.update(v);
         data
     }
 
@@ -141,7 +159,8 @@ impl Registers {
                                      palette: &mut P) {
         let addr = self.ppu_addr.get();
         self.ppu_data.write(vram, cram, addr, data, palette);
-        self.ppu_addr.update(0x01); // TODO: update 1 or 32
+        let v = self.get_ppu_addr_increment_value() as u16;
+        self.ppu_addr.update(v);
     }
 }
 
@@ -158,6 +177,14 @@ impl PpuRegisters for Registers {
         self.ppu_status &= 0xbF;
     }
 
+    fn set_sprite_hit(&mut self) {
+        self.ppu_status |= 0x40;
+    }
+
+    fn get_ppu_addr_increment_value(&self) -> usize {
+        if self.ppu_ctrl & 0x40 == 0x40 { 32 } else { 1 }
+    }
+
     fn is_irq_enable(&self) -> bool {
         self.ppu_ctrl & 0x80 == 0x80
     }
@@ -170,20 +197,36 @@ impl PpuRegisters for Registers {
         }
     }
 
+    fn get_background_table_offset(&self) -> Addr {
+        if self.ppu_ctrl & 0x10 == 0x10 {
+            0x1000
+        } else {
+            0x0000
+        }
+    }
+
+    fn get_name_table_id(&self) -> Data {
+        self.ppu_ctrl & 0x03
+    }
+
+
     fn get_scroll_x(&self) -> Data {
         self.ppu_scroll.get_x()
     }
 
     fn get_scroll_y(&self) -> Data {
         self.ppu_scroll.get_y()
-    }    
+    }
 
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
         match addr {
             0x0002 => {
                 &self.ppu_scroll.enable_x();
-                self.ppu_status
-            },
+                let data = self.ppu_status;
+                &self.clear_vblank();
+                data
+                
+            }
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,
