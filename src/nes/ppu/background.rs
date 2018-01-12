@@ -44,7 +44,6 @@ impl Background {
         // let scroll_tile_x = scroll.0 / 8 + tile.0;
         // background of a line.
         // Build viewport + 1 tile for background scroll.
-        
         for x in 0..(TILE_PER_LINE + 1) {
             let tile_x = x + tile.0;
             let clamped_tile_x = tile_x % TILE_PER_LINE;

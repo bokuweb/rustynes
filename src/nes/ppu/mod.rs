@@ -97,7 +97,13 @@ impl Ppu {
 
         let scroll_x = self.registers.get_scroll_x();
         let scroll_y = self.registers.get_scroll_y();
-        if self.line <= 240 && self.line % 8 == 0 {
+        // if scroll_y == 0 {
+        //     println!("scrollY {} line {} tileY {}",
+        //              scroll_y,
+        //              self.line,
+        //             self.get_scroll_tile_y());
+        // }
+        if self.line <= 240 && self.line % 8 == 0 && scroll_y <= 240 {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: None,
                 offset_addr_by_background_table: self.registers.get_background_table_offset(),
@@ -107,7 +113,7 @@ impl Ppu {
             let tile_x = ((scroll_x as usize +
                            (self.registers.get_name_table_id() % 2) as usize * 256) /
                           8) as u8;
-            let tile_y = ((self.line / 8) as u8 + self.get_scroll_tile_y()) as u8;
+            let tile_y = self.get_scroll_tile_y();
             self.background
                 .build_line(&self.ctx.vram,
                             &self.ctx.cram,
@@ -140,7 +146,7 @@ impl Ppu {
     }
 
     fn get_scroll_tile_y(&self) -> Data {
-        ((self.registers.get_scroll_y() as usize +
+        ((self.registers.get_scroll_y() as usize + self.line + 
           ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
     }
 

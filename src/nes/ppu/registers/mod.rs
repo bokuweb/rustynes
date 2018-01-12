@@ -49,31 +49,6 @@ pub struct Registers {
   */
 
 
-
-
-
-
-
-
-
-
-
-/*
-    Control Register2 0x2001
-  | bit  | description                                 |
-  +------+---------------------------------------------+
-  |  7-5 | Background color  0x00: Black               |
-  |      |                   0x01: Green               |
-  |      |                   0x02: Blue                |
-  |      |                   0x04: Red                 |
-  |  4   | Enable sprite                               |
-  |  3   | Enable background                           |
-  |  2   | Sprite mask       render left end           |
-  |  1   | Background mask   render left end           |
-  |  0   | Display type      0: color, 1: mono         |
-  */
-
-
 pub trait PpuRegisters {
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data;
 
@@ -225,7 +200,7 @@ impl PpuRegisters for Registers {
                 let data = self.ppu_status;
                 &self.clear_vblank();
                 data
-                
+
             }
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
@@ -251,6 +226,21 @@ impl PpuRegisters for Registers {
               |      |            0x03: 0x2C00                     |
               */
             0x0000 => self.ppu_ctrl = data,
+            /*
+               Control Register2 0x2001
+             | bit  | description                                 |
+             +------+---------------------------------------------+
+             |  7-5 | Background color  0x00: Black               |
+             |      |                   0x01: Green               |
+             |      |                   0x02: Blue                |
+             |      |                   0x04: Red                 |
+             |  4   | Enable sprite                               |
+             |  3   | Enable background                           |
+             |  2   | Sprite mask       render left end           |
+             |  1   | Background mask   render left end           |
+             |  0   | Display type      0: color, 1: mono         |
+            */
+            0x0001 => (),
             0x0003 => self.write_oam_addr(data),
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
             0x0005 => self.ppu_scroll.write(data),

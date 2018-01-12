@@ -74,7 +74,7 @@ fn render_tile(data: &mut Vec<u8>, bg: &BackgroundUnit, x: usize, y: usize) {
         for j in 0..8 {
             let x = (x + j) as i32 - offset_x;
             let y = (y + i) as i32 - offset_y;
-            // makeprintln!("x {} offsetx {}", x, offset_x);
+            // println!("y {} offsety {}", x, offset_y);
             if x >= 0 as i32 && 0xFF >= x && y >= 0 as i32 && y < 224 {
                 let color_id = bg.tile.palette[bg.tile.sprite[i][j] as usize];
                 let color = COLORS[color_id as usize];
@@ -82,7 +82,7 @@ fn render_tile(data: &mut Vec<u8>, bg: &BackgroundUnit, x: usize, y: usize) {
                 data[index] = color.0;
                 data[index + 1] = color.1;
                 data[index + 2] = color.2;
-                // data[index + 3] = 0xFF;
+                data[index + 3] = 0xFF;
             }
         }
     }
