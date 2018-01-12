@@ -67,7 +67,8 @@ pub fn run(ctx: &mut Context, key_state: u8) {
             // externs::eval("console.timeEnd('cpu.run')");
         }
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
-        if is_ready {
+        // TODO: Do investigation, why empty background created....
+        if is_ready && ctx.ppu.background.0.len() != 0 {
             render(&ctx.ppu.background.0, &ctx.ppu.sprites);
             break;
         }
