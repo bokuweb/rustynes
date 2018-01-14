@@ -97,12 +97,6 @@ impl Ppu {
 
         let scroll_x = self.registers.get_scroll_x();
         let scroll_y = self.registers.get_scroll_y();
-        // if scroll_y == 0 {
-        //     println!("scrollY {} line {} tileY {}",
-        //              scroll_y,
-        //              self.line,
-        //             self.get_scroll_tile_y());
-        // }
         if self.line <= 240 && self.line % 8 == 0 && scroll_y <= 240 {
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: None,

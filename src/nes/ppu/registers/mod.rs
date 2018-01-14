@@ -157,7 +157,7 @@ impl PpuRegisters for Registers {
     }
 
     fn get_ppu_addr_increment_value(&self) -> usize {
-        if self.ppu_ctrl & 0x40 == 0x40 { 32 } else { 1 }
+        if self.ppu_ctrl & 0x04 == 0x04 { 32 } else { 1 }
     }
 
     fn is_irq_enable(&self) -> bool {
