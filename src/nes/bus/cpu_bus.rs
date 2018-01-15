@@ -50,17 +50,17 @@ impl<'a> CpuBus for Bus<'a> {
             0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
             0x2000...0x3FFF => self.ppu.read(addr - 0x2000),
             0x4016 => self.keypad.read(),
+            0x4000...0x401F => 0, // TODO: APU
             0x8000...0xBFFF => self.program_rom.read(addr - 0x8000),
             0xC000...0xFFFF if self.program_rom.size() <= 0x4000 => {
                 self.program_rom.read(addr - 0xC000)
             }
             0xC000...0xFFFF => self.program_rom.read(addr - 0x8000),
-            _ => panic!("There is an illegal address access."),
+            _ => panic!("There is an illegal address ({}) access.", addr),
         }
     }
 
     fn write(&mut self, addr: u16, data: u8) {
-        // println!("{} {}", addr, data);
         match addr {
             0x0000...0x07FF => self.work_ram.write(addr, data),
             0x0800...0x1FFF => self.work_ram.write(addr - 0x0800, data),
@@ -68,7 +68,7 @@ impl<'a> CpuBus for Bus<'a> {
             0x4014 => self.dma.write(data),
             0x4016 => self.keypad.write(data),
             0x4000...0x401F => {} // TODO: APU
-            _ => panic!("There is an illegal address access."),
+            _ => panic!("There is an illegal address ({}) access.", addr),
         };
     }
 }
