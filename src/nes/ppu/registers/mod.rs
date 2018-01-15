@@ -151,7 +151,7 @@ impl PpuRegisters for Registers {
     }
 
     fn is_sprite_8x8(&self) -> bool {
-        self.ppu_ctrl & 0x20 == 0x00
+        self.ppu_ctrl & 0x20 != 0x20
     }        
 
     fn clear_sprite_hit(&mut self) {
