@@ -54,6 +54,8 @@ pub trait PpuRegisters {
 
     fn write<P: PaletteRam>(&mut self, addr: Addr, data: Data, ctx: &mut PpuCtx<P>);
 
+    fn is_sprite_8x8(&self) -> bool;
+
     fn clear_vblank(&mut self);
 
     fn set_vblank(&mut self);
@@ -147,6 +149,10 @@ impl PpuRegisters for Registers {
     fn set_vblank(&mut self) {
         self.ppu_status |= 0x80;
     }
+
+    fn is_sprite_8x8(&self) -> bool {
+        self.ppu_ctrl & 0x20 == 0x00
+    }        
 
     fn clear_sprite_hit(&mut self) {
         self.ppu_status &= 0xbF;

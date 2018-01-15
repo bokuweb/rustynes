@@ -85,7 +85,8 @@ impl Ppu {
                           &self.ctx.cram,
                           &self.ctx.sprite_ram,
                           &self.ctx.palette,
-                          self.registers.get_sprite_table_offset());
+                          self.registers.get_sprite_table_offset(),
+                          self.registers.is_sprite_8x8());
         }
 
         self.cycle = cycle - CYCLES_PER_LINE;
