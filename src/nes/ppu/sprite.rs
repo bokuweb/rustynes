@@ -30,12 +30,12 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
             let (offset, sprite_id) = if is_8x8 {
                 (offset, sprite_id)
             } else {
-                let offset = if sprite_id & 0x01 == 0x00 {
-                    0x0000u16
-                } else {
-                    0x1000u16
-                };
-                let sprite_id = sprite_id >> 1;
+                // 76543210
+                // ||||||||
+                // |||||||+- Bank ($0000 or $1000) of tiles
+                // +++++++-- Tile number of top of sprite (0 to 254; bottom half gets the next tile)
+                let offset = 0x1000u16 * (sprite_id & 0x01) as u16;
+                let sprite_id = sprite_id & 0xFE;
                 (offset, sprite_id)
             };
             let x = sprite_ram.read(base + 3);
@@ -48,8 +48,7 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
                          attr,
                          palette: palette.get(palette_id, PaletteType::Sprite),
                      });
-            if y >= 16 && !is_8x8 {
-                let position: SpritePosition = (x, y);
+            if !is_8x8 {
                 let sprite = build(&cram, sprite_id + 1 as u8, offset);
                 let position: SpritePosition = (x, y);
                 let palette_id = attr & 0x03;
