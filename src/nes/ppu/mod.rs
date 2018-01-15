@@ -147,6 +147,6 @@ impl Ppu {
 
     fn has_sprite_hit(&self) -> bool {
         let y = self.ctx.sprite_ram.read(0) as usize;
-        y == self.line + 8 // && this.isBackgroundEnable && this.isSpriteEnable
+        y == self.line // && this.isBackgroundEnable && this.isSpriteEnable
     }
 }
