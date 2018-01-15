@@ -29,9 +29,8 @@ pub fn get_block_id(position: &SpritePosition) -> u8 {
 
 pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
     let tile_number = position.1 as Addr * 32 + position.0 as Addr;
-    let addr = mirror_down_sprite_addr(tile_number + config.offset_addr_by_name_table.unwrap(),
-                                       config.is_horizontal_mirror);
-    // println!("vram read {:X}", addr);
+    let addr = tile_number + config.offset_addr_by_name_table.unwrap();
+    let addr = mirror_down_sprite_addr(addr, config.is_horizontal_mirror);
     let data = vram.read(addr);
     data
 }
@@ -39,7 +38,6 @@ pub fn get_sprite_id(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
 pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfig) -> u8 {
     let addr = 0x03C0 + ((position.0 / 4) + ((position.1 / 4) * 8)) as u16 +
                config.offset_addr_by_name_table.unwrap();
-    // println!("attr addr {:X}", mirror_down_sprite_addr(addr, config.is_horizontal_mirror));
     vram.read(mirror_down_sprite_addr(addr, config.is_horizontal_mirror))
 }
 

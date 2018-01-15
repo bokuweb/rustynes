@@ -41,7 +41,6 @@ impl Background {
         // fetched from the attribute table.
         let clamped_tile_y = tile.1 % 30;
         let table_id_offset = if (tile.1 / 30) % 2 == 0 { 0 } else { 2 };
-        // let scroll_tile_x = scroll.0 / 8 + tile.0;
         // background of a line.
         // Build viewport + 1 tile for background scroll.
         for x in 0..(TILE_PER_LINE + 1) {

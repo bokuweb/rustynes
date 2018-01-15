@@ -43,7 +43,6 @@ pub fn reset(ctx: &mut Context) {
                                         &mut ctx.keypad,
                                         &mut ctx.dma);
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
-    // println!("{:?}", ctx.program_rom);
 }
 
 pub fn run(ctx: &mut Context, key_state: u8) {
