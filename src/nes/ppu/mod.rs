@@ -80,13 +80,6 @@ impl Ppu {
 
         if self.line == 0 {
             self.background.clear();
-            self.sprites = Vec::new();
-            build_sprites(&mut self.sprites,
-                          &self.ctx.cram,
-                          &self.ctx.sprite_ram,
-                          &self.ctx.palette,
-                          self.registers.get_sprite_table_offset(),
-                          self.registers.is_sprite_8x8());
         }
 
         self.cycle = cycle - CYCLES_PER_LINE;
@@ -130,6 +123,15 @@ impl Ppu {
             self.registers.clear_sprite_hit();
             *nmi = false;
             self.line = 0;
+
+            self.sprites = Vec::new();
+            build_sprites(&mut self.sprites,
+                          &self.ctx.cram,
+                          &self.ctx.sprite_ram,
+                          &self.ctx.palette,
+                          self.registers.get_sprite_table_offset(),
+                          self.registers.is_sprite_8x8());
+
             return true;
         }
         false
@@ -141,7 +143,7 @@ impl Ppu {
     }
 
     fn get_scroll_tile_y(&self) -> Data {
-        ((self.registers.get_scroll_y() as usize + self.line + 
+        ((self.registers.get_scroll_y() as usize + self.line +
           ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
     }
 

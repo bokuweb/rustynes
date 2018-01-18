@@ -51,7 +51,7 @@ impl PaletteRam for Palette {
         };
         let start = (palette_id * 4 + offset) as usize;
         let end = start + 4;
-        (start..end).map(|p| self.0[p]).collect()
+        (start..end).map(|p| self.read(p as Addr)).collect()
     }
 
     fn read(&self, addr: Addr) -> Data {
