@@ -21,14 +21,21 @@ impl Renderer {
         Renderer { buf: vec![0xFF; 256 * 224 * 4] }
     }
 
-
     pub fn render(&mut self, background: &BackgroundField, sprites: &SpritesWithCtx) {
-        // let mut buf: Vec<u8> = vec![0xFF; 256 * 224 * 4];
         self.render_background(background);
-        self.render_sprites(sprites);
+        self.render_sprites(sprites, background);
         unsafe {
             canvas_render(self.buf.as_ptr(), self.buf.len());
         }
+    }
+
+    fn should_pixel_hide(&self, x: usize, y: usize, background: &BackgroundField) -> bool {
+        let tile_x = x / 8;
+        let tile_y = y / 8;
+        let background_index = tile_y * 33 + tile_x;
+        let sprite = &background[background_index];
+        // NOTE: If background pixel is not transparent, we need to hide sprite.
+        (sprite.tile.sprite[y % 8][x % 8] % 4) != 0
     }
 
     fn render_background(&mut self, background: &BackgroundField) {
@@ -39,12 +46,13 @@ impl Renderer {
         }
     }
 
-    fn render_sprites(&mut self, sprites: &SpritesWithCtx) {
+    fn render_sprites(&mut self, sprites: &SpritesWithCtx, background: &BackgroundField) {
         for sprite in sprites {
             self.render_sprite(&sprite.sprite,
-                          &sprite.position,
-                          &sprite.palette,
-                          sprite.attr);
+                               &sprite.position,
+                               &sprite.palette,
+                               sprite.attr,
+                               &background);
         }
     }
 
@@ -52,7 +60,8 @@ impl Renderer {
                      sprite: &Sprite,
                      position: &SpritePosition,
                      palette: &PaletteList,
-                     attr: u8) {
+                     attr: u8,
+                     background: &BackgroundField) {
         let is_vertical_reverse = (attr & 0x80) == 0x80;
         let is_horizontal_reverse = (attr & 0x40) == 0x40;
         let is_low_priority = (attr & 0x20) == 0x20;
@@ -61,9 +70,9 @@ impl Renderer {
             for j in 0..8 {
                 let x = position.0 as usize + if is_horizontal_reverse { 7 - j } else { j };
                 let y = position.1 as usize + if is_vertical_reverse { 7 - i } else { i };
-                // if is_low_priority && this.shouldPixelHide(x, y)) {
-                //   continue;
-                // }
+                if is_low_priority && self.should_pixel_hide(x, y, background) {
+                    continue;
+                }
                 if sprite[i][j] != 0 {
                     let color_id = palette[sprite[i][j] as usize];
                     let color = COLORS[color_id as usize];
@@ -71,7 +80,6 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
-                    // data[index + 3] = 0xFF;
                 }
             }
         }
@@ -85,7 +93,6 @@ impl Renderer {
             for j in 0..8 {
                 let x = (x + j) as i32 - offset_x;
                 let y = (y + i) as i32 - offset_y;
-                // println!("y {} offsety {}", x, offset_y);
                 if x >= 0 as i32 && 0xFF >= x && y >= 0 as i32 && y < 224 {
                     let color_id = bg.tile.palette[bg.tile.sprite[i][j] as usize];
                     let color = COLORS[color_id as usize];
@@ -93,7 +100,6 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
-                    self.buf[index + 3] = 0xFF;
                 }
             }
         }

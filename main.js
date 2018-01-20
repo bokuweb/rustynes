@@ -37,17 +37,21 @@
     }
   };
 
+  const onKeydown = (e) => {
+    buf[size - 1] |= convertKeyCode(e.keyCode);
+  }
+
+  const onKeyup = (e) => {
+    buf[size - 1] &= ~convertKeyCode(event.keyCode);
+  }
+
   const setupKeyHandler = () => {
     if (typeof window !== 'undefined') {
-      document.addEventListener('keydown', (event) => {
-        buf[size - 1] |= convertKeyCode(event.keyCode);
-      });
-
-      document.addEventListener('keyup', (event) => {
-        buf[size - 1] &= ~convertKeyCode(event.keyCode);
-      });
+      document.addEventListener('keydown', onKeydown);
+      document.addEventListener('keyup', onKeyup);
     }
   };
+
   setupKeyHandler();
   run(size, buf.byteOffset);
   // main();
