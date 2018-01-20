@@ -1,6 +1,6 @@
 mod color;
 
-use super::{BackgroundField, BackgroundUnit};
+use super::{BackgroundField, BackgroundCtx};
 use super::Tile;
 use super::PaletteList;
 use super::{Sprite, SpritesWithCtx, SpritePosition};
@@ -40,9 +40,11 @@ impl Renderer {
 
     fn render_background(&mut self, background: &BackgroundField) {
         for (i, bg) in background.into_iter().enumerate() {
-            let x = (i % 33) * 8;
-            let y = (i / 33) * 8;
-            self.render_tile(bg, x, y);
+            if bg.is_enabled {
+                let x = (i % 33) * 8;
+                let y = (i / 33) * 8;
+                self.render_tile(bg, x, y);
+            }
         }
     }
 
@@ -80,13 +82,16 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
+                    // if x < 8 {
+                    //     self.buf[index + 3] = 0;
+                    // }
                 }
             }
         }
     }
 
 
-    fn render_tile(&mut self, bg: &BackgroundUnit, x: usize, y: usize) {
+    fn render_tile(&mut self, bg: &BackgroundCtx, x: usize, y: usize) {
         let offset_x = (bg.scroll_x % 8) as i32;
         let offset_y = (bg.scroll_y % 8) as i32;
         for i in 0..8 {
@@ -100,6 +105,9 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
+                    // if x < 8 {
+                    //     self.buf[index + 3] = 0;
+                    // }
                 }
             }
         }

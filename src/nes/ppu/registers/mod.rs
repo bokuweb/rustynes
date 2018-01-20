@@ -17,7 +17,8 @@ use self::ppu_scroll::PpuScroll;
 
 #[derive(Debug)]
 pub struct Registers {
-    pub ppu_ctrl: Data,
+    pub ppu_ctrl1: Data,
+    pub ppu_ctrl2: Data,
     pub ppu_status: Data,
     pub oam: Oam,
     pub ppu_addr: PpuAddr,
@@ -77,12 +78,21 @@ pub trait PpuRegisters {
     fn get_scroll_y(&self) -> Data;
 
     fn is_irq_enable(&self) -> bool;
+
+    fn is_background_enable(&self) -> bool;
+
+    fn is_sprite_enable(&self) -> bool;
+
+    fn is_background_masked(&self) -> bool;
+
+    fn is_sprite_masked(&self) -> bool;    
 }
 
 impl Registers {
     pub fn new() -> Self {
         Registers {
-            ppu_ctrl: 0,
+            ppu_ctrl1: 0,
+            ppu_ctrl2: 0,
             ppu_status: 0,
             oam: Oam::new(),
             ppu_addr: PpuAddr::new(),
@@ -151,7 +161,7 @@ impl PpuRegisters for Registers {
     }
 
     fn is_sprite_8x8(&self) -> bool {
-        self.ppu_ctrl & 0x20 != 0x20
+        self.ppu_ctrl1 & 0x20 != 0x20
     }        
 
     fn clear_sprite_hit(&mut self) {
@@ -163,15 +173,15 @@ impl PpuRegisters for Registers {
     }
 
     fn get_ppu_addr_increment_value(&self) -> usize {
-        if self.ppu_ctrl & 0x04 == 0x04 { 32 } else { 1 }
+        if self.ppu_ctrl1 & 0x04 == 0x04 { 32 } else { 1 }
     }
 
     fn is_irq_enable(&self) -> bool {
-        self.ppu_ctrl & 0x80 == 0x80
+        self.ppu_ctrl1 & 0x80 == 0x80
     }
 
     fn get_sprite_table_offset(&self) -> Addr {
-        if self.ppu_ctrl & 0x08 == 0x08 {
+        if self.ppu_ctrl1 & 0x08 == 0x08 {
             0x1000
         } else {
             0x0000
@@ -179,7 +189,7 @@ impl PpuRegisters for Registers {
     }
 
     fn get_background_table_offset(&self) -> Addr {
-        if self.ppu_ctrl & 0x10 == 0x10 {
+        if self.ppu_ctrl1 & 0x10 == 0x10 {
             0x1000
         } else {
             0x0000
@@ -187,7 +197,7 @@ impl PpuRegisters for Registers {
     }
 
     fn get_name_table_id(&self) -> Data {
-        self.ppu_ctrl & 0x03
+        self.ppu_ctrl1 & 0x03
     }
 
 
@@ -197,6 +207,22 @@ impl PpuRegisters for Registers {
 
     fn get_scroll_y(&self) -> Data {
         self.ppu_scroll.get_y()
+    }
+
+    fn is_background_enable(&self) -> bool {
+        self.ppu_ctrl2 & 0x08 == 0x08
+    }
+
+    fn is_sprite_enable(&self) -> bool {
+        self.ppu_ctrl2 & 0x10 == 0x10
+    }
+
+    fn is_background_masked(&self) -> bool {
+        self.ppu_ctrl2 & 0x02 == 0x02
+    }
+
+    fn is_sprite_masked(&self) -> bool {
+        self.ppu_ctrl2 & 0x04 == 0x04
     }
 
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
@@ -231,7 +257,7 @@ impl PpuRegisters for Registers {
               |      |            0x02: 0x2800                     |
               |      |            0x03: 0x2C00                     |
               */
-            0x0000 => self.ppu_ctrl = data,
+            0x0000 => self.ppu_ctrl1 = data,
             /*
                Control Register2 0x2001
              | bit  | description                                 |
@@ -246,7 +272,16 @@ impl PpuRegisters for Registers {
              |  1   | Background mask   render left end           |
              |  0   | Display type      0: color, 1: mono         |
             */
-            0x0001 => (),
+            // If either of bits 3 or 4 is enabled, at any time outside of the vblank interval
+            // the PPU will be making continual use to the PPU address and data bus to fetch tiles
+            // to render,as well as internally fetching sprite data from the OAM.
+            // If you wish to make changes to PPU memory outside of vblank (via $2007),
+            // you must set both of these bits to 0 to disable rendering and prevent conflicts.
+            // Disabling rendering (clear both bits 3 and 4) during a visible part of the frame can be problematic.
+            // It can cause a corruption of the sprite state, which will display incorrect sprite data on the next frame.
+            // (See: Errata) It is, however, perfectly fine to mask sprites but leave the background on (set bit 3, clear bit 4) at any time in the frame.
+            // Sprite 0 hit does not trigger in any area where the background or sprites are hidden.
+            0x0001 => self.ppu_ctrl2 = data,
             0x0003 => self.write_oam_addr(data),
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
             0x0005 => self.ppu_scroll.write(data),

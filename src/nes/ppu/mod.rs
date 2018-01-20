@@ -97,6 +97,7 @@ impl Ppu {
                 offset_addr_by_background_table: self.registers.get_background_table_offset(),
                 offset_addr_by_sprite_table: self.registers.get_sprite_table_offset(),
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
+                is_background_enable: self.registers.is_background_enable(),
             };
             let tile_x = ((scroll_x as usize +
                            (self.registers.get_name_table_id() % 2) as usize * 256) /
@@ -149,6 +150,6 @@ impl Ppu {
 
     fn has_sprite_hit(&self) -> bool {
         let y = self.ctx.sprite_ram.read(0) as usize;
-        y == self.line // && this.isBackgroundEnable && this.isSpriteEnable
+        y == self.line && self.registers.is_background_enable() && self.registers.is_sprite_enable()
     }
 }
