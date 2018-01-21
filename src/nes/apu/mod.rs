@@ -1,8 +1,7 @@
 use super::types::{Data, Addr, Word};
 
 #[derive(Debug)]
-pub struct Apu {
-}
+pub struct Apu {}
 
 
 pub trait IApu {
@@ -12,22 +11,21 @@ pub trait IApu {
 }
 
 extern "C" {
-    fn test1(a: u8, b: u8, c: u8);
+    fn test1(a: f32, b: u8, c: u8);
     fn test2();
 }
 
 impl Apu {
     pub fn new() -> Self {
-        Apu {
-        }
+        Apu {}
     }
 
     pub fn read(&self, addr: Addr) -> Data {
-      println!("apu read {:x}", addr);
-      // if (addr === 0x15) {
-      //   this.interrupts.deassertIrq();
-      // }
-      0
+        println!("apu read {:x}", addr);
+        // if (addr === 0x15) {
+        //   this.interrupts.deassertIrq();
+        // }
+        0
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
@@ -35,14 +33,14 @@ impl Apu {
         match addr {
             0x00...0x03 => {
                 unsafe {
-                    test1(10, 20, 30);
+                    test1(10.111, 20, 30);
                 }
                 // square wave control register
                 // this.square[0].write(addr, data);
-            },
-            _ => ()
+            }
+            _ => (),
         }
-    }        
+    }
 }
 
 /*

@@ -1,149 +1,221 @@
+const CPU_CLOCK: f32 = 1789772.5;
 
-/*
-/* @flow */
+const GROBAL_GAIN: f32 = 0.01;
 
-import Oscillator from './oscillator';
-import { CPU_CLOCK } from '../constants/cpu';
-import { counterTable, globalGain } from '../constants/apu';
+const COUNTER_TABLE: &'static [u8] = &[0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06, 0xA0, 0x08,
+                                       0x3C, 0x0A, 0x0E, 0x0C, 0x1A, 0x0E, 0x0C, 0x10, 0x18, 0x12,
+                                       0x30, 0x14, 0x60, 0x16, 0xC0, 0x18, 0x48, 0x1A, 0x10, 0x1C,
+                                       0x20, 0x1E];
 
-import type { Byte } from '../types/common';
+/* 
+export const noiseTimerPeriodTable = [
+  0x004, 0x008, 0x010, 0x020,
+  0x040, 0x060, 0x080, 0x0A0,
+  0x0CA, 0x0FE, 0x17C, 0x1FC,
+  0x2FA, 0x3F8, 0x7F2, 0xFE4,
+];
 
-export default class Square {
+export const dmcTimerPeriodTable = [
+  0x1AC, 0x17C, 0x154, 0x140,
+  0x11E, 0x0FE, 0x0E2, 0x0D6,
+  0x0BE, 0x0A0, 0x08E, 0x080,
+  0x06A, 0x054, 0x048, 0x036,
+];
+*/
 
-  oscillator: Oscillator;
-  sweepUnitCounter: number;
-  lengthCounter: number;
-  isLengthCounterEnable: boolean;
-  sweepUnitDivider: number;
-  frequency: number;
-  sweepShiftAmount: number;
-  isSweepEnabled: boolean;
-  sweepMode: boolean;
-  dividerForFrequency: number;
-  envelopeLoopEnable: boolean;
-  envelopeGeneratorCounter: number;
-  envelopeRate: number;
-  envelopeVolume: number;
-  envelopeEnable: boolean;
+const DIVIDE_COUNT_FOR_240HZ: usize = 7457;
 
-  constructor() {
-    this.reset();
-    this.oscillator = new Oscillator();
-    this.oscillator.setVolume(1)
-    this.sweepUnitCounter = 0;
-    this.envelopeGeneratorCounter = 0;
-    this.envelopeRate = 0x0F;
-    this.envelopeEnable = false;
-  }
+use super::types::{Data, Addr, Word};
 
-  get volume(): number {
-    const vol = this.envelopeEnable ? this.envelopeVolume : this.envelopeRate;
-    return vol / (0x0F / globalGain);
-  }
+#[derive(Debug)]
+pub struct Square {
+    index: usize,
+    sweep_unit_counter: usize,
+    length_counter: usize,
+    is_length_counter_enable: bool,
+    sweep_unit_divider: usize,
+    frequency: usize,
+    sweep_shift_amount: usize,
+    is_sweep_enabled: bool,
+    sweep_mode: bool,
+    divider_for_frequency: usize,
+    envelope_loop_enable: bool,
+    envelope_generator_counter: usize,
+    envelope_rate: usize,
+    envelope_volume: usize,
+    envelope_enable: bool,
+}
 
-  reset() {
-    this.lengthCounter = 0;
-    this.isLengthCounterEnable = false;
-  }
+extern "C" {
+    fn start_oscillator(index: usize);
+    fn stop_oscillator(index: usize);
+    fn close_oscillator(index: usize);
+    fn set_oscillator_frequency(index: usize, freq: usize);
+    fn change_oscillator_frequency(index: usize, freq: usize);
+    fn set_oscillator_volume(index: usize, volume: f32);
+    fn set_oscillator_pulse_width(index: usize, width: f32);
+}
 
-  updateEnvelope() {
-    if ((--this.envelopeGeneratorCounter) <= 0) {
-      this.envelopeGeneratorCounter = this.envelopeRate;
-      if (this.envelopeVolume > 0) {
-        this.envelopeVolume--;
-      } else {
-        this.envelopeVolume = this.envelopeLoopEnable ? 0x0F : 0x00;
-      }
-    }
-    this.oscillator.setVolume(this.volume);
-  }
-
-  // Length counter
-  // When clocked by the frame counter, the length counter is decremented except when:
-  // The length counter is 0, or The halt flag is set
-  updateSweepAndLengthCounter() {
-    if (this.isLengthCounterEnable && this.lengthCounter > 0) {
-      this.lengthCounter--;
-      if (this.lengthCounter === 0) {
-        this.oscillator.stop();
-      }
-    }
-
-    this.sweepUnitCounter++;
-    if (!(this.sweepUnitCounter % this.sweepUnitDivider)) {
-      // INFO: 
-      // sweep mode 0 : newFreq = currentFreq - (currentFreq >> N)
-      // sweep mode 1 : newFreq = currentFreq + (currentFreq >> N)
-      if (this.isSweepEnabled) {
-        const sign = this.sweepMode ? 1 : -1;
-        this.frequency = this.frequency + ((this.frequency >> this.sweepShiftAmount) * sign);
-        if (this.frequency > 4095) {
-          this.frequency = 4095;
-          this.oscillator.stop();
-        } else if (this.frequency < 16) {
-          this.frequency = 16;
-          this.oscillator.stop();
+impl Square {
+    pub fn new(index: usize) -> Self {
+        Square {
+            index,
+            sweep_unit_counter: 0,
+            length_counter: 0,
+            is_length_counter_enable: false,
+            sweep_unit_divider: 1,
+            frequency: 0,
+            sweep_shift_amount: 0,
+            is_sweep_enabled: false,
+            sweep_mode: false,
+            divider_for_frequency: 1,
+            envelope_loop_enable: false,
+            envelope_generator_counter: 0,
+            envelope_rate: 0x0F,
+            envelope_volume: 0,
+            envelope_enable: false,
+            length_counter: 0,
+            is_length_counter_enable: false,
         }
-        this.oscillator.changeFrequency(this.frequency);
-      }
     }
-  }
 
-  getPulseWidth(duty: number): number {
-    switch (duty) {
-      case 0x00: return 0.125;
-      case 0x01: return 0.25;
-      case 0x02: return 0.5;
-      case 0x03: return 0.75;
-      default: return 0;
+    fn get_volume(&self) -> f32 {
+        let vol = if self.envelope_enable {
+            self.envelope_volume
+        } else {
+            self.envelope_rate
+        };
+        vol as f32 / (0x0F / GROBAL_GAIN);
     }
-  }
 
-  write(addr: Byte, data: Byte) {
-    if (addr === 0x00) {
-      this.envelopeEnable = !((data & 0x10) !== 0);
-      this.envelopeRate = data & 0xF + 1;
-      this.envelopeLoopEnable = ((data & 0x20) !== 0);
-      const duty = (data >> 6) & 0x3;
-      this.isLengthCounterEnable = !(data & 0x20);
-      this.oscillator.setVolume(this.volume);
-      this.oscillator.setPulseWidth(this.getPulseWidth(duty));
-
+    fn stop_oscillator(&self) {
+        unsafe {
+            stop_oscillator(self.index);
+        };
     }
+
+    // Length counter
+    // When clocked by the frame counter, the length counter is decremented except when:
+    // The length counter is 0, or The halt flag is set
+    fn update_counters() {
+        if self.is_length_counter_enable && self.length_counter > 0 {
+            self.length_counter -= 1;
+            if self.length_counter == 0 {
+                self.stop_oscillator(self.index);
+            }
+        }
+
+        self.sweep_unit_counter += 1;
+        if self.sweep_unit_counter % self.sweep_unit_divider == 0 {
+            // INFO:
+            // sweep mode 0 : newFreq = currentFreq - (currentFreq >> N)
+            // sweep mode 1 : newFreq = currentFreq + (currentFreq >> N)
+            if self.is_sweep_enabled {
+                let sign = if self.sweep_mode { 1 } else { -1 };
+                self.frequency = self.frequency +
+                                 ((self.frequency >> self.sweep_shift_amount) * sign);
+                if self.frequency > 4095 {
+                    self.frequency = 4095;
+                    self.stop_oscillator();
+                } else if self.frequency < 16 {
+                    self.frequency = 16;
+                    self.stop_oscillator();
+                }
+                unsafe {
+                    change_oscillator_frequency(self.index, self.frequency);
+                }
+            }
+        }
+    }
+
+    pub fn start(&self) {
+        unsafe {
+            start_oscillator(self.index);
+            set_oscillator_frequency(self.index, self.frequency);
+        };
+    }
+
+    pub fn close(&self) {
+        unsafe { close_oscillator(self.index) };
+    }
+
+    pub fn get_pulse_width(&self, duty: usize) -> f32 {
+        match (duty) {
+            0x00 => 0.125,
+            0x01 => 0.25,
+            0x02 => 0.5,
+            0x03 => 0.75,
+            _ => 0,
+        }
+    }
+
+    pub fn update_envelope(&mut self) {
+        self.envelope_generator_counter -= 1;
+        if self.envelope_generator_counter <= 0 {
+            self.envelope_generator_counter = self.envelope_rate;
+            if self.envelope_volume > 0 {
+                self.envelope_volume -= 1;
+            } else {
+                self.envelope_volume = if self.envelope_loop_enable {
+                    0x0F
+                } else {
+                    0x00
+                };
+            }
+        }
+        unsafe {
+            set_oscillator_volume(self.index, self.get_volume());
+        };
+    }
+
+    fn reset(&mut self) {
+        self.length_counter = 0;
+        self.is_length_counter_enable = false;
+    }
+
+    pub fn write(&mut self, addr: Addr, data: Data) {
+
+        match addr {
+            0x00 => {
+                self.envelope_enable = data & 0x10 == 0;
+                self.envelope_rate = data & 0xF + 1;
+                self.envelope_loop_enable = (data & 0x20) != 0;
+                let duty = (data >> 6) & 0x3;
+                self.is_length_counter_enable = data & 0x20 == 0x00;
+                unsafe {
+                    set_oscillator_volume(self.index, self.volume);
+                    set_oscillator_pulse_width(self.index, self.get_pulse_width(duty));
+                }
+            }
+            _ => (),
+        }
+        /*
+
     else if (addr === 0x01) {
       // Sweep
-      this.isSweepEnabled = !!(data & 0x80);
-      this.sweepUnitDivider = ((data >> 4) & 0x07) + 1;
-      this.sweepMode = !!(data & 0x08);
-      this.sweepShiftAmount = data & 0x07;
+      self.isSweepEnabled = !!(data & 0x80);
+      self.sweepUnitDivider = ((data >> 4) & 0x07) + 1;
+      self.sweepMode = !!(data & 0x08);
+      self.sweepShiftAmount = data & 0x07;
     }
     else if (addr === 0x02) {
-      this.dividerForFrequency &= 0x700;
-      this.dividerForFrequency |= data;
+      self.dividerForFrequency &= 0x700;
+      self.dividerForFrequency |= data;
     }
     else if (addr === 0x03) {
       // Programmable timer, length counter
-      this.dividerForFrequency &= 0xFF;
-      this.dividerForFrequency |= ((data & 0x7) << 8);
-      if (this.isLengthCounterEnable) {
-        this.lengthCounter = counterTable[data & 0xF8];
+      self.dividerForFrequency &= 0xFF;
+      self.dividerForFrequency |= ((data & 0x7) << 8);
+      if (self.isLengthCounterEnable) {
+        self.lengthCounter = counterTable[data & 0xF8];
       }
-      this.frequency = CPU_CLOCK / ((this.dividerForFrequency + 1) * 32);
-      this.sweepUnitCounter = 0;
+      self.frequency = CPU_CLOCK / ((self.dividerForFrequency + 1) * 32);
+      self.sweepUnitCounter = 0;
       // envelope
-      this.envelopeGeneratorCounter = this.envelopeRate;
-      this.envelopeVolume = 0x0F;
-      this.start();
+      self.envelopeGeneratorCounter = self.envelopeRate;
+      self.envelopeVolume = 0x0F;
+      self.start();
     }
-  }
-
-  start() {
-    this.oscillator.start();
-    this.oscillator.setFrequency(this.frequency);
-  }
-
-  close() {
-    this.oscillator.close();
-  }  
+    */
+    }
 }
-*/

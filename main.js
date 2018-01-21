@@ -8,8 +8,9 @@ const start = async () => {
     ctx,
     canvas,
     image: ctx.createImageData(256, 240),
-    osc1: new Oscillator(),
+    oscs: [new Oscillator(), new Oscillator()],
     test1: function (a, b, c) {
+      // this.osc1.start();
       console.log('test1', a, b, c);
     },
     test2: function () {
