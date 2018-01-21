@@ -1,6 +1,6 @@
+import Oscillator from './src/nes/browser/oscillator.js';
 
-(async () => {
-  // const main = Module.cwrap('run');
+const start = async () => {
   const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
@@ -8,6 +8,13 @@
     ctx,
     canvas,
     image: ctx.createImageData(256, 240),
+    osc1: new Oscillator(),
+    test1: function (a, b, c) {
+      console.log('test1', a, b, c);
+    },
+    test2: function () {
+      console.log('test2');
+    },
   }
   canvas.width = 256;
   canvas.height = 240;
@@ -54,13 +61,7 @@
 
   setupKeyHandler();
   run(size, buf.byteOffset);
-  // main();
-})().catch(e => {
-  if (e == 'SimulateInfiniteLoop') {
-    Module['noExitRuntime'] = true;
-    return;
-  }
-});
+};
 
-
+export default start;
 

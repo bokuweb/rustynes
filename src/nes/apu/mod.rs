@@ -11,6 +11,11 @@ pub trait IApu {
     fn write(&mut self, addr: Addr, data: Data);
 }
 
+extern "C" {
+    fn test1(a: u8, b: u8, c: u8);
+    fn test2();
+}
+
 impl Apu {
     pub fn new() -> Self {
         Apu {
@@ -18,6 +23,7 @@ impl Apu {
     }
 
     pub fn read(&self, addr: Addr) -> Data {
+      println!("apu read {:x}", addr);
       // if (addr === 0x15) {
       //   this.interrupts.deassertIrq();
       // }
@@ -28,6 +34,9 @@ impl Apu {
         println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
+                unsafe {
+                    test1(10, 20, 30);
+                }
                 // square wave control register
                 // this.square[0].write(addr, data);
             },

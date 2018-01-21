@@ -1,42 +1,15 @@
 <!DOCTYPE html>
 <html lang="">
-
 <head>
   <meta charset="utf-8" />
-  <title>Game of life with rust + wasm</title>
+  <title>rustynes</title>
 </head>
 
 <body>
   <canvas></canvas>
-  <script type="text/javascript">
-    "use strict"
-    const name = "wasm/rustynes";
-    var Module = {
-      preRun: [],
-      postRun: [],
-      wasmBinaryFile: `${name}.wasm`,
-      noExitRuntime: true,
-      print: text => {
-        console.log(text);
-      },
-      printErr: text => {
-        console.error(text);
-      },
-      onRuntimeInitialized() {
-        const main = document.createElement('script');
-        main.src = 'main.js';
-        document.body.appendChild(main);
-      },
-    };
-    fetch(`${name}.wasm`)
-      .then(resp => resp.arrayBuffer())
-      .then(buffer => {
-        Module.wasmBinary = buffer;
-        const script = document.createElement("script");
-        script.src = `${name}.js`;
-        document.body.appendChild(script);
-      })
-  </script>
+  <script type="module" src="./src/nes/browser/pulse.js"></script>
+  <script type="module" src="./src/nes/browser/oscillator.js"></script>
+  <script type="module" src="./main.js"></script>
+  <script type="module" src="./init.js"></script>
 </body>
-
 </html>
