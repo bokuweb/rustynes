@@ -51,7 +51,7 @@ impl PaletteRam for Palette {
         };
         let start = (palette_id * 4 + offset) as usize;
         let end = start + 4;
-        (start..end).map(|p| self.0[p]).collect()
+        (start..end).map(|p| self.read(p as Addr)).collect()
     }
 
     fn read(&self, addr: Addr) -> Data {
@@ -96,7 +96,7 @@ fn test_get_sprite_palette() {
     }
     let palette = p.get(0x00, PaletteType::Sprite);
     assert_eq!(palette.len(), 0x4);
-    assert_eq!(palette[0], 0x0);
+    assert_eq!(palette[0], 0x10);
     assert_eq!(palette[1], 0x11);
     assert_eq!(palette[2], 0x12);
     assert_eq!(palette[3], 0x13);

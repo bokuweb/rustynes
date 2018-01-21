@@ -7,13 +7,14 @@ use super::sprite_utils::*;
 use super::palette::*;
 
 #[derive(Debug,)]
-pub struct BackgroundUnit {
+pub struct BackgroundCtx {
     pub tile: Tile,
     pub scroll_x: Data,
     pub scroll_y: Data,
+    pub is_enabled: bool,
 }
 
-pub type BackgroundField = Vec<BackgroundUnit>;
+pub type BackgroundField = Vec<BackgroundCtx>;
 
 #[derive(Debug,)]
 pub struct Background(pub BackgroundField);
@@ -50,10 +51,11 @@ impl Background {
             config.offset_addr_by_name_table = Some((name_table_id as Addr) * 0x400);
             let position: SpritePosition = (clamped_tile_x as u8, clamped_tile_y as u8);
             self.0
-                .push(BackgroundUnit {
+                .push(BackgroundCtx {
                           tile: Tile::new(vram, cram, palette, &position, &config),
                           scroll_x: scroll.0,
                           scroll_y: scroll.1,
+                          is_enabled: config.is_background_enable,
                       });
         }
     }

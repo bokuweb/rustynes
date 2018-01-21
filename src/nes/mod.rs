@@ -15,6 +15,7 @@ pub use self::ppu::background;
 pub use self::ppu::Tile;
 pub use self::ppu::{SpriteWithCtx, Sprite, SpritePosition};
 pub use self::keypad::*;
+pub use self::renderer::*;
 
 use self::ppu::*;
 use self::renderer::*;
@@ -34,6 +35,7 @@ pub struct Context {
     keypad: Keypad,
     dma: Dma,
     nmi: bool,
+    renderer: Renderer,
 }
 
 pub fn reset(ctx: &mut Context) {
@@ -45,12 +47,10 @@ pub fn reset(ctx: &mut Context) {
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
 }
 
-pub fn run(ctx: &mut Context, key_state: u8) {
+pub fn run(ctx: &mut Context, key_state: u8) {   
+    ctx.keypad.update(key_state);
     loop {
         let mut cycle: u16 = 0;
-        {
-            ctx.keypad.update(key_state);
-        }
         if ctx.dma.should_run() {
             ctx.dma.run(&ctx.work_ram, &mut ctx.ppu);
             cycle = 514;
@@ -66,9 +66,11 @@ pub fn run(ctx: &mut Context, key_state: u8) {
             // externs::eval("console.timeEnd('cpu.run')");
         }
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
-        // TODO: Do investigation, why empty background created....
-        if is_ready && ctx.ppu.background.0.len() != 0 {
-            render(&ctx.ppu.background.0, &ctx.ppu.sprites);
+        if is_ready {
+            if ctx.ppu.background.0.len() != 0 {
+                ctx.renderer
+                    .render(&ctx.ppu.background.0, &ctx.ppu.sprites);
+            }
             break;
         }
     }
@@ -86,6 +88,7 @@ impl Context {
             keypad: Keypad::new(),
             dma: Dma::new(),
             nmi: false,
+            renderer: Renderer::new(),
         }
     }
 }
