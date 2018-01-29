@@ -1,7 +1,12 @@
-use super::types::{Data, Addr, Word};
+mod square;
+
+use nes::types::{Data, Addr, Word};
+use self::square::Square;
 
 #[derive(Debug)]
-pub struct Apu {}
+pub struct Apu {
+  squares: (Square, Square),
+}
 
 
 pub trait IApu {
@@ -17,7 +22,9 @@ extern "C" {
 
 impl Apu {
     pub fn new() -> Self {
-        Apu {}
+        Apu {
+          squares: (Square::new(0), Square::new(1))
+        }
     }
 
     pub fn read(&self, addr: Addr) -> Data {

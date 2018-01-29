@@ -1,4 +1,4 @@
-const CPU_CLOCK: f32 = 1789772.5;
+const CPU_CLOCK: usize = 1789772;
 
 const GROBAL_GAIN: f32 = 0.01;
 
@@ -25,7 +25,7 @@ export const dmcTimerPeriodTable = [
 
 const DIVIDE_COUNT_FOR_240HZ: usize = 7457;
 
-use super::types::{Data, Addr, Word};
+use nes::types::{Data, Addr, Word};
 
 #[derive(Debug)]
 pub struct Square {
@@ -62,7 +62,6 @@ impl Square {
             index,
             sweep_unit_counter: 0,
             length_counter: 0,
-            is_length_counter_enable: false,
             sweep_unit_divider: 1,
             frequency: 0,
             sweep_shift_amount: 0,
@@ -74,7 +73,6 @@ impl Square {
             envelope_rate: 0x0F,
             envelope_volume: 0,
             envelope_enable: false,
-            length_counter: 0,
             is_length_counter_enable: false,
         }
     }
@@ -85,7 +83,7 @@ impl Square {
         } else {
             self.envelope_rate
         };
-        vol as f32 / (0x0F / GROBAL_GAIN);
+        vol as f32 / (16.0 / GROBAL_GAIN)
     }
 
     fn stop_oscillator(&self) {
@@ -97,11 +95,11 @@ impl Square {
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
     // The length counter is 0, or The halt flag is set
-    fn update_counters() {
+    fn update_counters(&mut self) {
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
             if self.length_counter == 0 {
-                self.stop_oscillator(self.index);
+                self.stop_oscillator();
             }
         }
 
@@ -111,9 +109,11 @@ impl Square {
             // sweep mode 0 : newFreq = currentFreq - (currentFreq >> N)
             // sweep mode 1 : newFreq = currentFreq + (currentFreq >> N)
             if self.is_sweep_enabled {
-                let sign = if self.sweep_mode { 1 } else { -1 };
-                self.frequency = self.frequency +
-                                 ((self.frequency >> self.sweep_shift_amount) * sign);
+                if self.sweep_mode {
+                    self.frequency = self.frequency + (self.frequency >> self.sweep_shift_amount);
+                } else {
+                    self.frequency = self.frequency - (self.frequency >> self.sweep_shift_amount);
+                };
                 if self.frequency > 4095 {
                     self.frequency = 4095;
                     self.stop_oscillator();
@@ -145,7 +145,7 @@ impl Square {
             0x01 => 0.25,
             0x02 => 0.5,
             0x03 => 0.75,
-            _ => 0,
+            _ => 0f32,
         }
     }
 
@@ -178,44 +178,40 @@ impl Square {
         match addr {
             0x00 => {
                 self.envelope_enable = data & 0x10 == 0;
-                self.envelope_rate = data & 0xF + 1;
+                self.envelope_rate = data as usize & 0xF + 1;
                 self.envelope_loop_enable = (data & 0x20) != 0;
                 let duty = (data >> 6) & 0x3;
                 self.is_length_counter_enable = data & 0x20 == 0x00;
                 unsafe {
-                    set_oscillator_volume(self.index, self.volume);
-                    set_oscillator_pulse_width(self.index, self.get_pulse_width(duty));
+                    set_oscillator_volume(self.index, self.get_volume());
+                    set_oscillator_pulse_width(self.index, self.get_pulse_width(duty as usize));
                 }
             }
+            0x01 => {
+                // Sweep
+                self.is_sweep_enabled = data & 0x80 == 0x80;
+                self.sweep_unit_divider = ((data as usize >> 4) & 0x07) + 1;
+                self.sweep_mode = (data & 0x08 == 0x08);
+                self.sweep_shift_amount = data as usize & 0x07;
+            }
+            0x02 => {
+                self.divider_for_frequency = (self.divider_for_frequency & 0x700) | data as usize;
+            }    
+            0x03 => {
+                // Programmable timer, length counter
+                self.divider_for_frequency &= 0xFF;
+                self.divider_for_frequency |= ((data as usize & 0x7) << 8);
+                if self.is_length_counter_enable {
+                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize] as usize;
+                }
+                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 32)) as usize;
+                self.sweep_unit_counter = 0;
+                // envelope
+                self.envelope_generator_counter = self.envelope_rate;
+                self.envelope_volume = 0x0F;
+                self.start();
+            }                        
             _ => (),
         }
-        /*
-
-    else if (addr === 0x01) {
-      // Sweep
-      self.isSweepEnabled = !!(data & 0x80);
-      self.sweepUnitDivider = ((data >> 4) & 0x07) + 1;
-      self.sweepMode = !!(data & 0x08);
-      self.sweepShiftAmount = data & 0x07;
-    }
-    else if (addr === 0x02) {
-      self.dividerForFrequency &= 0x700;
-      self.dividerForFrequency |= data;
-    }
-    else if (addr === 0x03) {
-      // Programmable timer, length counter
-      self.dividerForFrequency &= 0xFF;
-      self.dividerForFrequency |= ((data & 0x7) << 8);
-      if (self.isLengthCounterEnable) {
-        self.lengthCounter = counterTable[data & 0xF8];
-      }
-      self.frequency = CPU_CLOCK / ((self.dividerForFrequency + 1) * 32);
-      self.sweepUnitCounter = 0;
-      // envelope
-      self.envelopeGeneratorCounter = self.envelopeRate;
-      self.envelopeVolume = 0x0F;
-      self.start();
-    }
-    */
     }
 }
