@@ -41,7 +41,7 @@ impl Apu {
                 //     test1(10.111, 20, 30);
                 // }
                 // square wave control register
-                self.square.0.write(addr, data);
+                self.squares.0.write(addr, data);
             }
             _ => (),
         }
