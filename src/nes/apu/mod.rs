@@ -15,11 +15,6 @@ pub trait IApu {
     fn write(&mut self, addr: Addr, data: Data);
 }
 
-extern "C" {
-    fn test1(a: f32, b: u8, c: u8);
-    fn test2();
-}
-
 impl Apu {
     pub fn new() -> Self {
         Apu { squares: (Square::new(0), Square::new(1)) }
@@ -37,12 +32,11 @@ impl Apu {
         println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
-                // unsafe {
-                //     test1(10.111, 20, 30);
-                // }
-                // square wave control register
                 self.squares.0.write(addr, data);
             }
+            0x04...0x07 => {
+                self.squares.1.write(addr - 0x04, data);
+            }            
             _ => (),
         }
     }
