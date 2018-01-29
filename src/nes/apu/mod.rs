@@ -5,7 +5,7 @@ use self::square::Square;
 
 #[derive(Debug)]
 pub struct Apu {
-  squares: (Square, Square),
+    squares: (Square, Square),
 }
 
 
@@ -22,9 +22,7 @@ extern "C" {
 
 impl Apu {
     pub fn new() -> Self {
-        Apu {
-          squares: (Square::new(0), Square::new(1))
-        }
+        Apu { squares: (Square::new(0), Square::new(1)) }
     }
 
     pub fn read(&self, addr: Addr) -> Data {
@@ -39,11 +37,11 @@ impl Apu {
         println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
-                unsafe {
-                    test1(10.111, 20, 30);
-                }
+                // unsafe {
+                //     test1(10.111, 20, 30);
+                // }
                 // square wave control register
-                // this.square[0].write(addr, data);
+                self.square.0.write(addr, data);
             }
             _ => (),
         }
