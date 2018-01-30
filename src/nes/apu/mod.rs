@@ -3,12 +3,12 @@ mod square;
 use nes::types::{Data, Addr, Word};
 use self::square::Square;
 
-const DIVIDE_COUNT_FOR_240HZ: usize = 7457;
+const DIVIDE_COUNT_FOR_240HZ: u16 = 7457;
 
 #[derive(Debug)]
 pub struct Apu {
     squares: (Square, Square),
-    cycle: usize,
+    cycle: u16,
     step: usize,
     sequencer_mode: bool,
 }
@@ -23,7 +23,7 @@ pub struct Apu {
 // }
 
 impl Apu {
-    pub fn run(&mut self, cycle: usize) {
+    pub fn run(&mut self, cycle: u16) {
         self.cycle += cycle;
         if (self.cycle >= DIVIDE_COUNT_FOR_240HZ) {
             // invoked by 240hz
@@ -37,7 +37,7 @@ impl Apu {
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        println!("apu read {:x}", addr);
+        // println!("apu read {:x}", addr);
         // if (addr === 0x15) {
         //   self.interrupts.deassertIrq();
         // }
@@ -45,7 +45,7 @@ impl Apu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("apu write {:x} {:x}", addr, data);
+        // println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
                 self.squares.0.write(addr, data);

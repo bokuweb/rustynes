@@ -51,7 +51,7 @@ pub fn reset(ctx: &mut Context) {
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
 }
 
-pub fn run(ctx: &mut Context, key_state: u8) {   
+pub fn run(ctx: &mut Context, key_state: u8) {
     ctx.keypad.update(key_state);
     loop {
         let mut cycle: u16 = 0;
@@ -70,6 +70,7 @@ pub fn run(ctx: &mut Context, key_state: u8) {
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
             // externs::eval("console.timeEnd('cpu.run')");
         }
+        ctx.apu.run(cycle);
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
         if is_ready {
             if ctx.ppu.background.0.len() != 0 {
