@@ -95,7 +95,7 @@ impl Square {
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
     // The length counter is 0, or The halt flag is set
-    fn update_counters(&mut self) {
+    pub fn update_counters(&mut self) {
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
             if self.length_counter == 0 {
