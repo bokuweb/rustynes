@@ -9,18 +9,11 @@ const start = async () => {
     canvas,
     image: ctx.createImageData(256, 240),
     oscs: [new Oscillator(), new Oscillator()],
-    test1: function (a, b, c) {
-      // this.osc1.start();
-      console.log('test1', a, b, c);
-    },
-    test2: function () {
-      console.log('test2');
-    },
   }
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch('./roms/giko012.nes');
+  const res = await fetch('./roms/giko013.nes');
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.
