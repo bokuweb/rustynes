@@ -1,26 +1,21 @@
 mod square;
+mod triangle;
+mod constants;
 
 use nes::types::{Data, Addr, Word};
 use self::square::Square;
+use self::triangle::Triangle;
+use self::constants::*;
 
-const DIVIDE_COUNT_FOR_240HZ: u16 = 7457;
 
 #[derive(Debug)]
 pub struct Apu {
     squares: (Square, Square),
+    triangle: Triangle,
     cycle: u16,
     step: usize,
     sequencer_mode: bool,
 }
-
-
-// pub trait IApu {
-//     fn read(&mut self, addr: Addr) -> Data;
-//
-//     fn write(&mut self, addr: Addr, data: Data);
-//
-//     fn run(&mut self, cycle: usize);
-// }
 
 impl Apu {
     pub fn run(&mut self, cycle: u16) {
@@ -52,7 +47,11 @@ impl Apu {
             }
             0x04...0x07 => {
                 self.squares.1.write(addr - 0x04, data);
-            }            
+            }   
+            0x08...0x0c => {
+                // triangle
+                self.triangle.write(addr - 0x08, data);
+            }         
             _ => (),
         }
     }
@@ -60,6 +59,7 @@ impl Apu {
     pub fn new() -> Self {
         Apu {
             squares: (Square::new(0), Square::new(1)),
+            triangle: Triangle::new(2),
             cycle: 0,
             step: 0,
             sequencer_mode: false,

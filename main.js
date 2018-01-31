@@ -8,7 +8,7 @@ const start = async () => {
     ctx,
     canvas,
     image: ctx.createImageData(256, 240),
-    oscs: [new Oscillator(), new Oscillator()],
+    oscs: [new Oscillator(), new Oscillator(), new Oscillator('triangle')],
   }
   canvas.width = 256;
   canvas.height = 240;
