@@ -1,4 +1,4 @@
-use super::super::super::types::{Data, Addr, Word};
+use super::super::super::types::{Data, Addr};
 use super::super::super::ram::*;
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use super::constants::*;
-use nes::types::{Data, Addr, Word};
+use nes::types::{Data, Addr};
 
 #[derive(Debug)]
 pub struct Square {
@@ -23,7 +23,7 @@ pub struct Square {
 extern "C" {
     fn start_oscillator(index: usize);
     fn stop_oscillator(index: usize);
-    fn close_oscillator(index: usize);
+    // fn close_oscillator(index: usize);
     fn set_oscillator_frequency(index: usize, freq: usize);
     fn change_oscillator_frequency(index: usize, freq: usize);
     fn set_oscillator_volume(index: usize, volume: f32);
@@ -67,9 +67,9 @@ impl Square {
         };
     }
 
-    pub fn stop(&mut self) {
-        self.stop_oscillator();
-    }
+    // pub fn stop(&mut self) {
+    //     self.stop_oscillator();
+    // }
 
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
@@ -114,12 +114,8 @@ impl Square {
         };
     }
 
-    pub fn close(&self) {
-        unsafe { close_oscillator(self.index) };
-    }
-
     pub fn get_pulse_width(&self, duty: usize) -> f32 {
-        match (duty) {
+        match duty {
             0x00 => 0.125,
             0x01 => 0.25,
             0x02 => 0.5,
@@ -174,7 +170,7 @@ impl Square {
                 // Sweep
                 self.is_sweep_enabled = data & 0x80 == 0x80;
                 self.sweep_unit_divider = ((data as usize >> 4) & 0x07) + 1;
-                self.sweep_mode = (data & 0x08 == 0x08);
+                self.sweep_mode = data & 0x08 == 0x08;
                 self.sweep_shift_amount = data as usize & 0x07;
             }
             0x02 => {
@@ -183,7 +179,7 @@ impl Square {
             0x03 => {
                 // Programmable timer, length counter
                 self.divider_for_frequency &= 0xFF;
-                self.divider_for_frequency |= ((data as usize & 0x7) << 8);
+                self.divider_for_frequency |= (data as usize & 0x7) << 8;
                 if self.is_length_counter_enable {
                     self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
                 }

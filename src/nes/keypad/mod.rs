@@ -1,4 +1,4 @@
-use super::types::{Data, Addr, Word};
+use super::types::{Data, Addr};
 
 #[derive(Debug)]
 pub struct Keypad {

@@ -1,16 +1,94 @@
 <!DOCTYPE html>
 <html lang="">
+
 <head>
   <meta charset="utf-8" />
   <title>rustynes</title>
+  <style>
+    html,
+    body {
+      min-height: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      transform: scale3d(2, 2, 1);
+      transform-origin: 0 0;
+    }
+
+    .nes {
+      width: 512px;
+      height: 480px;
+    }
+
+    .select {
+      margin-left: 16px;
+    }
+
+    .key {
+      margin: 16px 0 0 16px;
+    }
+  </style>
 </head>
 
 <body>
-  <canvas></canvas>
+  <div>
+    <div class="nes">
+      <canvas></canvas>
+    </div>
+    <div class="select">
+      <select name="rom">
+        <option value="falling">falling</option>
+        <option value="dushlan">dushlan</option>
+        <option value="color_test">color_test</option>
+        <option value="firedemo">firedemo</option>
+        <option value="giko005">giko005</option>
+        <option value="giko008">giko008</option>
+        <option value="giko009">giko009</option>
+        <option value="giko010b">giko010b</option>
+        <option value="giko011">giko011</option>
+        <option value="giko012">giko012</option>
+        <option value="giko013">giko013</option>
+        <option value="giko015">giko015</option>
+        <option value="giko016">giko016</option>
+        <option value="giko017">giko017</option>
+        <option value="hello">hello</option>
+        <option value="nestest">nestest</option>
+      </select>
+    </div>
+  </div>
+  <div class="key">
+    <span>Key pad</span>
+    <ul>
+      <li>X A</li>
+      <li>Z B</li>
+      <li>A SELECT</li>
+      <li>S START</li>
+      <li>↑ ↑</li>
+      <li>↓ ↓</li>
+      <li>← ←</li>
+      <li>→ →</li>
+    </ul>
+  </div>
   <script type="module" src="./src/nes/browser/pulse.js"></script>
   <script type="module" src="./src/nes/browser/oscillator.js"></script>
   <script type="module" src="./src/nes/browser/noise.js"></script>
   <script type="module" src="./main.js"></script>
   <script type="module" src="./init.js"></script>
+  <script type="module">
+    import start from './main.js';
+    document.querySelector('select').addEventListener('change', (e) => {
+      console.log(e);
+      start(`./roms/${e.target.value}.nes`);
+    })
+  </script>
 </body>
+
 </html>

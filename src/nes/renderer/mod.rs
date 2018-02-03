@@ -1,7 +1,6 @@
 mod color;
 
 use super::{BackgroundField, BackgroundCtx};
-use super::Tile;
 use super::PaletteList;
 use super::{Sprite, SpritesWithCtx, SpritePosition};
 use self::color::COLORS;
@@ -67,7 +66,6 @@ impl Renderer {
         let is_vertical_reverse = (attr & 0x80) == 0x80;
         let is_horizontal_reverse = (attr & 0x40) == 0x40;
         let is_low_priority = (attr & 0x20) == 0x20;
-        let palette_id = attr & 0x03;
         for i in 0..8 {
             for j in 0..8 {
                 let x = position.0 as usize + if is_horizontal_reverse { 7 - j } else { j };

@@ -19,14 +19,12 @@ pub use self::keypad::*;
 pub use self::renderer::*;
 
 use self::ppu::*;
-use self::renderer::*;
 use self::rom::Rom;
 use self::ram::Ram;
 use self::bus::cpu_bus;
 use self::dma::*;
 use self::apu::*;
 use nes::types::Data;
-use super::externs;
 
 #[derive(Debug)]
 pub struct Context {

@@ -3,7 +3,7 @@ mod triangle;
 mod noise;
 mod constants;
 
-use nes::types::{Data, Addr, Word};
+use nes::types::{Data, Addr};
 use self::square::Square;
 use self::triangle::Triangle;
 use self::noise::Noise;
@@ -36,7 +36,7 @@ impl Apu {
 
     pub fn run(&mut self, cycle: u16) {
         self.cycle += cycle;
-        if (self.cycle >= DIVIDE_COUNT_FOR_240HZ) {
+        if self.cycle >= DIVIDE_COUNT_FOR_240HZ {
             // invoked by 240hz
             self.cycle -= DIVIDE_COUNT_FOR_240HZ;
             if self.sequencer_mode {
@@ -144,7 +144,7 @@ impl Apu {
             self.update_counters();
         }
         self.step += 1;
-        if (self.step == 5) {
+        if self.step == 5 {
             self.step = 0;
         } else {
             self.update_envelope();

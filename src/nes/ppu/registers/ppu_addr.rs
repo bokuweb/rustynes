@@ -1,4 +1,4 @@
-use super::super::super::types::{Data, Addr, Word};
+use super::super::super::types::{Data, Addr};
 
 #[derive(Debug)]
 pub struct PpuAddr {
