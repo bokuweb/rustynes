@@ -1,5 +1,5 @@
 use super::constants::*;
-use nes::types::{Data, Addr, Word};
+use nes::types::{Data, Addr};
 
 #[derive(Debug)]
 pub struct Triangle {
@@ -71,19 +71,15 @@ impl Triangle {
         };
     }
 
-    pub fn close(&self) {
-        unsafe { close_oscillator(self.index) };
-    }
-
     pub fn has_count_end(&self) -> bool {
         self.length_counter == 0
     }
 
-    fn reset(&mut self) {
-        self.length_counter = 0;
-        self.is_length_counter_enable = false;
-        self.set_volume();
-    }
+    // fn reset(&mut self) {
+    //     self.length_counter = 0;
+    //     self.is_length_counter_enable = false;
+    //     self.set_volume();
+    // }
 
     fn set_volume(&self) {
         unsafe { set_oscillator_volume(self.index, self.get_volume()) }
@@ -103,7 +99,7 @@ impl Triangle {
             0x03 => {
                 // Programmable timer, length counter
                 self.divider_for_frequency &= 0xFF;
-                self.divider_for_frequency |= ((data as usize & 0x7) << 8);
+                self.divider_for_frequency |= (data as usize & 0x7) << 8;
                 if self.is_length_counter_enable {
                     self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
                 }

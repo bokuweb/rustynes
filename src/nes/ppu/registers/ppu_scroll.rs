@@ -1,7 +1,5 @@
 
 use super::super::super::types::Data;
-use super::super::super::Ram;
-use super::super::palette::*;
 
 #[derive(Debug)]
 enum Enable {

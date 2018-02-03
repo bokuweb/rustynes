@@ -1,4 +1,4 @@
-use super::types::{Data, Addr, Word};
+use super::types::{Data};
 use nes::ram::Ram;
 use nes::ppu::Ppu;
 

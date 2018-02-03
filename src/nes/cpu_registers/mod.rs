@@ -1,4 +1,3 @@
-use super::types::{Data, Addr, Word};
 use super::helper::*;
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 use super::constants::{NOISE_TIMER_PERIOD_TABLE, GROBAL_GAIN, CPU_CLOCK, COUNTER_TABLE};
-use nes::types::{Data, Addr, Word};
+use nes::types::{Data, Addr};
 
 #[derive(Debug)]
 pub struct Noise {
@@ -19,7 +19,7 @@ extern "C" {
     fn set_noise_volume(volume: f32);
     fn stop_noise();
     fn start_noise();
-    fn close_noise();
+    // fn close_noise();
 }
 
 impl Noise {
@@ -80,15 +80,15 @@ impl Noise {
         }
     }
 
-    pub fn has_count_end(&self) -> bool {
-        self.length_counter == 0
-    }
+    // pub fn has_count_end(&self) -> bool {
+    //     self.length_counter == 0
+    // }
 
-    fn reset(&mut self) {
-        self.length_counter = 0;
-        self.is_length_counter_enable = false;
-        self.set_volume();
-    }
+    // fn reset(&mut self) {
+    //     self.length_counter = 0;
+    //     self.is_length_counter_enable = false;
+    //     self.set_volume();
+    // }
 
     fn set_volume(&self) {
         unsafe { set_noise_volume(self.get_volume()) }
@@ -126,9 +126,5 @@ impl Noise {
             }                        
             _ => (),
         }
-    }
-
-    fn close(&self) {
-        unsafe { close_noise() }
     }
 }
