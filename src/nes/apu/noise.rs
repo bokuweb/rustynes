@@ -18,6 +18,8 @@ pub struct Noise {
 extern "C" {
     fn set_noise_frequency(freq: f32);
     fn set_noise_volume(volume: f32);
+    fn stop_noise();
+    fn start_noise();
     fn close_noise();
 }
 
@@ -43,7 +45,7 @@ impl Noise {
         } else {
             self.envelope_rate
         };
-        vol as f32 / (16.0 / GROBAL_GAIN)
+        vol as f32 / (32.0 / GROBAL_GAIN)
     }
 
     pub fn update_envelope(&mut self) {
@@ -59,14 +61,28 @@ impl Noise {
         self.set_volume();
     }
 
-    pub fn stop(&mut self) {
-        // self.stop_oscillator();
+    pub fn start(&self) {
+        unsafe { start_noise() };
+    }
+
+    pub fn stop(&self) {
+        unsafe { stop_noise() };
     }
 
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
     // The length counter is 0, or The halt flag is set
-    pub fn update_counter(&mut self) {}
+    pub fn update_counter(&mut self) {
+        if self.is_length_counter_enable && self.length_counter > 0 {
+            self.length_counter -= 1;
+        }
+        if self.linear_counter > 0 {
+            self.linear_counter -= 1;
+        }
+        if self.length_counter == 0 && self.linear_counter == 0 {
+            self.stop();
+        }
+    }
 
     pub fn has_count_end(&self) -> bool {
         self.length_counter == 0
@@ -85,12 +101,12 @@ impl Noise {
     fn set_frequency(&self, data: Data) {
         unsafe {
             set_noise_frequency(CPU_CLOCK as f32 /
-                                NOISE_TIMER_PERIOD_TABLE[data as usize & 0xF] as f32)
+                                (NOISE_TIMER_PERIOD_TABLE[data as usize & 0xF] as f32 / 16f32))
         }
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("noise write {:x} {:x}", addr, data);
+        // println!("noise write {:x} {:x}", addr, data);
         match addr {
             0x00 => {
                 self.envelope_enable = (data & 0x10) == 0;
@@ -104,11 +120,12 @@ impl Noise {
             }    
             0x03 => {
                 if self.is_length_counter_enable {
-                    self.length_counter = COUNTER_TABLE[data as usize & 0xF8] as usize;
+                    self.length_counter = COUNTER_TABLE[(data as usize & 0xF8) >> 3] as usize;
                 }
                 self.envelope_generator_counter = self.envelope_rate;
                 self.envelope_volume = 0x0F;
                 self.set_volume();
+                self.start();
             }                        
             _ => (),
         }

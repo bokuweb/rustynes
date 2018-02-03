@@ -185,9 +185,9 @@ impl Square {
                 self.divider_for_frequency &= 0xFF;
                 self.divider_for_frequency |= ((data as usize & 0x7) << 8);
                 if self.is_length_counter_enable {
-                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize] as usize;
+                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
                 }
-                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 32)) as usize;
+                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 16)) as usize;
                 self.sweep_unit_counter = 0;
                 // envelope
                 self.envelope_generator_counter = self.envelope_rate;

@@ -33,5 +33,11 @@ mergeInto(LibraryManager.library, {
   },
   close_noise: function () {
     Module.NES.noise.close();
+  },
+  stop_noise: function () {
+    Module.NES.noise.stop();
+  },
+  start_noise: function () {
+    Module.NES.noise.start();
   }
 });

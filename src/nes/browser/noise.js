@@ -28,11 +28,8 @@ export default class Noise {
     this.bandpass.connect(this.context.destination);
     this.source = node;
     this.setVolume(0);
-    console.log('start')
-    this.source.start(0);
   }
 
-  /* eslint-disable */
   setVolume(volume) {
     volume = Math.max(0, Math.min(1, volume));
     this.gain.gain.value = volume;
@@ -40,6 +37,21 @@ export default class Noise {
 
   setFrequency(frequency) {
     this.bandpass.frequency.value = frequency > 22050 ? 22050 : frequency;
+  }
+
+  start() {
+    if (!this.playing) {
+      this.playing = true;
+      this.source.start(0);
+    }
+  }
+
+  stop() {
+    if (this.playing) {
+      this.playing = false;
+      this.source.stop();
+      this.createSource();
+    }
   }
 
   close() {

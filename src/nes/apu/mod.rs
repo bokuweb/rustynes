@@ -22,7 +22,6 @@ pub struct Apu {
 }
 
 impl Apu {
-
     pub fn new() -> Self {
         Apu {
             squares: (Square::new(0), Square::new(1)),
@@ -76,7 +75,7 @@ impl Apu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        // println!("apu write {:x} {:x}", addr, data);
+        println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
                 self.squares.0.write(addr, data);
@@ -107,12 +106,19 @@ impl Apu {
                 // } else {
                 //     self.triangle.stop();
                 // }
+                // if data & 0x08 == 0x08 {
+                //     // self.noise.start();
+                // } else {
+                //     println!("noise stop");
+                //     // self.noise.stop();
+                // }
             }            
             0x17 => {
                 self.sequencer_mode = data & 0x80 == 0x80;
                 self.enable_irq = data & 0x40 == 0x40;
                 // if self.sequencer_mode {
-                //     self.step = 0;
+                self.step = 0;
+                self.cycle = 0;
                 // }
             }                     
             _ => (),
