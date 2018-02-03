@@ -31,6 +31,10 @@
     .select {
       margin-left: 16px;
     }
+
+    .key {
+      margin: 16px 0 0 16px;
+    }
   </style>
 </head>
 
@@ -42,6 +46,7 @@
     <div class="select">
       <select name="rom">
         <option value="falling">falling</option>
+        <option value="dushlan">dushlan</option>
         <option value="color_test">color_test</option>
         <option value="firedemo">firedemo</option>
         <option value="giko005">giko005</option>
@@ -58,6 +63,19 @@
         <option value="nestest">nestest</option>
       </select>
     </div>
+  </div>
+  <div class="key">
+    <span>Key pad</span>
+    <ul>
+      <li>X A</li>
+      <li>Z B</li>
+      <li>A SELECT</li>
+      <li>S START</li>
+      <li>↑ ↑</li>
+      <li>↓ ↓</li>
+      <li>← ←</li>
+      <li>→ →</li>
+    </ul>
   </div>
   <script type="module" src="./src/nes/browser/pulse.js"></script>
   <script type="module" src="./src/nes/browser/oscillator.js"></script>
