@@ -15,7 +15,7 @@ const start = async () => {
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch('./roms/mario.nes');
+  const res = await fetch('./roms/falling.nes');
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.

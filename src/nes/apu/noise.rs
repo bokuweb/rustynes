@@ -10,7 +10,6 @@ pub struct Noise {
     is_length_counter_enable: bool,
     length_counter: usize,
 
-    linear_counter: usize,
     divider_for_frequency: usize,
     frequency: usize,
 }
@@ -33,7 +32,6 @@ impl Noise {
 
             is_length_counter_enable: false,
             length_counter: 0,
-            linear_counter: 0,
             divider_for_frequency: 1,
             frequency: 0,
         }
@@ -45,7 +43,7 @@ impl Noise {
         } else {
             self.envelope_rate
         };
-        vol as f32 / (32.0 / GROBAL_GAIN)
+        vol as f32 / (16.0 / GROBAL_GAIN)
     }
 
     pub fn update_envelope(&mut self) {
@@ -55,6 +53,7 @@ impl Noise {
             if self.envelope_volume > 0 {
                 self.envelope_volume -= 1;
             } else {
+                self.stop();
                 self.envelope_volume = 0x0F;
             }
         }
@@ -76,10 +75,7 @@ impl Noise {
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
         }
-        if self.linear_counter > 0 {
-            self.linear_counter -= 1;
-        }
-        if self.length_counter == 0 && self.linear_counter == 0 {
+        if self.is_length_counter_enable && self.length_counter == 0 {
             self.stop();
         }
     }
@@ -101,7 +97,8 @@ impl Noise {
     fn set_frequency(&self, data: Data) {
         unsafe {
             set_noise_frequency(CPU_CLOCK as f32 /
-                                (NOISE_TIMER_PERIOD_TABLE[data as usize & 0xF] as f32 / 16f32))
+                                NOISE_TIMER_PERIOD_TABLE[data as usize & 0xF] as f32 /
+                                2f32)
         }
     }
 

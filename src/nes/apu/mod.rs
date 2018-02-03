@@ -66,7 +66,7 @@ impl Apu {
                 } else {
                     0x04
                 };
-                println!("apu read {:x} {:x}", addr, t | s1 | s0);
+                // println!("apu read {:x} {:x}", addr, t | s1 | s0);
                 t | s1 | s0
             }
             _ => 0,
@@ -75,7 +75,7 @@ impl Apu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("apu write {:x} {:x}", addr, data);
+        // println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
                 self.squares.0.write(addr, data);
