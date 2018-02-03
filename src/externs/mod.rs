@@ -27,6 +27,7 @@ pub fn wget(url: &str, file: &str) {
 
 extern "C" {
     // This extern is built in by Emscripten.
+    pub fn emscripten_cancel_main_loop();
     pub fn emscripten_run_script_int(x: *const c_char) -> c_int;
     pub fn emscripten_set_main_loop(func: em_callback_func,
                                     fps: c_int,
@@ -37,6 +38,9 @@ extern "C" {
                                  */
 }
 
+pub fn cancel_main_loop() {
+    unsafe { emscripten_cancel_main_loop(); }
+}
 
 pub fn set_main_loop_callback<F>(callback: F)
     where F: FnMut()

@@ -53,7 +53,6 @@ impl Triangle {
     // When clocked by the frame counter, the length counter is decremented except when:
     // The length counter is 0, or The halt flag is set
     pub fn update_counter(&mut self) {
-        println!("ln counter {} {}", self.length_counter, self.linear_counter);
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
         }
@@ -61,7 +60,6 @@ impl Triangle {
             self.linear_counter -= 1;
         }
         if (self.is_length_counter_enable && self.length_counter == 0) || self.linear_counter == 0 {
-            println!("stop");
             self.stop();
         }
     }
@@ -92,7 +90,6 @@ impl Triangle {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("wr triangle {:x} {:x}", addr, data);
         match addr {
             0x00 => {
                 self.is_length_counter_enable = data & 0x80 == 0;

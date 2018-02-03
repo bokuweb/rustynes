@@ -1,10 +1,14 @@
 import Oscillator from './src/nes/browser/oscillator.js';
 import Noise from './src/nes/browser/noise.js';
 
-const start = async () => {
+const start = async (rom = './roms/falling.nes') => {
   const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
+  if (Module.NES) {
+    Module.NES.oscs.forEach(o => o.close());
+    Module.NES.noise.close();
+  }
   Module.NES = {
     ctx,
     canvas,
@@ -15,7 +19,7 @@ const start = async () => {
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch('./roms/falling.nes');
+  const res = await fetch(rom);
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.
