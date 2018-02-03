@@ -60,10 +60,15 @@ impl Square {
         vol as f32 / (16.0 / GROBAL_GAIN)
     }
 
-    fn stop_oscillator(&self) {
+    fn stop_oscillator(&mut self) {
+        self.length_counter = 0;
         unsafe {
             stop_oscillator(self.index);
         };
+    }
+
+    pub fn stop(&mut self) {
+        self.stop_oscillator();
     }
 
     // Length counter
@@ -121,6 +126,10 @@ impl Square {
             0x03 => 0.75,
             _ => 0f32,
         }
+    }
+
+    pub fn has_count_end(&self) -> bool {
+        self.length_counter == 0
     }
 
     pub fn update_envelope(&mut self) {

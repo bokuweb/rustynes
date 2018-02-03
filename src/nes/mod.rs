@@ -58,17 +58,14 @@ pub fn run(ctx: &mut Context, key_state: u8) {
         if ctx.dma.should_run() {
             ctx.dma.run(&ctx.work_ram, &mut ctx.ppu);
             cycle = 514;
-        }
-        {
+        } else {
             let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
                                                 &ctx.work_ram,
                                                 &mut ctx.ppu,
                                                 &mut ctx.apu,
                                                 &mut ctx.keypad,
                                                 &mut ctx.dma);
-            // externs::eval("console.time('cpu.run')");
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
-            // externs::eval("console.timeEnd('cpu.run')");
         }
         ctx.apu.run(cycle);
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);

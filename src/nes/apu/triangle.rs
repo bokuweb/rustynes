@@ -37,10 +37,15 @@ impl Triangle {
         GROBAL_GAIN
     }
 
-    fn stop_oscillator(&self) {
+    fn stop_oscillator(&mut self) {
+        self.length_counter = 0;
         unsafe {
             stop_oscillator(self.index);
         };
+    }
+
+    pub fn stop(&mut self) {
+        self.stop_oscillator();
     }
 
     // Length counter
@@ -67,6 +72,10 @@ impl Triangle {
 
     pub fn close(&self) {
         unsafe { close_oscillator(self.index) };
+    }
+
+    pub fn has_count_end(&self) -> bool {
+        self.length_counter == 0
     }
 
     fn reset(&mut self) {

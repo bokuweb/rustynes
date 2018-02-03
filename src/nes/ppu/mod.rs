@@ -85,13 +85,14 @@ impl Ppu {
         self.cycle = cycle - CYCLES_PER_LINE;
         self.line = self.line + 1;
 
-        if self.has_sprite_hit() {
-            self.registers.set_sprite_hit();
-        }
+
 
         let scroll_x = self.registers.get_scroll_x();
         let scroll_y = self.registers.get_scroll_y();
         if self.line <= 240 && self.line % 8 == 0 && scroll_y <= 240 {
+            if self.has_sprite_hit() {
+                self.registers.set_sprite_hit();
+            }
             let mut config = SpriteConfig {
                 offset_addr_by_name_table: None,
                 offset_addr_by_background_table: self.registers.get_background_table_offset(),
@@ -114,6 +115,7 @@ impl Ppu {
 
         if self.line == 241 {
             self.registers.set_vblank();
+            self.registers.clear_sprite_hit();
             if self.registers.is_irq_enable() {
                 *nmi = true;
             }
@@ -150,6 +152,7 @@ impl Ppu {
 
     fn has_sprite_hit(&self) -> bool {
         let y = self.ctx.sprite_ram.read(0) as usize;
-        y == self.line && self.registers.is_background_enable() && self.registers.is_sprite_enable()
+        (y == self.line) && self.registers.is_background_enable() &&
+        self.registers.is_sprite_enable()
     }
 }
