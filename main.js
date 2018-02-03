@@ -1,4 +1,5 @@
 import Oscillator from './src/nes/browser/oscillator.js';
+import Noise from './src/nes/browser/noise.js';
 
 const start = async () => {
   const run = Module.cwrap('run', null, ['number', 'number']);
@@ -9,11 +10,12 @@ const start = async () => {
     canvas,
     image: ctx.createImageData(256, 240),
     oscs: [new Oscillator(), new Oscillator(), new Oscillator('triangle')],
+    noise: new Noise(),
   }
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch('./roms/mario.nes');
+  const res = await fetch('./roms/giko013.nes');
   const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.
@@ -53,6 +55,7 @@ const start = async () => {
   };
 
   setupKeyHandler();
+  console.log('start nes');
   run(size, buf.byteOffset);
 };
 

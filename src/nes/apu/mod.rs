@@ -1,10 +1,12 @@
 mod square;
 mod triangle;
+mod noise;
 mod constants;
 
 use nes::types::{Data, Addr, Word};
 use self::square::Square;
 use self::triangle::Triangle;
+use self::noise::Noise;
 use self::constants::*;
 
 
@@ -12,6 +14,7 @@ use self::constants::*;
 pub struct Apu {
     squares: (Square, Square),
     triangle: Triangle,
+    noise: Noise,
     cycle: u16,
     step: usize,
     sequencer_mode: bool,
@@ -19,6 +22,19 @@ pub struct Apu {
 }
 
 impl Apu {
+
+    pub fn new() -> Self {
+        Apu {
+            squares: (Square::new(0), Square::new(1)),
+            triangle: Triangle::new(2),
+            noise: Noise::new(),
+            cycle: 0,
+            step: 0,
+            sequencer_mode: false,
+            enable_irq: false,
+        }
+    }
+
     pub fn run(&mut self, cycle: u16) {
         self.cycle += cycle;
         if (self.cycle >= DIVIDE_COUNT_FOR_240HZ) {
@@ -68,10 +84,13 @@ impl Apu {
             0x04...0x07 => {
                 self.squares.1.write(addr - 0x04, data);
             }   
-            0x08...0x0c => {
+            0x08...0x0b => {
                 // triangle
                 self.triangle.write(addr - 0x08, data);
             }   
+            0x0c...0x0f => {
+                self.noise.write(addr - 0x0c, data);
+            }               
             0x15 => {
                 // if data & 0x01 == 0x01 {
                 //     self.squares.0.start();
@@ -97,17 +116,6 @@ impl Apu {
                 // }
             }                     
             _ => (),
-        }
-    }
-
-    pub fn new() -> Self {
-        Apu {
-            squares: (Square::new(0), Square::new(1)),
-            triangle: Triangle::new(2),
-            cycle: 0,
-            step: 0,
-            sequencer_mode: false,
-            enable_irq: false,
         }
     }
 
@@ -140,12 +148,13 @@ impl Apu {
     fn update_counters(&mut self) {
         self.squares.0.update_counters();
         self.squares.1.update_counters();
-        // self.triangle.updateCounter();
-        // self.noise.updateCounter();
+        self.triangle.update_counter();
+        self.noise.update_counter();
     }
 
     fn update_envelope(&mut self) {
         self.squares.0.update_envelope();
         self.squares.1.update_envelope();
+        self.noise.update_envelope();
     }
 }

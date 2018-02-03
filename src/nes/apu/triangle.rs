@@ -95,9 +95,6 @@ impl Triangle {
                 self.linear_counter = data as usize & 0x7F;
                 self.set_volume();
             }
-            // 0x01 => {
-            //
-            // }
             0x02 => {
                 self.divider_for_frequency &= 0x700;
                 self.divider_for_frequency |= data as usize;
