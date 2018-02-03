@@ -9,7 +9,6 @@ impl Rom {
     }
 
     pub fn read(&self, addr: u16) -> u8 {
-        // println!("Rom read from {}", addr);
         self.vec[addr as usize]
     }
 
