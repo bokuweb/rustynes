@@ -54,6 +54,7 @@ impl<'a> CpuBus for Bus<'a> {
             0x0800...0x1FFF => self.work_ram.read(addr - 0x0800),
             0x2000...0x3FFF => self.ppu.read(addr - 0x2000),
             0x4016 => self.keypad.read(),
+            0x4017 => 0, // TODO: 2player
             0x4000...0x401F => self.apu.read(addr - 0x4000),
             0x8000...0xBFFF => self.program_rom.read(addr - 0x8000),
             0xC000...0xFFFF if self.program_rom.size() <= 0x4000 => {

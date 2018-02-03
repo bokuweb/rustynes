@@ -1,30 +1,4 @@
-const CPU_CLOCK: usize = 1789772;
-
-const GROBAL_GAIN: f32 = 0.01;
-
-const COUNTER_TABLE: &'static [u8] = &[0x0A, 0xFE, 0x14, 0x02, 0x28, 0x04, 0x50, 0x06, 0xA0, 0x08,
-                                       0x3C, 0x0A, 0x0E, 0x0C, 0x1A, 0x0E, 0x0C, 0x10, 0x18, 0x12,
-                                       0x30, 0x14, 0x60, 0x16, 0xC0, 0x18, 0x48, 0x1A, 0x10, 0x1C,
-                                       0x20, 0x1E];
-
-/* 
-export const noiseTimerPeriodTable = [
-  0x004, 0x008, 0x010, 0x020,
-  0x040, 0x060, 0x080, 0x0A0,
-  0x0CA, 0x0FE, 0x17C, 0x1FC,
-  0x2FA, 0x3F8, 0x7F2, 0xFE4,
-];
-
-export const dmcTimerPeriodTable = [
-  0x1AC, 0x17C, 0x154, 0x140,
-  0x11E, 0x0FE, 0x0E2, 0x0D6,
-  0x0BE, 0x0A0, 0x08E, 0x080,
-  0x06A, 0x054, 0x048, 0x036,
-];
-*/
-
-const DIVIDE_COUNT_FOR_240HZ: usize = 7457;
-
+use super::constants::*;
 use nes::types::{Data, Addr, Word};
 
 #[derive(Debug)]
@@ -86,10 +60,15 @@ impl Square {
         vol as f32 / (16.0 / GROBAL_GAIN)
     }
 
-    fn stop_oscillator(&self) {
+    fn stop_oscillator(&mut self) {
+        self.length_counter = 0;
         unsafe {
             stop_oscillator(self.index);
         };
+    }
+
+    pub fn stop(&mut self) {
+        self.stop_oscillator();
     }
 
     // Length counter
@@ -149,6 +128,10 @@ impl Square {
         }
     }
 
+    pub fn has_count_end(&self) -> bool {
+        self.length_counter == 0
+    }
+
     pub fn update_envelope(&mut self) {
         self.envelope_generator_counter -= 1;
         if self.envelope_generator_counter <= 0 {
@@ -202,9 +185,9 @@ impl Square {
                 self.divider_for_frequency &= 0xFF;
                 self.divider_for_frequency |= ((data as usize & 0x7) << 8);
                 if self.is_length_counter_enable {
-                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize] as usize;
+                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
                 }
-                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 32)) as usize;
+                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 16)) as usize;
                 self.sweep_unit_counter = 0;
                 // envelope
                 self.envelope_generator_counter = self.envelope_rate;

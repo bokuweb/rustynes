@@ -82,9 +82,10 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
-                    // if x < 8 {
-                    //     self.buf[index + 3] = 0;
-                    // }
+                    // TODO: See rregister value wheather clip or not.
+                    if x < 8 {
+                        self.buf[index + 3] = 0;
+                    }
                 }
             }
         }
@@ -105,9 +106,10 @@ impl Renderer {
                     self.buf[index] = color.0;
                     self.buf[index + 1] = color.1;
                     self.buf[index + 2] = color.2;
-                    // if x < 8 {
-                    //     self.buf[index + 3] = 0;
-                    // }
+                    // TODO: See rregister value wheather clip or not.
+                    if x < 8 {
+                        self.buf[index + 3] = 0;
+                    }
                 }
             }
         }

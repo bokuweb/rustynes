@@ -1,28 +1,39 @@
 mod square;
+mod triangle;
+mod noise;
+mod constants;
 
 use nes::types::{Data, Addr, Word};
 use self::square::Square;
+use self::triangle::Triangle;
+use self::noise::Noise;
+use self::constants::*;
 
-const DIVIDE_COUNT_FOR_240HZ: u16 = 7457;
 
 #[derive(Debug)]
 pub struct Apu {
     squares: (Square, Square),
+    triangle: Triangle,
+    noise: Noise,
     cycle: u16,
     step: usize,
     sequencer_mode: bool,
+    enable_irq: bool,
 }
 
-
-// pub trait IApu {
-//     fn read(&mut self, addr: Addr) -> Data;
-//
-//     fn write(&mut self, addr: Addr, data: Data);
-//
-//     fn run(&mut self, cycle: usize);
-// }
-
 impl Apu {
+    pub fn new() -> Self {
+        Apu {
+            squares: (Square::new(0), Square::new(1)),
+            triangle: Triangle::new(2),
+            noise: Noise::new(),
+            cycle: 0,
+            step: 0,
+            sequencer_mode: false,
+            enable_irq: false,
+        }
+    }
+
     pub fn run(&mut self, cycle: u16) {
         self.cycle += cycle;
         if (self.cycle >= DIVIDE_COUNT_FOR_240HZ) {
@@ -37,11 +48,30 @@ impl Apu {
     }
 
     pub fn read(&mut self, addr: Addr) -> Data {
-        // println!("apu read {:x}", addr);
-        // if (addr === 0x15) {
-        //   self.interrupts.deassertIrq();
-        // }
-        0
+        match addr {
+            0x15 => {
+                // self.interrupts.deassertIrq();
+                let s0 = if self.squares.0.has_count_end() {
+                    0x00
+                } else {
+                    0x01
+                };
+                let s1 = if self.squares.1.has_count_end() {
+                    0x00
+                } else {
+                    0x02
+                };
+                let t = if self.triangle.has_count_end() {
+                    0x00
+                } else {
+                    0x04
+                };
+                // println!("apu read {:x} {:x}", addr, t | s1 | s0);
+                t | s1 | s0
+            }
+            _ => 0,
+        }
+
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
@@ -52,17 +82,46 @@ impl Apu {
             }
             0x04...0x07 => {
                 self.squares.1.write(addr - 0x04, data);
+            }   
+            0x08...0x0b => {
+                // triangle
+                self.triangle.write(addr - 0x08, data);
+            }   
+            0x0c...0x0f => {
+                self.noise.write(addr - 0x0c, data);
+            }               
+            0x15 => {
+                // if data & 0x01 == 0x01 {
+                //     self.squares.0.start();
+                // } else {
+                //     self.squares.0.stop();
+                // }
+                // if data & 0x02 == 0x02 {
+                //     self.squares.1.start();
+                // } else {
+                //     self.squares.0.stop();
+                // }
+                // if data & 0x04 == 0x04 {
+                //     self.triangle.start();
+                // } else {
+                //     self.triangle.stop();
+                // }
+                // if data & 0x08 == 0x08 {
+                //     // self.noise.start();
+                // } else {
+                //     println!("noise stop");
+                //     // self.noise.stop();
+                // }
             }            
+            0x17 => {
+                self.sequencer_mode = data & 0x80 == 0x80;
+                self.enable_irq = data & 0x40 == 0x40;
+                // if self.sequencer_mode {
+                self.step = 0;
+                self.cycle = 0;
+                // }
+            }                     
             _ => (),
-        }
-    }
-
-    pub fn new() -> Self {
-        Apu {
-            squares: (Square::new(0), Square::new(1)),
-            cycle: 0,
-            step: 0,
-            sequencer_mode: false,
         }
     }
 
@@ -73,9 +132,9 @@ impl Apu {
         }
         self.step += 1;
         if self.step == 4 {
-            // if self.enable_irq {
-            //self.interrupts.assert_irq();
-            // }
+            if self.enable_irq {
+                //self.interrupts.assert_irq();
+            }
             self.step = 0;
         }
     }
@@ -95,85 +154,13 @@ impl Apu {
     fn update_counters(&mut self) {
         self.squares.0.update_counters();
         self.squares.1.update_counters();
-        // self.triangle.updateCounter();
-        // self.noise.updateCounter();
+        self.triangle.update_counter();
+        self.noise.update_counter();
     }
 
     fn update_envelope(&mut self) {
         self.squares.0.update_envelope();
         self.squares.1.update_envelope();
+        self.noise.update_envelope();
     }
 }
-
-/*
-/* @flow */
-
-import type { Byte } from '../types/common';
-import Square from './square';
-import Noise from './noise';
-import Triangle from './triangle';
-import Interrupts from '../interrupts';
-import { DIVIDE_COUNT_FOR_240HZ } from '../constants/apu';
-
-export default class Apu {
-
-  registers: Uint8Array;
-  cycle: number;
-  step: number;
-  envelopesCounter: number;
-  square: Square[];
-  triangle: Triangle;
-  noise: Noise;
-  sequencerMode: number;
-  enableIrq: boolean;
-  interrupts: Interrupts;
-
-  constructor(interrupts: Interrupts) {
-    self.interrupts = interrupts;
-    // APU Registers
-    // (0x4000 〜 0x4017)
-    self.registers = new Uint8Array(0x18);
-    self.cycle = 0;
-    self.step = 0;
-    self.square = [new Square(), new Square()];
-    self.triangle = new Triangle();
-    self.noise = new Noise();
-    self.enableIrq = false;
-  }
-
-
-
-
-
-
-  write(addr: Byte, data: Byte) {
-    /* eslint-disable */
-    // console.log('apu write', addr, data);
-    // TODO: FIx perf
-    if (addr <= 0x03) {
-      // square wave control register
-      self.square[0].write(addr, data);
-    } else if (addr <= 0x07) {
-      // square wave control register
-      self.square[1].write(addr - 0x04, data);
-    } else if (addr <= 0x0B) {
-      // triangle
-      self.triangle.write(addr - 0x08, data);
-    } else if (addr <= 0x0F) {
-      // noise
-      self.noise.write(addr - 0x0C, data);
-    } else if (addr === 0x17) {
-      self.sequencerMode = data & 0x80 ? 1 : 0;
-      self.registers[addr] = data;
-      self.enableIrq = !!(data & 0x40);
-    }
-  }
-
-  close() {
-    self.noise.close();
-    self.square[0].close();
-    self.square[1].close();
-    self.triangle.close();
-  }
-}
-*/

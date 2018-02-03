@@ -20,6 +20,7 @@ export default class Oscillator {
       '0.75': this.context.createPeriodicWave(pulse['0.75'].real, pulse['0.75'].imag),
     };
 
+    this.setVolume(0);
     this.setPulseWidth(0.5);
     this.playing = false;
   }
@@ -34,6 +35,7 @@ export default class Oscillator {
 
   stop() {
     if (this.playing) {
+      this.setVolume(0);
       this.playing = false;
       this.oscillator.stop(this.context.currentTime);
       this.oscillator = this.createOscillator();

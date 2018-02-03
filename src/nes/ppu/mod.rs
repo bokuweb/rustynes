@@ -82,12 +82,12 @@ impl Ppu {
             self.background.clear();
         }
 
-        self.cycle = cycle - CYCLES_PER_LINE;
-        self.line = self.line + 1;
-
-        if self.has_sprite_hit() {
+        if self.has_sprite_hit(cycle) {
             self.registers.set_sprite_hit();
         }
+
+        self.cycle = cycle - CYCLES_PER_LINE;
+        self.line = self.line + 1;
 
         let scroll_x = self.registers.get_scroll_x();
         let scroll_y = self.registers.get_scroll_y();
@@ -114,12 +114,13 @@ impl Ppu {
 
         if self.line == 241 {
             self.registers.set_vblank();
+            self.registers.clear_sprite_hit();
             if self.registers.is_irq_enable() {
                 *nmi = true;
             }
         }
 
-        if self.line == 262 {
+        if self.line >= 262 {
             self.registers.clear_vblank();
             self.registers.clear_sprite_hit();
             *nmi = false;
@@ -148,8 +149,10 @@ impl Ppu {
           ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
     }
 
-    fn has_sprite_hit(&self) -> bool {
+    fn has_sprite_hit(&self, cycle: usize) -> bool {
         let y = self.ctx.sprite_ram.read(0) as usize;
-        y == self.line && self.registers.is_background_enable() && self.registers.is_sprite_enable()
+        let x = self.ctx.sprite_ram.read(3) as usize;
+        // (y == self.line) && self.registers.is_sprite_enable()
+        (y == self.line) && x <= cycle && self.registers.is_sprite_enable()
     }
 }
