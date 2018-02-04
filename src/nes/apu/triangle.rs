@@ -9,6 +9,8 @@ pub struct Triangle {
     linear_counter: usize,
     divider_for_frequency: usize,
     frequency: usize,
+    enable: bool,
+    playing: bool,
 }
 
 extern "C" {
@@ -30,23 +32,39 @@ impl Triangle {
             linear_counter: 0,
             divider_for_frequency: 1,
             frequency: 0,
+            enable: false,
+            playing: false,
         }
     }
 
     fn get_volume(&self) -> f32 {
-        8.0 / (16.0 / GROBAL_GAIN)
+        32.0 / (16.0 / GROBAL_GAIN)
     }
 
     fn stop_oscillator(&mut self) {
-        self.length_counter = 0;
+        // self.length_counter = 0;
+        // self.linear_counter = 0;
         unsafe {
             stop_oscillator(self.index);
             set_oscillator_volume(self.index, 0.0);
         };
     }
 
+    pub fn enable(&mut self) {
+        self.enable = true;
+        self.start();
+    }
+
+    pub fn disable(&mut self) {
+        self.enable = false;
+        self.stop();
+    }
+
     pub fn stop(&mut self) {
-        self.stop_oscillator();
+        if self.playing {
+            self.playing = false;
+            self.stop_oscillator();
+        }
     }
 
     // Length counter
@@ -59,27 +77,35 @@ impl Triangle {
         if self.linear_counter > 0 {
             self.linear_counter -= 1;
         }
-        if (self.is_length_counter_enable && self.length_counter == 0) || self.linear_counter == 0 {
+        if !self.is_length_counter_enable {
+            return;
+        }
+        if self.length_counter == 0 || self.linear_counter == 0 {
             self.stop();
         }
     }
 
-    pub fn start(&self) {
+    fn change_frequency(&self) {
         unsafe {
-            start_oscillator(self.index);
-            set_oscillator_frequency(self.index, self.frequency);
-        };
+            change_oscillator_frequency(self.index, self.frequency);
+        }
+    }
+
+    pub fn start(&mut self) {
+        if !self.playing {
+            self.playing = true;
+            unsafe {
+                start_oscillator(self.index);
+                set_oscillator_frequency(self.index, self.frequency);
+            };
+        } else {
+            self.change_frequency();
+        }
     }
 
     pub fn has_count_end(&self) -> bool {
         self.length_counter == 0
     }
-
-    // fn reset(&mut self) {
-    //     self.length_counter = 0;
-    //     self.is_length_counter_enable = false;
-    //     self.set_volume();
-    // }
 
     fn set_volume(&self) {
         unsafe { set_oscillator_volume(self.index, self.get_volume()) }
@@ -90,26 +116,31 @@ impl Triangle {
             0x00 => {
                 self.is_length_counter_enable = data & 0x80 == 0;
                 self.linear_counter = data as usize & 0x7F;
-                // self.set_volume();
             }
             0x02 => {
                 self.divider_for_frequency &= 0x700;
                 self.divider_for_frequency |= data as usize;
+                self.update_frequency();
+                self.change_frequency();
             }    
             0x03 => {
                 // Programmable timer, length counter
                 self.divider_for_frequency &= 0xFF;
                 self.divider_for_frequency |= (data as usize & 0x7) << 8;
                 if self.is_length_counter_enable {
-                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
+                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize / 2;
                 }
-                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 32)) as usize;
+                self.update_frequency();
                 self.set_volume();
-                if self.linear_counter != 0 {
+                if self.enable {
                     self.start();
                 }
             }                        
             _ => (),
         }
+    }
+
+    fn update_frequency(&mut self) {
+        self.frequency = CPU_CLOCK / ((self.divider_for_frequency + 1) * 32) as usize;
     }
 }

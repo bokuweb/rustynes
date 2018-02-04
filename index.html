@@ -84,10 +84,10 @@
   <script type="module" src="./init.js"></script>
   <script type="module">
     import start from './main.js';
-    document.querySelector('select').addEventListener('change', (e) => {
-      console.log(e);
-      start(`./roms/${e.target.value}.nes`);
-    })
+    document.querySelector('select')
+      .addEventListener('change', (e) => {
+        start(`./roms/${e.target.value}.nes`);
+      })
   </script>
 </body>
 

@@ -28,6 +28,9 @@ mergeInto(LibraryManager.library, {
   set_noise_frequency: function (freq) {
     Module.NES.noise.setFrequency(freq);
   },
+  change_noise_frequency: function (freq) {
+    Module.NES.noise.changeFrequency(freq);
+  },  
   set_noise_volume: function (volume) {
     Module.NES.noise.setVolume(volume);
   },

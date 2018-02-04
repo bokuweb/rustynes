@@ -66,8 +66,12 @@ impl Apu {
                 } else {
                     0x04
                 };
-                // println!("apu read {:x} {:x}", addr, t | s1 | s0);
-                t | s1 | s0
+                let n = if self.noise.has_count_end() {
+                    0x00
+                } else {
+                    0x08
+                };
+                n | t | s1 | s0
             }
             _ => 0,
         }
@@ -75,7 +79,6 @@ impl Apu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        // println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
                 self.squares.0.write(addr, data);
@@ -84,34 +87,32 @@ impl Apu {
                 self.squares.1.write(addr - 0x04, data);
             }   
             0x08...0x0b => {
-                // triangle
                 self.triangle.write(addr - 0x08, data);
             }   
             0x0c...0x0f => {
                 self.noise.write(addr - 0x0c, data);
             }               
             0x15 => {
-                // if data & 0x01 == 0x01 {
-                //     self.squares.0.start();
-                // } else {
-                //     self.squares.0.stop();
-                // }
-                // if data & 0x02 == 0x02 {
-                //     self.squares.1.start();
-                // } else {
-                //     self.squares.0.stop();
-                // }
-                // if data & 0x04 == 0x04 {
-                //     self.triangle.start();
-                // } else {
-                //     self.triangle.stop();
-                // }
-                // if data & 0x08 == 0x08 {
-                //     // self.noise.start();
-                // } else {
-                //     println!("noise stop");
-                //     // self.noise.stop();
-                // }
+                if data & 0x01 == 0x01 {
+                    self.squares.0.enable();
+                } else {
+                    self.squares.0.disable();
+                }
+                if data & 0x02 == 0x02 {
+                    self.squares.1.enable();
+                } else {
+                    self.squares.1.disable();
+                }
+                if data & 0x04 == 0x04 {
+                    self.triangle.enable();
+                } else {
+                    self.triangle.disable();
+                }
+                if data & 0x08 == 0x08 {
+                    self.noise.start();
+                } else {
+                    self.noise.stop();
+                }
             }            
             0x17 => {
                 self.sequencer_mode = data & 0x80 == 0x80;
@@ -121,7 +122,7 @@ impl Apu {
                 self.cycle = 0;
                 // }
             }                     
-            _ => (),
+            _ => (), //println!("addr {} data {}", addr, data),
         }
     }
 
