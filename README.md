@@ -31,7 +31,7 @@ $cargo test
 - [x] PPU
   - [x] 8 * 16 Sprite
 - [ ] APU
-  - [ ] Noise
+  - [x] Noise
   - [ ] DCM
 - [ ] 2P GamePad  
 
