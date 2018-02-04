@@ -103,7 +103,6 @@ impl Noise {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        // println!("noise write {:x} {:x}", addr, data);
         match addr {
             0x00 => {
                 self.envelope_enable = (data & 0x10) == 0;

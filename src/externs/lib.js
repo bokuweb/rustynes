@@ -14,6 +14,7 @@ mergeInto(LibraryManager.library, {
     Module.NES.oscs[index].close();
   },
   set_oscillator_frequency: function (index, freq) {
+    console.log(index, freq)
     Module.NES.oscs[index].setFrequency(freq);
   },
   change_oscillator_frequency: function (index, freq) {

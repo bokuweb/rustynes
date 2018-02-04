@@ -75,7 +75,6 @@ impl Apu {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        // println!("apu write {:x} {:x}", addr, data);
         match addr {
             0x00...0x03 => {
                 self.squares.0.write(addr, data);
@@ -91,27 +90,28 @@ impl Apu {
                 self.noise.write(addr - 0x0c, data);
             }               
             0x15 => {
-                // if data & 0x01 == 0x01 {
-                //     self.squares.0.start();
-                // } else {
-                //     self.squares.0.stop();
-                // }
-                // if data & 0x02 == 0x02 {
-                //     self.squares.1.start();
-                // } else {
-                //     self.squares.0.stop();
-                // }
-                // if data & 0x04 == 0x04 {
-                //     self.triangle.start();
-                // } else {
-                //     self.triangle.stop();
-                // }
-                // if data & 0x08 == 0x08 {
-                //     // self.noise.start();
-                // } else {
-                //     println!("noise stop");
-                //     // self.noise.stop();
-                // }
+                if data & 0x01 == 0x01 {
+                    self.squares.0.enable();
+                } else {
+                    self.squares.0.disable();
+                }
+                if data & 0x02 == 0x02 {
+                    println!("sq enable");
+                    self.squares.1.enable();
+                } else {
+                    println!("sq disable");
+                    self.squares.1.disable();
+                }
+                if data & 0x04 == 0x04 {
+                    self.triangle.enable();
+                } else {
+                    self.triangle.disable();
+                }
+                if data & 0x08 == 0x08 {
+                    // self.noise.start();
+                } else {
+                    // self.noise.stop();
+                }
             }            
             0x17 => {
                 self.sequencer_mode = data & 0x80 == 0x80;

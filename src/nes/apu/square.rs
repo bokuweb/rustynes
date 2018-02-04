@@ -18,6 +18,8 @@ pub struct Square {
     envelope_rate: usize,
     envelope_volume: usize,
     envelope_enable: bool,
+    enable: bool,
+    playing: bool,
 }
 
 extern "C" {
@@ -48,6 +50,8 @@ impl Square {
             envelope_volume: 0,
             envelope_enable: false,
             is_length_counter_enable: false,
+            enable: false,
+            playing: false,
         }
     }
 
@@ -61,15 +65,10 @@ impl Square {
     }
 
     fn stop_oscillator(&mut self) {
-        self.length_counter = 0;
         unsafe {
             stop_oscillator(self.index);
         };
     }
-
-    // pub fn stop(&mut self) {
-    //     self.stop_oscillator();
-    // }
 
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
@@ -78,7 +77,7 @@ impl Square {
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
             if self.length_counter == 0 {
-                self.stop_oscillator();
+                self.stop();
             }
         }
 
@@ -107,11 +106,37 @@ impl Square {
         }
     }
 
-    pub fn start(&self) {
-        unsafe {
-            start_oscillator(self.index);
-            set_oscillator_frequency(self.index, self.frequency);
-        };
+    pub fn enable(&mut self) {
+        self.enable = true;
+        if !self.frequency != 0 {
+            self.start();
+        }
+    }
+
+    pub fn disable(&mut self) {
+        self.enable = false;
+        self.stop();
+    }
+
+    pub fn start(&mut self) {
+        if !self.playing {
+            self.playing = true;
+            unsafe {
+                start_oscillator(self.index);
+                set_oscillator_frequency(self.index, self.frequency);
+            };
+        } else {
+            self.change_frequency();
+        }
+    }
+
+    pub fn stop(&mut self) {
+        if self.playing {
+            self.playing = false;
+            unsafe {
+                stop_oscillator(self.index);
+            };
+        }
     }
 
     pub fn get_pulse_width(&self, duty: usize) -> f32 {
@@ -120,7 +145,7 @@ impl Square {
             0x01 => 0.25,
             0x02 => 0.5,
             0x03 => 0.75,
-            _ => 0f32,
+            _ => 0.0,
         }
     }
 
@@ -147,13 +172,19 @@ impl Square {
         };
     }
 
+    fn change_frequency(&self) {
+        unsafe {
+            change_oscillator_frequency(self.index, self.frequency);
+        }
+    }
+
     fn reset(&mut self) {
         self.length_counter = 0;
         self.is_length_counter_enable = false;
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-
+        println!("sq {} {}", addr, data);
         match addr {
             0x00 => {
                 self.envelope_enable = data & 0x10 == 0;
@@ -175,20 +206,23 @@ impl Square {
             }
             0x02 => {
                 self.divider_for_frequency = (self.divider_for_frequency & 0x700) | data as usize;
+                self.change_frequency();
             }    
             0x03 => {
                 // Programmable timer, length counter
                 self.divider_for_frequency &= 0xFF;
                 self.divider_for_frequency |= (data as usize & 0x7) << 8;
                 if self.is_length_counter_enable {
-                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize;
+                    self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize / 2;
                 }
-                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 16)) as usize;
+                self.frequency = CPU_CLOCK / ((self.divider_for_frequency + 1) * 16) as usize;
                 self.sweep_unit_counter = 0;
                 // envelope
                 self.envelope_generator_counter = self.envelope_rate;
                 self.envelope_volume = 0x0F;
-                self.start();
+                if self.enable && !self.frequency != 0 {
+                    self.start();
+                }
             }                        
             _ => (),
         }
