@@ -38,12 +38,12 @@ impl Triangle {
     }
 
     fn get_volume(&self) -> f32 {
-        16.0 / (16.0 / GROBAL_GAIN)
+        32.0 / (16.0 / GROBAL_GAIN)
     }
 
     fn stop_oscillator(&mut self) {
-        self.length_counter = 0;
-        self.linear_counter = 0;
+        // self.length_counter = 0;
+        // self.linear_counter = 0;
         unsafe {
             stop_oscillator(self.index);
             set_oscillator_volume(self.index, 0.0);
@@ -51,13 +51,11 @@ impl Triangle {
     }
 
     pub fn enable(&mut self) {
-        println!("enable");
         self.enable = true;
         self.start();
     }
 
     pub fn disable(&mut self) {
-        println!("disable");
         self.enable = false;
         self.stop();
     }
@@ -87,6 +85,12 @@ impl Triangle {
         }
     }
 
+    fn change_frequency(&self) {
+        unsafe {
+            change_oscillator_frequency(self.index, self.frequency);
+        }
+    }
+
     pub fn start(&mut self) {
         if !self.playing {
             self.playing = true;
@@ -95,9 +99,7 @@ impl Triangle {
                 set_oscillator_frequency(self.index, self.frequency);
             };
         } else {
-            unsafe {
-                change_oscillator_frequency(self.index, self.frequency);
-            }
+            self.change_frequency();
         }
     }
 
@@ -118,6 +120,8 @@ impl Triangle {
             0x02 => {
                 self.divider_for_frequency &= 0x700;
                 self.divider_for_frequency |= data as usize;
+                self.update_frequency();
+                self.change_frequency();
             }    
             0x03 => {
                 // Programmable timer, length counter
@@ -126,7 +130,7 @@ impl Triangle {
                 if self.is_length_counter_enable {
                     self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize / 2;
                 }
-                self.frequency = (CPU_CLOCK / ((self.divider_for_frequency + 1) * 32)) as usize;
+                self.update_frequency();
                 self.set_volume();
                 if self.enable {
                     self.start();
@@ -134,5 +138,9 @@ impl Triangle {
             }                        
             _ => (),
         }
+    }
+
+    fn update_frequency(&mut self) {
+        self.frequency = CPU_CLOCK / ((self.divider_for_frequency + 1) * 32) as usize;
     }
 }

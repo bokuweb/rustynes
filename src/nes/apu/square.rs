@@ -81,28 +81,35 @@ impl Square {
             }
         }
 
+        if !self.is_sweep_enabled || !self.playing {
+            return;
+        };
+
         self.sweep_unit_counter += 1;
         if self.sweep_unit_counter % self.sweep_unit_divider == 0 {
+            self.sweep_unit_counter = 0;
             // INFO:
-            // sweep mode 0 : newFreq = currentFreq - (currentFreq >> N)
-            // sweep mode 1 : newFreq = currentFreq + (currentFreq >> N)
-            if self.is_sweep_enabled {
-                if self.sweep_mode {
-                    self.frequency = self.frequency + (self.frequency >> self.sweep_shift_amount);
-                } else {
-                    self.frequency = self.frequency - (self.frequency >> self.sweep_shift_amount);
-                };
-                if self.frequency > 4095 {
-                    self.frequency = 4095;
-                    self.stop_oscillator();
-                } else if self.frequency < 16 {
-                    self.frequency = 16;
-                    self.stop_oscillator();
-                }
-                unsafe {
-                    change_oscillator_frequency(self.index, self.frequency);
-                }
+            // sweep mode 0 : newPeriod = currentPeriod - (currentPeriod >> N)
+            // sweep mode 1 : newPeriod = currentPeriod + (currentPeriod >> N)
+            if self.sweep_mode {
+                self.divider_for_frequency = self.divider_for_frequency -
+                                             (self.divider_for_frequency >>
+                                              self.sweep_shift_amount);
+            } else {
+                self.divider_for_frequency = self.divider_for_frequency +
+                                             (self.divider_for_frequency >>
+                                              self.sweep_shift_amount);
+
+            };
+            if self.divider_for_frequency > 4095 {
+                self.divider_for_frequency = 4095;
+                self.stop();
+            } else if self.divider_for_frequency < 16 {
+                self.divider_for_frequency = 16;
+                self.stop();
             }
+            self.update_frequency();
+            self.change_frequency();
         }
     }
 
@@ -184,7 +191,6 @@ impl Square {
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
-        println!("sq {} {}", addr, data);
         match addr {
             0x00 => {
                 self.envelope_enable = data & 0x10 == 0;
@@ -206,6 +212,7 @@ impl Square {
             }
             0x02 => {
                 self.divider_for_frequency = (self.divider_for_frequency & 0x700) | data as usize;
+                self.update_frequency();
                 self.change_frequency();
             }    
             0x03 => {
@@ -215,16 +222,20 @@ impl Square {
                 if self.is_length_counter_enable {
                     self.length_counter = COUNTER_TABLE[(data & 0xF8) as usize >> 3] as usize / 2;
                 }
-                self.frequency = CPU_CLOCK / ((self.divider_for_frequency + 1) * 16) as usize;
+                self.update_frequency();
                 self.sweep_unit_counter = 0;
                 // envelope
                 self.envelope_generator_counter = self.envelope_rate;
                 self.envelope_volume = 0x0F;
-                if self.enable && !self.frequency != 0 {
+                if self.enable {
                     self.start();
                 }
             }                        
             _ => (),
         }
+    }
+
+    fn update_frequency(&mut self) {
+        self.frequency = CPU_CLOCK / ((self.divider_for_frequency + 1) * 16) as usize;
     }
 }

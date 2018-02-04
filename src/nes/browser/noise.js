@@ -39,6 +39,10 @@ export default class Noise {
     this.bandpass.frequency.value = frequency > 22050 ? 22050 : frequency;
   }
 
+  changeFrequency(frequency) {
+    this.bandpass.frequency.setValueAtTime(frequency, this.context.currentTime)
+  }  
+
   start() {
     if (!this.playing) {
       this.playing = true;

@@ -12,6 +12,7 @@ pub struct Noise {
 
     divider_for_frequency: usize,
     frequency: usize,
+    enable: bool,
 }
 
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
     fn set_noise_volume(volume: f32);
     fn stop_noise();
     fn start_noise();
-    // fn close_noise();
+// fn close_noise();
 }
 
 impl Noise {
@@ -34,8 +35,20 @@ impl Noise {
             length_counter: 0,
             divider_for_frequency: 1,
             frequency: 0,
+            enable: false,
         }
     }
+
+    pub fn enable(&mut self) {
+        self.enable = true;
+        self.start();
+    }
+
+    pub fn disable(&mut self) {
+        self.enable = false;
+        self.stop();
+    }
+
 
     fn get_volume(&self) -> f32 {
         let vol = if self.envelope_enable {
@@ -74,21 +87,16 @@ impl Noise {
     pub fn update_counter(&mut self) {
         if self.is_length_counter_enable && self.length_counter > 0 {
             self.length_counter -= 1;
+            if self.length_counter == 0 {
+                self.stop();
+            }
         }
-        if self.is_length_counter_enable && self.length_counter == 0 {
-            self.stop();
-        }
+
     }
 
-    // pub fn has_count_end(&self) -> bool {
-    //     self.length_counter == 0
-    // }
-
-    // fn reset(&mut self) {
-    //     self.length_counter = 0;
-    //     self.is_length_counter_enable = false;
-    //     self.set_volume();
-    // }
+    pub fn has_count_end(&self) -> bool {
+        self.length_counter == 0
+    }
 
     fn set_volume(&self) {
         unsafe { set_noise_volume(self.get_volume()) }
@@ -120,8 +128,10 @@ impl Noise {
                 }
                 self.envelope_generator_counter = self.envelope_rate;
                 self.envelope_volume = 0x0F;
-                self.set_volume();
-                self.start();
+                if self.enable {
+                    self.set_volume();
+                    self.start();
+                }
             }                        
             _ => (),
         }

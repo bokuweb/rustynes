@@ -1,7 +1,7 @@
 import Oscillator from './src/nes/browser/oscillator.js';
 import Noise from './src/nes/browser/noise.js';
 
-const start = async (rom = './roms/mario.nes') => {
+const start = async (rom = './roms/falling.nes') => {
   const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
