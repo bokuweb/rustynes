@@ -1,6 +1,6 @@
 # Rustynes
 
-[![CircleCI](https://circleci.com/gh/bokuweb/rustnes.svg?style=svg)](https://circleci.com/gh/bokuweb/rustnes)
+[![CircleCI](https://circleci.com/gh/bokuweb/rustynes.svg?style=svg)](https://circleci.com/gh/bokuweb/rustynes)
 
 Work in progress
 
