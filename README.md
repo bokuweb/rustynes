@@ -8,6 +8,10 @@ Work in progress
 
 <img src="https://github.com/bokuweb/flownes/blob/master/docs/screenshot.png?raw=true" />
 
+## Demo
+
+https://bokuweb.github.io/rustynes/
+
 ## Development
 
 ```
