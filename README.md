@@ -12,6 +12,11 @@ Work in progress
 
 https://bokuweb.github.io/rustynes/
 
+## requirements
+
+- emscripten
+- rust
+
 ## Development
 
 ```
