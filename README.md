@@ -35,7 +35,11 @@ $cargo test
 ## TODO
 
 - [ ] Mappers
-  - [ ] Mapper3
+  - [x] Mapper0
+  - [ ] Mapper1
+  - [ ] Mapper2
+  - [x] Mapper3
+  - [ ] Mapper4
   - [ ] Othres
 - [x] PPU
   - [x] 8 * 16 Sprite
