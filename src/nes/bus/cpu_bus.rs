@@ -7,7 +7,7 @@ use nes::apu::Apu;
 
 pub struct Bus<'a> {
     program_rom: &'a Box<Rom>,
-    work_ram: &'a Box<Ram>,
+    work_ram: &'a mut Box<Ram>,
     ppu: &'a mut Ppu,
     apu: &'a mut Apu,
     keypad: &'a mut Keypad,
@@ -24,7 +24,7 @@ pub trait CpuBus {
 
 impl<'a> Bus<'a> {
     pub fn new(program_rom: &'a Box<Rom>,
-               work_ram: &'a Box<Ram>,
+               work_ram: &'a mut Box<Ram>,
                ppu: &'a mut Ppu,
                apu: &'a mut Apu,
                keypad: &'a mut Keypad,

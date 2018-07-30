@@ -41,7 +41,7 @@ pub struct Context {
 
 pub fn reset(ctx: &mut Context) {
     let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
-                                        &ctx.work_ram,
+                                        &mut ctx.work_ram,
                                         &mut ctx.ppu,
                                         &mut ctx.apu,
                                         &mut ctx.keypad,
@@ -58,7 +58,7 @@ pub fn run(ctx: &mut Context, key_state: u8) {
             cycle = 514;
         } else {
             let mut cpu_bus = cpu_bus::Bus::new(&ctx.program_rom,
-                                                &ctx.work_ram,
+                                                &mut ctx.work_ram,
                                                 &mut ctx.ppu,
                                                 &mut ctx.apu,
                                                 &mut ctx.keypad,

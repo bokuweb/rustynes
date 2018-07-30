@@ -39,8 +39,8 @@ impl PpuData {
     }
 
     pub fn write<P: PaletteRam>(&mut self,
-                                vram: &Ram,
-                                cram: &Ram,
+                                vram: &mut Ram,
+                                cram: &mut Ram,
                                 addr: Addr,
                                 data: Data,
                                 palette: &mut P) {
@@ -49,7 +49,6 @@ impl PpuData {
                 palette.write(addr - 0x3f00, data);
             } else {
                 let addr = self.calc_addr(addr);
-                // println!("vram write {:X}", addr);
                 vram.write(addr, data);
             }
         } else {

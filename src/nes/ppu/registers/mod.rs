@@ -141,8 +141,8 @@ impl Registers {
 
     fn write_ppu_data<P: PaletteRam>(&mut self,
                                      data: Data,
-                                     vram: &Ram,
-                                     cram: &Ram,
+                                     vram: &mut Ram,
+                                     cram: &mut Ram,
                                      palette: &mut P) {
         let addr = self.ppu_addr.get();
         self.ppu_data.write(vram, cram, addr, data, palette);
@@ -286,7 +286,7 @@ impl PpuRegisters for Registers {
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
             0x0005 => self.ppu_scroll.write(data),
             0x0006 => self.write_ppu_addr(data),
-            0x0007 => self.write_ppu_data(data, &ctx.vram, &ctx.cram, &mut ctx.palette),
+            0x0007 => self.write_ppu_data(data, &mut ctx.vram, &mut ctx.cram, &mut ctx.palette),
             _ => (),
         }
     }
