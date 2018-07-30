@@ -1,14 +1,13 @@
+mod constants;
+mod noise;
 mod square;
 mod triangle;
-mod noise;
-mod constants;
 
-use nes::types::{Data, Addr};
+use self::constants::*;
+use self::noise::Noise;
 use self::square::Square;
 use self::triangle::Triangle;
-use self::noise::Noise;
-use self::constants::*;
-
+use nes::types::{Addr, Data};
 
 #[derive(Debug)]
 pub struct Apu {
@@ -75,7 +74,6 @@ impl Apu {
             }
             _ => 0,
         }
-
     }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
@@ -85,13 +83,13 @@ impl Apu {
             }
             0x04...0x07 => {
                 self.squares.1.write(addr - 0x04, data);
-            }   
+            }
             0x08...0x0b => {
                 self.triangle.write(addr - 0x08, data);
-            }   
+            }
             0x0c...0x0f => {
                 self.noise.write(addr - 0x0c, data);
-            }               
+            }
             0x15 => {
                 if data & 0x01 == 0x01 {
                     self.squares.0.enable();
@@ -113,7 +111,7 @@ impl Apu {
                 } else {
                     self.noise.stop();
                 }
-            }            
+            }
             0x17 => {
                 self.sequencer_mode = data & 0x80 == 0x80;
                 self.enable_irq = data & 0x40 == 0x40;
@@ -121,7 +119,7 @@ impl Apu {
                 self.step = 0;
                 self.cycle = 0;
                 // }
-            }                     
+            }
             _ => (), //println!("addr {} data {}", addr, data),
         }
     }

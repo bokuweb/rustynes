@@ -17,9 +17,9 @@ pub fn run(len: usize, ptr: *mut u8) {
     externs::cancel_main_loop();
     let main_loop = || {
         let key_state = buf[len - 1];
-        externs::eval("console.time('nes.run')");
+        // externs::eval("console.time('nes.run')");
         nes::run(&mut ctx, key_state);
-        externs::eval("console.timeEnd('nes.run')");
+        // externs::eval("console.timeEnd('nes.run')");
     };
     externs::set_main_loop_callback(main_loop);
 }

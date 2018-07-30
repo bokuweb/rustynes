@@ -1,4 +1,4 @@
-use super::super::super::types::{Data, Addr};
+use super::super::super::types::{Addr, Data};
 
 #[derive(Debug)]
 pub struct PpuAddr {
@@ -24,9 +24,13 @@ impl PpuAddr {
         self.addr
     }
 
+    pub fn reser_latch(&mut self) {
+        self.is_lower_addr = false;
+    }
+
     pub fn update(&mut self, offset: Addr) {
         self.addr += offset;
-    }    
+    }
 
     pub fn write(&mut self, data: Data) {
         // println!("[PPUADDR] write = {:x}", data);
@@ -39,7 +43,6 @@ impl PpuAddr {
         }
     }
 }
-
 
 #[test]
 fn set_addr() {

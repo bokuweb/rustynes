@@ -43,6 +43,7 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
+        println!("cram length {}", character_ram.len());
         Ppu {
             cycle: 0,
             line: 0,
