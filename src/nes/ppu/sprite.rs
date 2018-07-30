@@ -1,5 +1,6 @@
 use self::super::sprite_utils::*;
 use self::super::Ram;
+use self::super::Mmc;
 use self::super::palette::*;
 
 const SPRITES_NUMBER: u16 = 0x100;
@@ -19,7 +20,8 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
                                     sprite_ram: &Ram,
                                     palette: &P,
                                     offset: u16,
-                                    is_8x8: bool) {
+                                    is_8x8: bool,
+                                    mmc: &Mmc) {
     for i in 0..(SPRITES_NUMBER / 4) {
         // INFO: Offset sprite Y position, because First and last 8line is not rendered.
         let base = i * 4;
@@ -39,7 +41,7 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
                 (offset, sprite_id)
             };
             let x = sprite_ram.read(base + 3);
-            let sprite = build(&cram, sprite_id as u8, offset);
+            let sprite = build(&cram, sprite_id as u8, offset, &mmc);
             let position: SpritePosition = (x, y - 8);
             let palette_id = attr & 0x03;
             buf.push(SpriteWithCtx {
@@ -49,7 +51,7 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
                          palette: palette.get(palette_id, PaletteType::Sprite),
                      });
             if !is_8x8 {
-                let sprite = build(&cram, sprite_id + 1 as u8, offset);
+                let sprite = build(&cram, sprite_id + 1 as u8, offset, &mmc);
                 let position: SpritePosition = (x, y);
                 let palette_id = attr & 0x03;
                 buf.push(SpriteWithCtx {

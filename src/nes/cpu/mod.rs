@@ -1,14 +1,14 @@
-mod opecode;
 mod fetch;
 mod instructions;
+mod opecode;
 
-use std::fmt::Debug;
-use self::opecode::*;
 use self::fetch::*;
 use self::instructions::*;
+use self::opecode::*;
+use std::fmt::Debug;
 
-use super::cpu_registers::CpuRegisters;
 use super::bus::cpu_bus::CpuBus;
+use super::cpu_registers::CpuRegisters;
 use super::types::Data;
 
 pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
@@ -16,16 +16,16 @@ pub fn reset<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     registers.set_PC(pc);
 }
 
-pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T,
-                                               bus: &mut U,
-                                               nmi: &mut bool)
-                                               -> Data {
+pub fn run<T: CpuRegisters + Debug, U: CpuBus>(
+    registers: &mut T,
+    bus: &mut U,
+    nmi: &mut bool,
+) -> Data {
     if *nmi {
         process_nmi(registers, bus);
         *nmi = false;
     }
     let _code = fetch(registers, bus);
-    // println!("registers = {:?}", &registers);
     let ref map = opecode::MAP;
     let code = &*map.get(&_code).unwrap();
     let opeland = fetch_opeland(&code, registers, bus);
@@ -53,28 +53,28 @@ pub fn run<T: CpuRegisters + Debug, U: CpuBus>(registers: &mut T,
         Instruction::ADC if code.mode == Addressing::Immediate => adc_imm(opeland, registers),
         Instruction::ADC => adc(opeland, registers, bus),
         Instruction::SBC if code.mode == Addressing::Immediate => sbc_imm(opeland, registers),
-        Instruction::SBC => sbc(opeland, registers, bus),       
+        Instruction::SBC => sbc(opeland, registers, bus),
         Instruction::CPX if code.mode == Addressing::Immediate => cpx_imm(opeland, registers),
-        Instruction::CPX => cpx(opeland, registers, bus),    
+        Instruction::CPX => cpx(opeland, registers, bus),
         Instruction::CPY if code.mode == Addressing::Immediate => cpy_imm(opeland, registers),
-        Instruction::CPY => cpy(opeland, registers, bus),                    
+        Instruction::CPY => cpy(opeland, registers, bus),
         Instruction::CMP if code.mode == Addressing::Immediate => cmp_imm(opeland, registers),
-        Instruction::CMP => cmp(opeland, registers, bus),      
+        Instruction::CMP => cmp(opeland, registers, bus),
         Instruction::AND if code.mode == Addressing::Immediate => and_imm(opeland, registers),
-        Instruction::AND => and(opeland, registers, bus),  
+        Instruction::AND => and(opeland, registers, bus),
         Instruction::EOR if code.mode == Addressing::Immediate => eor_imm(opeland, registers),
-        Instruction::EOR => eor(opeland, registers, bus),  
+        Instruction::EOR => eor(opeland, registers, bus),
         Instruction::ORA if code.mode == Addressing::Immediate => ora_imm(opeland, registers),
-        Instruction::ORA => ora(opeland, registers, bus),  
+        Instruction::ORA => ora(opeland, registers, bus),
         Instruction::BIT => bit(opeland, registers, bus),
         Instruction::ASL if code.mode == Addressing::Accumulator => asl_acc(registers),
-        Instruction::ASL => asl(opeland, registers, bus),          
+        Instruction::ASL => asl(opeland, registers, bus),
         Instruction::LSR if code.mode == Addressing::Accumulator => lsr_acc(registers),
-        Instruction::LSR => lsr(opeland, registers, bus),  
+        Instruction::LSR => lsr(opeland, registers, bus),
         Instruction::ROL if code.mode == Addressing::Accumulator => rol_acc(registers),
-        Instruction::ROL => rol(opeland, registers, bus),  
+        Instruction::ROL => rol(opeland, registers, bus),
         Instruction::ROR if code.mode == Addressing::Accumulator => ror_acc(registers),
-        Instruction::ROR => ror(opeland, registers, bus),  
+        Instruction::ROR => ror(opeland, registers, bus),
         Instruction::INX => inx(registers),
         Instruction::INY => iny(registers),
         Instruction::INC => inc(opeland, registers, bus),

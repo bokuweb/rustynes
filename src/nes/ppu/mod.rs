@@ -1,19 +1,19 @@
-
 pub mod background;
-pub mod tile;
-mod sprite_utils;
-mod sprite;
-mod registers;
 mod palette;
+mod registers;
+mod sprite;
+mod sprite_utils;
+pub mod tile;
 
+use self::super::mmc::Mmc;
 use self::super::ram::Ram;
-use self::registers::*;
-use super::types::{Data, Addr};
 pub use self::background::*;
-pub use self::tile::*;
 pub use self::palette::*;
+use self::registers::*;
 pub use self::sprite::*;
 pub use self::sprite_utils::*;
+pub use self::tile::*;
+use super::types::{Addr, Data};
 
 #[derive(Debug)]
 pub struct PpuConfig {
@@ -43,6 +43,7 @@ pub struct Ppu {
 
 impl Ppu {
     pub fn new(character_ram: Vec<u8>, config: PpuConfig) -> Ppu {
+        println!("cram length 0x{:x}", character_ram.len());
         Ppu {
             cycle: 0,
             line: 0,
@@ -71,7 +72,7 @@ impl Ppu {
     // While drawing the BG and sprite at the first 256 clocks,
     // it searches for sprites to be drawn on the next scan line.
     // Get the pattern of the sprite searched with the remaining clock.
-    pub fn run(&mut self, cycle: usize, nmi: &mut bool) -> bool {
+    pub fn run(&mut self, cycle: usize, nmi: &mut bool, mmc: &Mmc) -> bool {
         let cycle = self.cycle + cycle;
         if cycle < CYCLES_PER_LINE {
             self.cycle = cycle;
@@ -99,17 +100,19 @@ impl Ppu {
                 is_horizontal_mirror: self.config.is_horizontal_mirror,
                 is_background_enable: self.registers.is_background_enable(),
             };
-            let tile_x = ((scroll_x as usize +
-                           (self.registers.get_name_table_id() % 2) as usize * 256) /
-                          8) as u8;
+            let tile_x = ((scroll_x as usize
+                + (self.registers.get_name_table_id() % 2) as usize * 256)
+                / 8) as u8;
             let tile_y = self.get_scroll_tile_y();
-            self.background
-                .build_line(&self.ctx.vram,
-                            &self.ctx.cram,
-                            &self.ctx.palette,
-                            (tile_x, tile_y),
-                            (scroll_x, scroll_y),
-                            &mut config);
+            self.background.build_line(
+                &self.ctx.vram,
+                &self.ctx.cram,
+                &self.ctx.palette,
+                (tile_x, tile_y),
+                (scroll_x, scroll_y),
+                &mut config,
+                &mmc,
+            );
         }
 
         if self.line == 241 {
@@ -127,12 +130,15 @@ impl Ppu {
             self.line = 0;
 
             self.sprites = Vec::new();
-            build_sprites(&mut self.sprites,
-                          &self.ctx.cram,
-                          &self.ctx.sprite_ram,
-                          &self.ctx.palette,
-                          self.registers.get_sprite_table_offset(),
-                          self.registers.is_sprite_8x8());
+            build_sprites(
+                &mut self.sprites,
+                &self.ctx.cram,
+                &self.ctx.sprite_ram,
+                &self.ctx.palette,
+                self.registers.get_sprite_table_offset(),
+                self.registers.is_sprite_8x8(),
+                &mmc,
+            );
 
             return true;
         }
@@ -145,8 +151,10 @@ impl Ppu {
     }
 
     fn get_scroll_tile_y(&self) -> Data {
-        ((self.registers.get_scroll_y() as usize + self.line +
-          ((self.registers.get_name_table_id() / 2) as usize * 240)) / 8) as Data
+        ((self.registers.get_scroll_y() as usize
+            + self.line
+            + ((self.registers.get_name_table_id() / 2) as usize * 240))
+            / 8) as Data
     }
 
     fn has_sprite_hit(&self, cycle: usize) -> bool {

@@ -1,5 +1,6 @@
 use super::super::types::Addr;
 use super::super::Ram;
+use super::super::Mmc;
 
 pub type Sprite = Vec<Vec<u8>>;
 
@@ -42,12 +43,12 @@ pub fn get_attribute(vram: &Ram, position: &SpritePosition, config: &SpriteConfi
     vram.read(mirror_down_sprite_addr(addr, config.is_horizontal_mirror))
 }
 
-pub fn build(cram: &Ram, sprite_id: u8, offset: u16) -> Sprite {
+pub fn build(cram: &Ram, sprite_id: u8, offset: u16, mmc: &Mmc) -> Sprite {
     let mut sprite: Sprite = (0..8).into_iter().map(|_| vec![0; 8]).collect();
     for i in 0..16 {
         for j in 0..8 {
             let addr = (sprite_id as u16) * 16 + i + offset;
-            let ram = cram.read(addr);
+            let ram = cram.read(mmc.create_chram_addr(addr));
             if ram & (0x80 >> j) as u8 != 0 {
                 sprite[(i % 8) as usize][j] += (0x01 << (i / 8)) as u8;
             }

@@ -1,19 +1,17 @@
-
+mod oam;
 mod ppu_addr;
 mod ppu_data;
 mod ppu_scroll;
-mod oam;
 
-use super::super::types::{Data, Addr};
+use super::super::types::{Addr, Data};
 use super::super::Ram;
-use super::PpuCtx;
 use super::palette::*;
+use super::PpuCtx;
 // use super::super::helper::*;
 use self::oam::Oam;
 use self::ppu_addr::PpuAddr;
 use self::ppu_data::PpuData;
 use self::ppu_scroll::PpuScroll;
-
 
 #[derive(Debug)]
 pub struct Registers {
@@ -48,7 +46,6 @@ pub struct Registers {
   | 0x3F10-0x3F1F  |  sprite Palette            |
   | 0x3F20-0x3FFF  |  mirror of 0x3F00-0x3F1F   |
   */
-
 
 pub trait PpuRegisters {
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data;
@@ -85,7 +82,7 @@ pub trait PpuRegisters {
 
     fn is_background_masked(&self) -> bool;
 
-    fn is_sprite_masked(&self) -> bool;    
+    fn is_sprite_masked(&self) -> bool;
 }
 
 impl Registers {
@@ -116,6 +113,7 @@ impl Registers {
         self.ppu_scroll.enable_x();
         self.clear_vblank();
         self.clear_sprite_hit();
+        self.ppu_addr.reser_latch();
         data
     }
 
@@ -139,11 +137,13 @@ impl Registers {
         data
     }
 
-    fn write_ppu_data<P: PaletteRam>(&mut self,
-                                     data: Data,
-                                     vram: &Ram,
-                                     cram: &Ram,
-                                     palette: &mut P) {
+    fn write_ppu_data<P: PaletteRam>(
+        &mut self,
+        data: Data,
+        vram: &mut Ram,
+        cram: &mut Ram,
+        palette: &mut P,
+    ) {
         let addr = self.ppu_addr.get();
         self.ppu_data.write(vram, cram, addr, data, palette);
         let v = self.get_ppu_addr_increment_value() as u16;
@@ -162,7 +162,7 @@ impl PpuRegisters for Registers {
 
     fn is_sprite_8x8(&self) -> bool {
         self.ppu_ctrl1 & 0x20 != 0x20
-    }        
+    }
 
     fn clear_sprite_hit(&mut self) {
         self.ppu_status &= 0xbF;
@@ -173,7 +173,11 @@ impl PpuRegisters for Registers {
     }
 
     fn get_ppu_addr_increment_value(&self) -> usize {
-        if self.ppu_ctrl1 & 0x04 == 0x04 { 32 } else { 1 }
+        if self.ppu_ctrl1 & 0x04 == 0x04 {
+            32
+        } else {
+            1
+        }
     }
 
     fn is_irq_enable(&self) -> bool {
@@ -199,7 +203,6 @@ impl PpuRegisters for Registers {
     fn get_name_table_id(&self) -> Data {
         self.ppu_ctrl1 & 0x03
     }
-
 
     fn get_scroll_x(&self) -> Data {
         self.ppu_scroll.get_x()
@@ -227,13 +230,7 @@ impl PpuRegisters for Registers {
 
     fn read<P: PaletteRam>(&mut self, addr: Addr, ctx: &mut PpuCtx<P>) -> Data {
         match addr {
-            0x0002 => {
-                &self.ppu_scroll.enable_x();
-                let data = self.ppu_status;
-                &self.clear_vblank();
-                data
-
-            }
+            0x0002 => self.read_status(),
             0x0004 => self.oam.read_data(&ctx.sprite_ram),
             0x0007 => self.read_ppu_data(&ctx.vram, &ctx.cram, &ctx.palette),
             _ => 0,
@@ -286,7 +283,7 @@ impl PpuRegisters for Registers {
             0x0004 => self.write_oam_data(data, &mut ctx.sprite_ram),
             0x0005 => self.ppu_scroll.write(data),
             0x0006 => self.write_ppu_addr(data),
-            0x0007 => self.write_ppu_data(data, &ctx.vram, &ctx.cram, &mut ctx.palette),
+            0x0007 => self.write_ppu_data(data, &mut ctx.vram, &mut ctx.cram, &mut ctx.palette),
             _ => (),
         }
     }
