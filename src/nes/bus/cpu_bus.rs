@@ -1,10 +1,10 @@
 use nes::apu::Apu;
 use nes::dma::Dma;
 use nes::keypad::Keypad;
+use nes::mmc::*;
 use nes::ppu::Ppu;
 use nes::ram::Ram;
 use nes::rom::Rom;
-use nes::NesConfig;
 
 pub struct Bus<'a> {
     program_rom: &'a Box<Rom>,
@@ -13,8 +13,7 @@ pub struct Bus<'a> {
     apu: &'a mut Apu,
     keypad: &'a mut Keypad,
     dma: &'a mut Dma,
-    config: &'a NesConfig,
-    bank: u8,
+    mmc: &'a mut Mmc,
 }
 
 pub trait CpuBus {
@@ -23,8 +22,6 @@ pub trait CpuBus {
     fn read(&mut self, addr: u16) -> u8;
 
     fn write(&mut self, addr: u16, data: u8);
-
-    fn get_bank(&self) -> u8;
 }
 
 impl<'a> Bus<'a> {
@@ -35,8 +32,7 @@ impl<'a> Bus<'a> {
         apu: &'a mut Apu,
         keypad: &'a mut Keypad,
         dma: &'a mut Dma,
-        config: &'a NesConfig,
-        bank: u8,
+        mmc: &'a mut Mmc,
     ) -> Bus<'a> {
         Self {
             program_rom,
@@ -45,8 +41,7 @@ impl<'a> Bus<'a> {
             apu,
             keypad,
             dma,
-            config,
-            bank: 0,
+            mmc,
         }
     }
 }
@@ -98,13 +93,9 @@ impl<'a> CpuBus for Bus<'a> {
             }
             0x8000...0xFFFF => {
                 println!("switch bank to {}", data);
-                self.bank = data;
+                self.mmc.set_bank(data);
             }
             _ => panic!("[WRITE] There is an illegal address (0x{:x}) access.", addr),
         };
-    }
-
-    fn get_bank(&self) -> u8 {
-        self.bank
     }
 }

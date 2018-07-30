@@ -5,6 +5,7 @@ mod cpu_registers;
 mod dma;
 mod helper;
 mod keypad;
+mod mmc;
 mod parser;
 mod ppu;
 mod ram;
@@ -21,15 +22,11 @@ pub use self::renderer::*;
 use self::apu::*;
 use self::bus::cpu_bus;
 use self::dma::*;
+use self::mmc::*;
 use self::ppu::*;
 use self::ram::Ram;
 use self::rom::Rom;
 use nes::types::Data;
-
-#[derive(Debug)]
-pub struct NesConfig {
-    mapper: u8,
-}
 
 #[derive(Debug)]
 pub struct Context {
@@ -41,8 +38,8 @@ pub struct Context {
     dma: Dma,
     apu: Apu,
     nmi: bool,
-    config: NesConfig,
     renderer: Renderer,
+    mmc: Mmc,
 }
 
 pub fn reset(ctx: &mut Context) {
@@ -53,8 +50,7 @@ pub fn reset(ctx: &mut Context) {
         &mut ctx.apu,
         &mut ctx.keypad,
         &mut ctx.dma,
-        &ctx.config,
-        0,
+        &mut ctx.mmc,
     );
     cpu::reset(&mut ctx.cpu_registers, &mut cpu_bus);
 }
@@ -74,13 +70,12 @@ pub fn run(ctx: &mut Context, key_state: u8) {
                 &mut ctx.apu,
                 &mut ctx.keypad,
                 &mut ctx.dma,
-                &ctx.config,
-                0,
+                &mut ctx.mmc,
             );
             cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
         }
         ctx.apu.run(cycle);
-        let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi);
+        let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi, &ctx.mmc);
         if is_ready {
             if ctx.ppu.background.0.len() != 0 {
                 ctx.renderer.render(&ctx.ppu.background.0, &ctx.ppu.sprites);
@@ -107,9 +102,7 @@ impl Context {
             dma: Dma::new(),
             apu: Apu::new(),
             nmi: false,
-            config: NesConfig {
-                mapper: cassette.mapper,
-            },
+            mmc: Mmc::new(cassette.mapper, 0),
             renderer: Renderer::new(),
         }
     }
