@@ -16,6 +16,7 @@ https://bokuweb.github.io/rustynes/
 
 - emscripten
 - rust
+- wasm-gc
 
 ## Development
 
