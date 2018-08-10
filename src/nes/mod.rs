@@ -31,8 +31,8 @@ use nes::types::Data;
 #[derive(Debug)]
 pub struct Context {
     ppu: Ppu,
-    program_rom: Box<Rom>,
-    work_ram: Box<Ram>,
+    program_rom: Rom,
+    work_ram: Ram,
     cpu_registers: cpu_registers::Registers,
     keypad: Keypad,
     dma: Dma,
@@ -90,14 +90,14 @@ impl Context {
         let cassette = parser::parse(buf);
         Context {
             cpu_registers: cpu_registers::Registers::new(),
-            program_rom: Box::new(Rom::new(cassette.program_rom)),
+            program_rom: Rom::new(cassette.program_rom),
             ppu: Ppu::new(
                 cassette.character_ram,
                 PpuConfig {
                     is_horizontal_mirror: cassette.is_horizontal_mirror,
                 },
             ),
-            work_ram: Box::new(Ram::new(vec![0; 0x0800])),
+            work_ram: Ram::new(vec![0; 0x0800]),
             keypad: Keypad::new(),
             dma: Dma::new(),
             apu: Apu::new(),
