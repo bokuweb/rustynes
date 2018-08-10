@@ -26,9 +26,7 @@ const start = async (rom = './roms/falling.nes') => {
   const size = nes.byteLength + 1;
   const ptr = Module._malloc(size);
   const buf = new Uint8Array(Module.HEAPU8.buffer, ptr, size);
-  for (let i = 0; i < nes.length - 1; i = i + 1) {
-    buf[i] = nes[i];
-  }
+  buf.set(nes);
 
   const convertKeyCode = (keyCode) => {
     switch (keyCode) {
