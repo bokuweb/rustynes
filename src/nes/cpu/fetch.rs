@@ -9,7 +9,7 @@ pub fn fetch<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) -> Data
     code
 }
 
-pub fn fetch_opeland<T: CpuRegisters, U: CpuBus>(code: &Opecode,
+pub fn fetch_operand<T: CpuRegisters, U: CpuBus>(code: &Opecode,
                                                  registers: &mut T,
                                                  bus: &mut U)
                                                  -> Word {

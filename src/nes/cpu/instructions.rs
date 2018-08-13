@@ -13,61 +13,61 @@ pub fn process_nmi<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     registers.set_PC(next);
 }
 
-pub fn lda<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let computed = bus.read(opeland);
+pub fn lda<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(operand);
     registers
         .set_A(computed)
         .update_negative_by(computed)
         .update_zero_by(computed);
 }
 
-pub fn lda_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn lda_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
     registers
-        .set_A(opeland as Data)
-        .update_negative_by(opeland as Data)
-        .update_zero_by(opeland as Data);
+        .set_A(operand as Data)
+        .update_negative_by(operand as Data)
+        .update_zero_by(operand as Data);
 }
 
-pub fn ldx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let computed = bus.read(opeland);
+pub fn ldx<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(operand);
     registers
         .set_X(computed)
         .update_negative_by(computed)
         .update_zero_by(computed);
 }
 
-pub fn ldx_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn ldx_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
     registers
-        .set_X(opeland as Data)
-        .update_negative_by(opeland as Data)
-        .update_zero_by(opeland as Data);
+        .set_X(operand as Data)
+        .update_negative_by(operand as Data)
+        .update_zero_by(operand as Data);
 }
 
-pub fn ldy<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let computed = bus.read(opeland);
+pub fn ldy<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let computed = bus.read(operand);
     registers
         .set_Y(computed)
         .update_negative_by(computed)
         .update_zero_by(computed);
 }
 
-pub fn ldy_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn ldy_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
     registers
-        .set_Y(opeland as Data)
-        .update_negative_by(opeland as Data)
-        .update_zero_by(opeland as Data);
+        .set_Y(operand as Data)
+        .update_negative_by(operand as Data)
+        .update_zero_by(operand as Data);
 }
 
-pub fn sta<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    bus.write(opeland, registers.get_A());
+pub fn sta<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    bus.write(operand, registers.get_A());
 }
 
-pub fn stx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    bus.write(opeland, registers.get_X());
+pub fn stx<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    bus.write(operand, registers.get_X());
 }
 
-pub fn sty<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    bus.write(opeland, registers.get_Y());
+pub fn sty<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    bus.write(operand, registers.get_Y());
 }
 
 pub fn txa<T: CpuRegisters>(registers: &mut T) {
@@ -139,12 +139,12 @@ pub fn pla<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
         .update_zero_by(v);
 }
 
-pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = (opeland as u16) + registers.get_A() as u16 +
+pub fn adc_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = (operand as u16) + registers.get_A() as u16 +
                    bool_to_u8(registers.get_carry()) as u16;
     let acc = registers.get_A();
     registers
-        .set_overflow(!(((acc ^ (opeland as Data)) & 0x80) != 0) &&
+        .set_overflow(!(((acc ^ (operand as Data)) & 0x80) != 0) &&
                       (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
@@ -152,8 +152,8 @@ pub fn adc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
         .set_A(computed as Data);
 }
 
-pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn adc<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = fetched as u16 + registers.get_A() as u16 +
                    bool_to_u8(registers.get_carry()) as u16;
     let acc = registers.get_A();
@@ -166,12 +166,12 @@ pub fn adc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_A(computed as Data);
 }
 
-pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_A() as i16 - (opeland as i16) -
+pub fn sbc_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_A() as i16 - (operand as i16) -
                    bool_to_u8(!registers.get_carry()) as i16;
     let acc = registers.get_A();
     registers
-        .set_overflow((((acc ^ (opeland as Data)) & 0x80) != 0) &&
+        .set_overflow((((acc ^ (operand as Data)) & 0x80) != 0) &&
                       (((acc ^ computed as Data) & 0x80)) != 0)
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
@@ -179,8 +179,8 @@ pub fn sbc_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
         .set_A(computed as Data);
 }
 
-pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn sbc<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_A() as i16 - fetched as i16 -
                    bool_to_u8(!registers.get_carry()) as i16;
     let acc = registers.get_A();
@@ -193,16 +193,16 @@ pub fn sbc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_A(computed as Data);
 }
 
-pub fn cpx_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_X() as i16 - (opeland as i16);
+pub fn cpx_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_X() as i16 - (operand as i16);
     registers
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn cpx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn cpx<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_X() as i16 - fetched as i16;
     registers
         .update_negative_by(computed as Data)
@@ -210,16 +210,16 @@ pub fn cpx<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn cpy_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_Y() as i16 - (opeland as i16);
+pub fn cpy_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_Y() as i16 - (operand as i16);
     registers
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn cpy<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn cpy<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_Y() as i16 - fetched as i16;
     registers
         .update_negative_by(computed as Data)
@@ -227,16 +227,16 @@ pub fn cpy<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn cmp_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = (registers.get_A() as i16) - (opeland as i16);
+pub fn cmp_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = (registers.get_A() as i16) - (operand as i16);
     registers
         .update_negative_by(computed as Data)
         .update_zero_by(computed as Data)
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn cmp<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn cmp<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = (registers.get_A() as i16) - (fetched as i16);
     registers
         .update_negative_by(computed as Data)
@@ -244,16 +244,16 @@ pub fn cmp<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_carry(computed >= 0 as i16);
 }
 
-pub fn and_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_A() & (opeland as u8);
+pub fn and_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_A() & (operand as u8);
     registers
         .update_negative_by(computed)
         .update_zero_by(computed)
         .set_A(computed);
 }
 
-pub fn and<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn and<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_A() & fetched;
     registers
         .update_negative_by(computed)
@@ -261,16 +261,16 @@ pub fn and<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_A(computed);
 }
 
-pub fn eor_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_A() ^ (opeland as u8);
+pub fn eor_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_A() ^ (operand as u8);
     registers
         .update_negative_by(computed)
         .update_zero_by(computed)
         .set_A(computed);
 }
 
-pub fn eor<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn eor<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_A() ^ fetched;
     registers
         .update_negative_by(computed)
@@ -278,16 +278,16 @@ pub fn eor<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_A(computed);
 }
 
-pub fn ora_imm<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    let computed = registers.get_A() | (opeland as u8);
+pub fn ora_imm<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    let computed = registers.get_A() | (operand as u8);
     registers
         .update_negative_by(computed)
         .update_zero_by(computed)
         .set_A(computed);
 }
 
-pub fn ora<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn ora<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let computed = registers.get_A() | fetched;
     registers
         .update_negative_by(computed)
@@ -295,8 +295,8 @@ pub fn ora<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &m
         .set_A(computed);
 }
 
-pub fn bit<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn bit<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let acc = registers.get_A();
     registers
         .update_negative_by(fetched)
@@ -314,14 +314,14 @@ pub fn asl_acc<T: CpuRegisters>(registers: &mut T) {
         .set_A(shifted);
 }
 
-pub fn asl<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn asl<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let shifted = (fetched << 1) as u8;
     registers
         .set_carry(fetched & 0x80 == 0x80)
         .update_negative_by(shifted)
         .update_zero_by(shifted);
-    bus.write(opeland, shifted);
+    bus.write(operand, shifted);
 }
 
 pub fn lsr_acc<T: CpuRegisters>(registers: &mut T) {
@@ -334,14 +334,14 @@ pub fn lsr_acc<T: CpuRegisters>(registers: &mut T) {
         .set_A(shifted);
 }
 
-pub fn lsr<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn lsr<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let shifted = (fetched >> 1) as u8;
     registers
         .set_carry(fetched & 0x01 == 0x01)
         .update_negative_by(shifted)
         .update_zero_by(shifted);
-    bus.write(opeland, shifted);
+    bus.write(operand, shifted);
 }
 
 pub fn rol_acc<T: CpuRegisters>(registers: &mut T) {
@@ -354,14 +354,14 @@ pub fn rol_acc<T: CpuRegisters>(registers: &mut T) {
         .set_A(rotated);
 }
 
-pub fn rol<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn rol<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let rotated = rotate_to_left(registers, fetched);
     registers
         .set_carry(fetched & 0x80 == 0x80)
         .update_negative_by(rotated)
         .update_zero_by(rotated);
-    bus.write(opeland, rotated);
+    bus.write(operand, rotated);
 }
 
 pub fn ror_acc<T: CpuRegisters>(registers: &mut T) {
@@ -374,14 +374,14 @@ pub fn ror_acc<T: CpuRegisters>(registers: &mut T) {
         .set_A(rotated);
 }
 
-pub fn ror<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let fetched = bus.read(opeland);
+pub fn ror<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let fetched = bus.read(operand);
     let rotated = rotate_to_right(registers, fetched);
     registers
         .set_carry(fetched & 0x01 == 0x01)
         .update_negative_by(rotated)
         .update_zero_by(rotated);
-    bus.write(opeland, rotated);
+    bus.write(operand, rotated);
 }
 
 pub fn inx<T: CpuRegisters>(registers: &mut T) {
@@ -400,10 +400,10 @@ pub fn iny<T: CpuRegisters>(registers: &mut T) {
         .update_zero_by(y);
 }
 
-pub fn inc<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let data = bus.read(opeland) + 1 as u8;
+pub fn inc<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let data = bus.read(operand) + 1 as u8;
     registers.update_negative_by(data).update_zero_by(data);
-    bus.write(opeland, data);
+    bus.write(operand, data);
 }
 
 pub fn dex<T: CpuRegisters>(registers: &mut T) {
@@ -422,12 +422,12 @@ pub fn dey<T: CpuRegisters>(registers: &mut T) {
         .update_zero_by(y as Data);
 }
 
-pub fn dec<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
-    let data = bus.read(opeland) as i8 - 1;
+pub fn dec<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
+    let data = bus.read(operand) as i8 - 1;
     registers
         .update_negative_by(data as Data)
         .update_zero_by(data as Data);
-    bus.write(opeland, data as Data);
+    bus.write(operand, data as Data);
 }
 
 pub fn clc<T: CpuRegisters>(registers: &mut T) {
@@ -465,15 +465,15 @@ pub fn brk<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     registers.dec_PC();
 }
 
-pub fn jsr<T: CpuRegisters, U: CpuBus>(opeland: Word, registers: &mut T, bus: &mut U) {
+pub fn jsr<T: CpuRegisters, U: CpuBus>(operand: Word, registers: &mut T, bus: &mut U) {
     let pc = registers.get_PC() - 1;
     push((pc >> 8) as u8, registers, bus);
     push(pc as u8, registers, bus);
-    registers.set_PC(opeland);
+    registers.set_PC(operand);
 }
 
-pub fn jmp<T: CpuRegisters>(opeland: Word, registers: &mut T) {
-    registers.set_PC(opeland);
+pub fn jmp<T: CpuRegisters>(operand: Word, registers: &mut T) {
+    registers.set_PC(operand);
 }
 
 pub fn rti<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
@@ -487,51 +487,51 @@ pub fn rts<T: CpuRegisters, U: CpuBus>(registers: &mut T, bus: &mut U) {
     registers.inc_PC();
 }
 
-pub fn bcc<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bcc<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if !registers.get_carry() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bcs<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bcs<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if registers.get_carry() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn beq<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn beq<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if registers.get_zero() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bmi<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bmi<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if registers.get_negative() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bne<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bne<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if !registers.get_zero() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bpl<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bpl<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if !registers.get_negative() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bvs<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bvs<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if registers.get_overflow() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
-pub fn bvc<T: CpuRegisters>(opeland: Word, registers: &mut T) {
+pub fn bvc<T: CpuRegisters>(operand: Word, registers: &mut T) {
     if !registers.get_overflow() {
-        branch(registers, opeland);
+        branch(registers, operand);
     }
 }
 
