@@ -28,6 +28,8 @@ use self::ram::Ram;
 use self::rom::Rom;
 use nes::types::Data;
 
+const DMA_CYCLES: u16 = 514;
+
 #[derive(Debug)]
 pub struct Context {
     ppu: Ppu,
@@ -60,7 +62,7 @@ pub fn run(ctx: &mut Context, key_state: u8) {
     loop {
         let cycle: u16 = if ctx.dma.should_run() {
             ctx.dma.run(&ctx.work_ram, &mut ctx.ppu);
-            514
+            DMA_CYCLES
         } else {
             let mut cpu_bus = cpu_bus::Bus::new(
                 &ctx.program_rom,
