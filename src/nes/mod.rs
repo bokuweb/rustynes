@@ -58,10 +58,9 @@ pub fn reset(ctx: &mut Context) {
 pub fn run(ctx: &mut Context, key_state: u8) {
     ctx.keypad.update(key_state);
     loop {
-        let mut cycle: u16 = 0;
-        if ctx.dma.should_run() {
+        let cycle: u16 = if ctx.dma.should_run() {
             ctx.dma.run(&ctx.work_ram, &mut ctx.ppu);
-            cycle = 514;
+            514
         } else {
             let mut cpu_bus = cpu_bus::Bus::new(
                 &ctx.program_rom,
@@ -72,8 +71,8 @@ pub fn run(ctx: &mut Context, key_state: u8) {
                 &mut ctx.dma,
                 &mut ctx.mmc,
             );
-            cycle += cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16;
-        }
+            cpu::run(&mut ctx.cpu_registers, &mut cpu_bus, &mut ctx.nmi) as u16
+        };
         ctx.apu.run(cycle);
         let is_ready = ctx.ppu.run((cycle * 3) as usize, &mut ctx.nmi, &ctx.mmc);
         if is_ready {

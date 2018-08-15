@@ -619,7 +619,7 @@ mod test {
     }
 
     #[test]
-    fn test_lda_immidiate() {
+    fn test_lda_immediate() {
         let mut reg = Registers::new();
         lda_imm(0xA5, &mut reg);
         assert_eq!(reg.get_A(), 0xA5);
@@ -635,7 +635,7 @@ mod test {
     }
 
     #[test]
-    fn test_ldx_immidiate() {
+    fn test_ldx_immediate() {
         let mut reg = Registers::new();
         ldx_imm(0xA5, &mut reg);
         assert_eq!(reg.get_X(), 0xA5);
@@ -651,7 +651,7 @@ mod test {
     }
 
     #[test]
-    fn test_ldy_immidiate() {
+    fn test_ldy_immediate() {
         let mut reg = Registers::new();
         ldy_imm(0xA5, &mut reg);
         assert_eq!(reg.get_Y(), 0xA5);
