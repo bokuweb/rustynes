@@ -1,7 +1,7 @@
-use self::super::sprite_utils::*;
-use self::super::Ram;
-use self::super::Mmc;
 use self::super::palette::*;
+use self::super::sprite_utils::*;
+use self::super::Mmc;
+use self::super::Ram;
 
 const SPRITES_NUMBER: u16 = 0x100;
 
@@ -15,13 +15,15 @@ pub struct SpriteWithCtx {
     pub palette: PaletteList,
 }
 
-pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
-                                    cram: &Ram,
-                                    sprite_ram: &Ram,
-                                    palette: &P,
-                                    offset: u16,
-                                    is_8x8: bool,
-                                    mmc: &Mmc) {
+pub fn build_sprites<P: PaletteRam>(
+    cram: &Ram,
+    sprite_ram: &Ram,
+    palette: &P,
+    offset: u16,
+    is_8x8: bool,
+    mmc: &Mmc,
+) -> SpritesWithCtx {
+    let mut buf: SpritesWithCtx = vec![];
     for i in 0..(SPRITES_NUMBER / 4) {
         // INFO: Offset sprite Y position, because First and last 8line is not rendered.
         let base = i * 4;
@@ -45,22 +47,23 @@ pub fn build_sprites<P: PaletteRam>(buf: &mut SpritesWithCtx,
             let position: SpritePosition = (x, y - 8);
             let palette_id = attr & 0x03;
             buf.push(SpriteWithCtx {
-                         sprite,
-                         position,
-                         attr,
-                         palette: palette.get(palette_id, PaletteType::Sprite),
-                     });
+                sprite,
+                position,
+                attr,
+                palette: palette.get(palette_id, PaletteType::Sprite),
+            });
             if !is_8x8 {
                 let sprite = build(&cram, sprite_id + 1 as u8, offset, &mmc);
                 let position: SpritePosition = (x, y);
                 let palette_id = attr & 0x03;
                 buf.push(SpriteWithCtx {
-                             sprite,
-                             position,
-                             attr,
-                             palette: palette.get(palette_id, PaletteType::Sprite),
-                         });
+                    sprite,
+                    position,
+                    attr,
+                    palette: palette.get(palette_id, PaletteType::Sprite),
+                });
             }
         }
     }
+    buf
 }

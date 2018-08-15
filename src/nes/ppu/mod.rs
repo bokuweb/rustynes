@@ -128,10 +128,7 @@ impl Ppu {
             self.registers.clear_sprite_hit();
             *nmi = false;
             self.line = 0;
-
-            self.sprites = Vec::new();
-            build_sprites(
-                &mut self.sprites,
+            self.sprites = build_sprites(
                 &self.ctx.cram,
                 &self.ctx.sprite_ram,
                 &self.ctx.palette,
@@ -139,7 +136,6 @@ impl Ppu {
                 self.registers.is_sprite_8x8(),
                 &mmc,
             );
-
             return true;
         }
         false
