@@ -46,7 +46,7 @@ const start = async (rom = './roms/falling.nes') => {
   }
 
   const onKeyup = (e) => {
-    buf[size - 1] &= ~convertKeyCode(event.keyCode);
+    buf[size - 1] &= ~convertKeyCode(e.keyCode);
   }
 
   const setupKeyHandler = () => {
