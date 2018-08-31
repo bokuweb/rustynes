@@ -1,4 +1,4 @@
-import start from './main.js';
+import {start} from './main.js';
 
 const name = "wasm/rustynes";
 window.Module = {

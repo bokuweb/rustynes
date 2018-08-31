@@ -39,7 +39,7 @@
 </head>
 
 <body>
-  <div>
+  <div id="dropzone">
     <div class="nes">
       <canvas></canvas>
     </div>
@@ -83,11 +83,28 @@
   <script type="module" src="./main.js"></script>
   <script type="module" src="./init.js"></script>
   <script type="module">
-    import start from './main.js';
+    import {start, startFile} from './main.js';
     document.querySelector('select')
       .addEventListener('change', (e) => {
         start(`./roms/${e.target.value}.nes`);
       })
+
+    if (window.FileReader) {
+      const dropzone = document.querySelector('#dropzone');
+      dropzone.addEventListener('dragover', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+      }, false);
+      dropzone.addEventListener('drop', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        if (files.length <= 0)
+          return;
+        startFile(files[0]);
+      }, false);
+    }
   </script>
 </body>
 

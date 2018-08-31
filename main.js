@@ -35,7 +35,7 @@ const setupKeyHandler = () => {
 
 setupKeyHandler();
 
-const start = async (rom = './roms/falling.nes') => {
+const startArrayBuf = (arrayBuf) => {
   const run = Module.cwrap('run', null, ['number', 'number']);
   const canvas = document.querySelector("canvas");
   const ctx = canvas.getContext('2d');
@@ -53,8 +53,6 @@ const start = async (rom = './roms/falling.nes') => {
   canvas.width = 256;
   canvas.height = 240;
 
-  const res = await fetch(rom);
-  const arrayBuf = await res.arrayBuffer();
   const nes = new Uint8Array(arrayBuf);
   // Add key code area to tail.
   const size = nes.byteLength + 1;
@@ -66,5 +64,22 @@ const start = async (rom = './roms/falling.nes') => {
   run(size, buf.byteOffset);
 };
 
-export default start;
+export const start = async (rom = './roms/falling.nes') => {
+  const res = await fetch(rom);
+  const arrayBuf = await res.arrayBuffer();
+  startArrayBuf(arrayBuf);
+};
 
+export const startFile = async (file) => {
+  const loadFile = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(reader.error);
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const arrayBuf = await loadFile(file)
+  startArrayBuf(arrayBuf);
+};
