@@ -61,14 +61,14 @@ impl Square {
         } else {
             self.envelope_rate
         };
-        vol as f32 / (16.0 / GROBAL_GAIN)
+        vol as f32 / (GROBAL_GAIN)
     }
 
-    fn stop_oscillator(&mut self) {
-        unsafe {
-            stop_oscillator(self.index);
-        };
-    }
+    // fn stop_oscillator(&mut self) {
+    //     unsafe {
+    //         stop_oscillator(self.index);
+    //     };
+    // }
 
     // Length counter
     // When clocked by the frame counter, the length counter is decremented except when:
@@ -101,11 +101,9 @@ impl Square {
                                               self.sweep_shift_amount);
 
             };
-            if self.divider_for_frequency > 4095 {
-                self.divider_for_frequency = 4095;
+            if self.divider_for_frequency > 0x7FF {
                 self.stop();
-            } else if self.divider_for_frequency < 16 {
-                self.divider_for_frequency = 16;
+            } else if self.divider_for_frequency < 8 {
                 self.stop();
             }
             self.update_frequency();
@@ -185,17 +183,17 @@ impl Square {
         }
     }
 
-    fn reset(&mut self) {
-        self.length_counter = 0;
-        self.is_length_counter_enable = false;
-    }
+    // fn reset(&mut self) {
+    //     self.length_counter = 0;
+    //     self.is_length_counter_enable = false;
+    // }
 
     pub fn write(&mut self, addr: Addr, data: Data) {
         match addr {
             0x00 => {
                 self.envelope_enable = data & 0x10 == 0;
-                self.envelope_rate = data as usize & 0xF + 1;
-                self.envelope_loop_enable = (data & 0x20) != 0;
+                self.envelope_rate = data as usize & 0xF;
+                self.envelope_loop_enable = (data & 0x10) != 0;
                 let duty = (data >> 6) & 0x3;
                 self.is_length_counter_enable = data & 0x20 == 0x00;
                 unsafe {
