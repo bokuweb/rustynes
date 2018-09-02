@@ -28,6 +28,7 @@ impl Tile {
             sprite_id,
             config.offset_addr_by_background_table,
             &mmc,
+            true,
         );
         Tile {
             sprite,

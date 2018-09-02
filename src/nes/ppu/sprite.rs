@@ -43,7 +43,7 @@ pub fn build_sprites<P: PaletteRam>(
                 (offset, sprite_id)
             };
             let x = sprite_ram.read(base + 3);
-            let sprite = build(&cram, sprite_id as u8, offset, &mmc);
+            let sprite = build(&cram, sprite_id as u8, offset, &mmc, is_8x8);
             let position: SpritePosition = (x, y - 8);
             let palette_id = attr & 0x03;
             buf.push(SpriteWithCtx {
@@ -52,17 +52,6 @@ pub fn build_sprites<P: PaletteRam>(
                 attr,
                 palette: palette.get(palette_id, PaletteType::Sprite),
             });
-            if !is_8x8 {
-                let sprite = build(&cram, sprite_id + 1 as u8, offset, &mmc);
-                let position: SpritePosition = (x, y);
-                let palette_id = attr & 0x03;
-                buf.push(SpriteWithCtx {
-                    sprite,
-                    position,
-                    attr,
-                    palette: palette.get(palette_id, PaletteType::Sprite),
-                });
-            }
         }
     }
     buf
