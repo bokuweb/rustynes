@@ -6,6 +6,7 @@ use sdl2::event::{Event};
 use sdl2::keyboard::{Keycode};
 use sdl2::pixels::{Color};
 use sdl2::render::{WindowCanvas};
+use sdl2::rect::{Point};
 
 use std::time::{Duration};
 
@@ -48,7 +49,6 @@ impl App {
 
     pub fn run(&mut self) {
         let mut event_pump = self.sdl_context.event_pump().unwrap();
-        let mut i = 0;
         'running: loop {
             for event in event_pump.poll_iter() {
                 match event {
@@ -61,11 +61,7 @@ impl App {
             }
 
             self.update();
-
-            i = (i + 1) % 255;
-            self.canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
-            self.canvas.clear();
-
+            self.render();
             self.canvas.present();
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         }
@@ -77,6 +73,25 @@ impl App {
             Some(ctx) => {
                 let key_state = 0;
                 nes::run(ctx, key_state);
+            },
+            None => (),
+        }
+    }
+
+    fn render(&mut self) {
+        match &mut self.ctx {
+            Some(ctx) => {
+                let buf = nes::get_render_buf(ctx);
+                for i in 0..HEIGHT {
+                    for j in 0..WIDTH {
+                        let base = ((i * WIDTH + j) * 4) as usize;
+                        let r = buf[base + 0];
+                        let g = buf[base + 1];
+                        let b = buf[base + 2];
+                        self.canvas.set_draw_color(Color::RGB(r, g, b));
+                        let _ = self.canvas.draw_point(Point::new(j as i32, i as i32));
+                    }
+                }
             },
             None => (),
         }
