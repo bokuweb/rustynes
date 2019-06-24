@@ -8,7 +8,7 @@ use sdl2::pixels::{Color};
 use sdl2::render::{WindowCanvas};
 use sdl2::rect::{Point};
 
-use std::time::{Duration};
+use std::time::{Duration, SystemTime};
 
 use std::env;
 use std::fs;
@@ -74,6 +74,7 @@ impl App {
     pub fn run(&mut self) {
         let mut event_pump = self.sdl_context.event_pump().unwrap();
         let mut pad = 0;
+        let mut prev_time = SystemTime::now();
         'running: loop {
             for event in event_pump.poll_iter() {
                 match event {
@@ -94,7 +95,12 @@ impl App {
             self.update(pad);
             self.render();
             self.canvas.present();
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+
+            let elapsed_time = SystemTime::now().duration_since(prev_time).expect("Time went backwards").as_nanos();
+            let wait = if elapsed_time < 1_000_000_000u128 / 60 { 1_000_000_000u32 / 60 - (elapsed_time as u32) } else { 0 };
+            ::std::thread::sleep(Duration::new(0, wait));
+
+            prev_time = SystemTime::now();
         }
     }
 
