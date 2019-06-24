@@ -10,6 +10,7 @@ use sdl2::rect::{Point};
 
 use std::time::{Duration};
 
+use std::env;
 use std::fs;
 use rustynes::nes;
 use rustynes::nes::Context;
@@ -159,14 +160,22 @@ fn start_noise() {}
 //fn close_noise();
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("<.nes file> required");
+        std::process::exit(1);
+    }
+
     let mut app = App::new();
 
-    match fs::read("roms/falling.nes") {
+    let filename = &args[1];
+    match fs::read(filename) {
         Result::Ok(rom) => {
             app.set_rom(rom);
             app.run();
         },
         Result::Err(err) => {
+            eprintln!("Cannot open .nes file: {}", filename);
             panic!(err);
         }
     }
