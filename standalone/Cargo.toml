@@ -2,3 +2,10 @@
 name = "standalone"
 version = "0.1.0"
 authors = ["tyfkda <tyfkda@gmail.com>"]
+
+[dependencies]
+rustynes = { path = ".." }
+
+[[bin]]
+name = "rustynes"
+path = "src/main.rs"

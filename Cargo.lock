@@ -19,6 +19,9 @@ dependencies = [
 [[package]]
 name = "standalone"
 version = "0.1.0"
+dependencies = [
+ "rustynes 0.1.0",
+]
 
 [metadata]
 "checksum lazy_static 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "3b37545ab726dd833ec6420aaba8231c5b320814b9029ad585555d2a03e94fbf"
