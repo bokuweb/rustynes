@@ -17,6 +17,29 @@ use rustynes::nes::Context;
 const WIDTH: u32 = 256;
 const HEIGHT: u32 = 224;
 
+const PAD_A: u8      = 0x01;
+const PAD_B: u8      = 0x02;
+const PAD_SELECT: u8 = 0x04;
+const PAD_START: u8  = 0x08;
+const PAD_U: u8      = 0x10;
+const PAD_D: u8      = 0x20;
+const PAD_L: u8      = 0x40;
+const PAD_R: u8      = 0x80;
+
+fn keycode_to_pad(key: Keycode) -> u8 {
+    match key {
+        Keycode::X => PAD_A,
+        Keycode::Z => PAD_B,
+        Keycode::A => PAD_SELECT,
+        Keycode::S => PAD_START,
+        Keycode::Up => PAD_U,
+        Keycode::Down => PAD_D,
+        Keycode::Left => PAD_L,
+        Keycode::Right => PAD_R,
+        _ => 0,
+    }
+}
+
 pub struct App {
     sdl_context: Sdl,
     canvas: WindowCanvas,
@@ -49,6 +72,7 @@ impl App {
 
     pub fn run(&mut self) {
         let mut event_pump = self.sdl_context.event_pump().unwrap();
+        let mut pad = 0;
         'running: loop {
             for event in event_pump.poll_iter() {
                 match event {
@@ -56,23 +80,28 @@ impl App {
                     Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'running
                     },
+                    Event::KeyDown { keycode: Some(key), .. } => {
+                        pad |= keycode_to_pad(key);
+                    },
+                    Event::KeyUp { keycode: Some(key), .. } => {
+                        pad &= !keycode_to_pad(key);
+                    },
                     _ => {}
                 }
             }
 
-            self.update();
+            self.update(pad);
             self.render();
             self.canvas.present();
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         }
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, pad: u8) {
         let optctx = &mut self.ctx;
         match optctx {
             Some(ctx) => {
-                let key_state = 0;
-                nes::run(ctx, key_state);
+                nes::run(ctx, pad);
             },
             None => (),
         }
