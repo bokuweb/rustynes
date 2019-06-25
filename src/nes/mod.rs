@@ -86,6 +86,10 @@ pub fn run(ctx: &mut Context, key_state: u8) {
     }
 }
 
+pub fn get_render_buf(ctx: &mut Context) -> &Vec<u8> {
+    ctx.renderer.get_buf()
+}
+
 impl Context {
     pub fn new(buf: &mut [Data]) -> Self {
         let cassette = parser::parse(buf);

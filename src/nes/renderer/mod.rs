@@ -28,6 +28,10 @@ impl Renderer {
         }
     }
 
+    pub fn get_buf(&self) -> &Vec<u8> {
+        &self.buf
+    }
+
     fn should_pixel_hide(&self, x: usize, y: usize, background: &BackgroundField) -> bool {
         let tile_x = x / 8;
         let tile_y = y / 8;
