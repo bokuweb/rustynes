@@ -21,11 +21,31 @@ https://bokuweb.github.io/rustynes/
 
 ## Development
 
+### webAssembly
 ```
-$make
-$npm install
-$npm start
-$open http://localhost:3334
+$ make
+$ npm install
+$ npm start
+$ open http://localhost:3334
+```
+
+### Native
+
+```
+$ cargo run -p standalone --release roms/hello.nes
+```
+
+## Build
+
+### webAssembly
+```
+$ make
+```
+
+### Native
+
+```
+$ make standalone
 ```
 
 ## Test
