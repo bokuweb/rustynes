@@ -17,6 +17,7 @@ https://bokuweb.github.io/rustynes/
 - emscripten
 - rust
 - wasm-gc
+- SDL2
 
 ## Development
 
