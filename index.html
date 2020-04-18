@@ -45,7 +45,7 @@
     </div>
     <div class="select">
       <select name="rom">
-        <option value="falling">falling</option>
+        <!-- <option value="falling">falling</option>
         <option value="dushlan">dushlan</option>
         <option value="color_test">color_test</option>
         <option value="firedemo">firedemo</option>
@@ -61,6 +61,7 @@
         <option value="giko017">giko017</option>
         <option value="hello">hello</option>
         <option value="nestest">nestest</option>
+        <option value="Mario">Mario</option> -->
       </select>
     </div>
   </div>
@@ -84,6 +85,17 @@
   <script type="module" src="./init.js"></script>
   <script type="module">
     import {start, startFile} from './main.js';
+    function romsListRender( roms ){
+      document.querySelector('select').innerHTML = roms.map( rom => `<option value=${rom}>${rom}</option>` ).join('');
+    }
+    (async ()=>{
+      const req = await fetch('/roms');
+      if( req.ok ){
+        let roms = await req.json();
+        roms = roms.map( rom => rom.split('.')[0] );
+        romsListRender(roms);
+      }
+    })();
     document.querySelector('select')
       .addEventListener('change', (e) => {
         start(`./roms/${e.target.value}.nes`);
